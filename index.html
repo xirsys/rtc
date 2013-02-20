@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>WebRTC example</title>
+	<link href="CSS/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+	<link href="CSS/Main.css" rel="stylesheet" />
+	<script src="Scripts/xRtc/Class.js"></script>
+	<script src="Scripts/xRtc/Logger.js"></script>
+	<script src="Scripts/xRtc/Ajax.js"></script>
+	<script src="Scripts/xRtc/EventDispatcher.js"></script>
+	<script src="Scripts/xRtc/DataChannel.js"></script>
+
+	<script src="Scripts/jquery-1.9.1.min.js"></script>
+	<script src="Scripts/Script.js"></script>
+</head>
+<body>
+	<div id="step1">
+		<form id="form">
+			<table class="form">
+				<tr>
+					<th class="text-left"><label for="domain">Domain</label></th>
+					<td><input type="text" id="domain" name="domain" value="www.example.com" /></td>
+				</tr>
+				<tr>
+					<th class="text-left"><label for="application">Application</label></th>
+					<td><input type="text" id="application" name="application" value="test_app" /></td>
+				</tr>
+				<tr>
+					<th class="text-left"><label for="room">Room</label></th>
+					<td><input type="text" id="room" name="room" value="test_room" /></td>
+				</tr>
+				<tr>
+					<th class="text-left"><label for="name">Name (identity)</label></th>
+					<td><input type="text" id="name" name="name" value="alex" /></td>
+				</tr>
+				<tr>
+					<td colspan="2" class="button-block"><input type="submit" value="Join" class="btn-inverse" /></td>
+				</tr>
+			</table>
+			
+		</form>
+	</div>
+
+	<div id="step2">
+	</div>
+</body>
+</html>

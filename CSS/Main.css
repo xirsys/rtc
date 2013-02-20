@@ -1,0 +1,23 @@
+﻿table.form th,
+table.form td {
+	text-align: left;
+	padding: 2px 5px 2px 0;
+	vertical-align: middle;
+}
+
+table.form .button-block {
+	text-align: right;
+}
+
+#form {
+	display: block;
+	padding: 20px;
+}
+
+#step1 {
+	display: block;
+}
+
+#step1 {
+	display: none;
+}
