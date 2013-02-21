@@ -1,4 +1,30 @@
-﻿table.form th,
+﻿.clear {
+	clear: both;
+	height: 0;
+}
+
+#chat-table {
+	width: 100%;
+	height: 100%;
+}
+
+#video-cell {
+	padding: 0 20px;
+	vertical-align: top;
+}
+
+#contacts-cell {
+	width: 350px;
+	vertical-align: top;
+}
+
+#chat-cell {
+	padding: 0 20px;
+	height: 300px;
+	vertical-align: top;
+}
+
+table.form th,
 table.form td {
 	text-align: left;
 	padding: 2px 5px 2px 0;
@@ -16,8 +42,125 @@ table.form .button-block {
 
 #step1 {
 	display: block;
+	padding: 20px;
 }
 
-#step1 {
+#step2 {
 	display: none;
+	padding: 20px 50px 20px 20px;
+}
+
+/* Video */
+.person {
+	float: left;
+	width: 300px;
+	margin: 0 10px 10px 0;
+}
+
+.person .name {
+	height: 20px;
+	font: 600 14px/20px Arial;
+	color: #000;
+}
+
+.person .video {
+	height: 300px;
+	border: 5px solid #000;
+	background: #FFF url("../Images/video-bg.png") center center no-repeat;
+}
+
+.person .video video {
+	height: 300px;
+	display: none;
+
+}
+
+.person.my .name {
+	color: #F00;
+}
+
+/* Contacts */
+#contacts-block {
+	border: 2px solid #000;
+	height: 600px;
+}
+
+#contacts-block legend {
+	font: 600 16px/20px Arial;
+	margin: 0 10px;
+	padding: 3px;
+	border: none;
+	color: #008000;
+}
+
+#contacts {
+	padding: 0 10px;
+	overflow: auto;
+}
+
+.contact {
+	height: 25px;
+	margin: 5px 0;
+	padding: 2px 0;
+	border-bottom: 1px dashed #666;
+}
+
+.contact .name {
+	font: 600 14px/25px Arial;
+	color: #000;
+	float: left;
+}
+
+.contact .button {
+	float: right;
+}
+
+.contact.my .name {
+	color: #F00;
+}
+.contact.my .button {
+	display: none;
+}
+
+/* Chat */
+#chat {
+	border: 1px solid #000;
+	padding: 5px;
+	font: 400 13px/18px Arial;
+	color: #000;
+	height: 200px;
+	overflow: auto;
+	margin: 0 0 20px;
+}
+
+#chat .message {
+	padding: 3px 0;
+}
+
+#chat .message .name {
+	font-weight: 600;
+}
+
+#chat .message.my .name {
+	color: #F00;
+}
+
+#chat .message.my .text {
+	color: #666;
+}
+
+#chat-form .chat-input {
+	float: left;
+	width: 90%;
+}
+
+#chat-form .chat-button {
+	float: right;
+	width: 10%;
+	text-align: right;
+	padding: 3px 0 0;
+}
+
+#chat-form .chat-input input {
+	width: 100%;
 }

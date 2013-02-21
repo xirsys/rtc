@@ -28,10 +28,10 @@
 
 			var events = this._events[eventName];
 			if (!events) {
-				this.logger.warning("EventDispatcher.trigger", 'trying to call event which is not listening');
+				this._logger.warning("EventDispatcher.trigger", 'Trying to call event which is not listening.');
 				return;
 			}
-
+			
 			var args = Array.prototype.slice.call(arguments, 1);
 			for (var i = 0, len = events.length; i < len; i++) {
 				events[i].apply(null, args);

@@ -12,25 +12,38 @@
 	$('#form').on('submit', function(e) {
 		e.preventDefault();
 
-		var formData = $(this).serializeObject();
+		var userData = $(this).serializeObject();
 		
-		// {iceServers: [{url: "stun: turn.influxis.com: 3478"}]}
-		var data = {
-			Type: "token_request",
-			Authentication: "public",
-			Authorization: null,
-			Domain: formData.domain || "www.example.com",
-			Application: formData.application || "test_app",
-			Room: formData.room || "test_room",
-			Ident: formData.name || "alex"
-		};
 		
-		showMainWindow(data);
+		joinRoom(userData);
 	});
-	
 
-	function showMainWindow (data) {
-		alert(escape(JSON.stringify(data)));
-		// todo: add code here
+
+	$('#form').trigger('submit');
+
+	function joinRoom(userData) {
+		$('#step1, #step2').toggle();
+		//alert(escape(JSON.stringify(data)));
+
+		var handshake = new xRtc.HandshakeController();
+		handshake.on(xRtc.HandshakeController.events.connectionOpen, function (e) {
+			debugger;
+			console.log(e);
+		});
+
+
+		var connection = new xRtc.Connection(userData, handshake);
+		setInterval(function() {
+			connection.connect();
+		}, 15000);
+
+		//$('#video .video:first video').show().get(0).src = 
+
 	};
 });
+
+/*(function (exports) {
+	exports.ChatViewModel = exports.xRtc.Class();
+
+	exports.ChatViewModel.include();
+})(window);*/

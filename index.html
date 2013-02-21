@@ -6,9 +6,11 @@
 	<link href="CSS/Main.css" rel="stylesheet" />
 	<script src="Scripts/xRtc/Class.js"></script>
 	<script src="Scripts/xRtc/Logger.js"></script>
-	<script src="Scripts/xRtc/Ajax.js"></script>
 	<script src="Scripts/xRtc/EventDispatcher.js"></script>
+	<script src="Scripts/xRtc/Ajax.js"></script>
 	<script src="Scripts/xRtc/DataChannel.js"></script>
+	<script src="Scripts/xRtc/HandshakeController.js"></script>
+	<script src="Scripts/xRtc/Connection.js"></script>
 
 	<script src="Scripts/jquery-1.9.1.min.js"></script>
 	<script src="Scripts/Script.js"></script>
@@ -42,6 +44,88 @@
 	</div>
 
 	<div id="step2">
+		<table id="chat-table">
+			<tr>
+				<td id="video-cell">
+					<div id="video">
+						<div class="person my">
+							<div class="name">Alex</div>
+							<div class="video">
+								<!--<video src="" autoplay="autoplay" />-->
+							</div>
+						</div>
+
+						<div class="person">
+							<div class="name">My Friend</div>
+							<div class="video">
+								<!--<video src="" autoplay="autoplay" />-->
+							</div>
+						</div>
+					</div>
+					<div class="clear"></div>
+				</td>
+				<td rowspan="2" id="contacts-cell">
+					<fieldset id="contacts-block">
+						<legend>www.example.com, my_app, my_room</legend>
+						<div id="contacts">
+							<div class="contact">
+								<div class="name">my_friend_name</div>
+								<div class="button"><button class="btn-inverse">Connect</button></div>
+								<div class="clear"></div>
+							</div>
+							<div class="contact">
+								<div class="name">my_2nd_friend_name</div>
+								<div class="button"><button class="btn-inverse">Connect</button></div>
+								<div class="clear"></div>
+							</div>
+							<div class="contact my">
+								<div class="name">my_name</div>
+								<div class="button"><button class="btn-inverse">Connect</button></div>
+								<div class="clear"></div>
+							</div>
+							<div class="contact">
+								<div class="name">my_3rd_friend_name</div>
+								<div class="button"><button class="btn-inverse">Connect</button></div>
+								<div class="clear"></div>
+							</div>
+						</div>
+					</fieldset>
+				</td>
+			</tr>
+
+			<tr>
+				<td id="chat-cell">
+					<div id="chat">
+						<div class="message my">
+							<span class="name">Alex:</span>
+							<span class="text">Hello! How are you?</span>
+						</div>
+						<div class="message">
+							<span class="name">Peter:</span>
+							<span class="text">I am fine!</span>
+						</div>
+						<div class="message">
+							<span class="name">Peter:</span>
+							<span class="text">What about you?</span>
+						</div>
+						<div class="message my">
+							<span class="name">Alex:</span>
+							<span class="text">Great! I've got a new car!</span>
+						</div>
+					</div>
+					
+					<form id="chat-form">
+						<div class="chat-input">
+							<input type="text" name="message" value="How are you today?" placeholder="Input message here" />
+						</div>
+						<div class="chat-button">
+							<input type="submit" class="btn-inverse" value="Send" />
+						</div>
+						<div class="clear"></div>
+					</form>
+				</td>
+			</tr>
+		</table>
 	</div>
 </body>
 </html>

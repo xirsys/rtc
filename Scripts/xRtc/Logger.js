@@ -5,15 +5,19 @@
 
 	xrtc.Logger.include({
 		info: function () {
-			console.log("Info: ", arguments);
+			console.log("Info: ", Array.prototype.slice.call(arguments));
 		},
 
 		debug: function () {
-			console.log("Debug: ", arguments);
+			console.log("Debug: ", Array.prototype.slice.call(arguments));
 		},
 
 		warning: function () {
-			console.log("Warning: ", arguments);
+			console.log("Warning: ", Array.prototype.slice.call(arguments));
+		},
+		
+		error: function () {
+			console.log("Error: ", Array.prototype.slice.call(arguments));
 		}
 	});
 })(window);
