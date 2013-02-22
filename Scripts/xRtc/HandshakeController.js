@@ -36,13 +36,11 @@
 			self._socket = new WebSocket(url);
 
 			self._socket.onopen = function (evt) {
-				debugger;
 				self._logger.info(evt);
 				self.trigger(events.connectionOpen, evt);
 			};
 
 			self._socket.onmessage = function (msg) {
-				debugger;
 				self._logger.info(msg);
 				self.trigger(events.message, msg);
 
@@ -51,13 +49,11 @@
 			};
 
 			self._socket.onclose = function (evt) {
-				debugger;
 				self._logger.info(evt);
 				self.trigger(events.connectionClose, evt);
 			};
 
 			self._socket.onerror = function (evt) {
-				debugger;
 				self._logger.error(evt);
 				self.trigger(events.connectionError, evt);
 			};

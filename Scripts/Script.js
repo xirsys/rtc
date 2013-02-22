@@ -23,7 +23,6 @@
 			$(document).on('click', '#contacts .button button', function (e) {
 				e.preventDefault();
 				
-
 				var contact = $(this).parents('.contact').data();
 				exports.chat.connect(contact.name);
 			});

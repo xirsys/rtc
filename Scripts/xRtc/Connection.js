@@ -22,12 +22,13 @@
 
 			handshakeController.on(xrtc.HandshakeController.events.recieveOffer, function (response) {
 				var sdp = JSON.parse(response.sdp);
-				debugger;
+				$('#chat-form :text').val(response.participantId);
 				
 				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 				self._peerConnection.createAnswer(
-					function(answer) {
+					function (answer) {
+						debugger;
 						self._peerConnection.setLocalDescription(answer);
 						self._handshakeController.sendAnswer(response.participantId, JSON.stringify(answer));
 
@@ -62,7 +63,7 @@
 			
 			this._initPeerConnection();
 			self._peerConnection.createOffer(
-				function(offer) {
+				function (offer) {
 					self._peerConnection.setLocalDescription(offer);
 					self._handshakeController.sendOffer(participantId, JSON.stringify(offer));
 				},
@@ -107,12 +108,10 @@
 				navigator,
 				opts,
 				function (stream) {
-					debugger;
 					self._peerConnection.addStream(stream);
 					self.trigger(xrtc.Connection.events.streamAdded, stream);
 				}, function(error) {
 					//todo: pass own params
-					debugger;
 					self.trigger(xrtc.Connection.events.streamError, error);
 				});
 		},
@@ -151,17 +150,16 @@
 		},
 		
 		_initPeerConnection: function () {
-			debugger;
 			if (!this._peerConnection) {
 				var self = this;
 				this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
-				/*this._peerConnection.onicecandidate = function (event) {
+				this._peerConnection.onicecandidate = function (event) {
 					debugger;
 					if (!!event.candidate) {
 						self._handshakeController.sendIce(self._userData.name, event.candidate.candidate);
 						self.trigger(xrtc.Connection.events.iceSent, event);
 					}
-				};*/
+				};
 			}
 		},
 		
