@@ -2,13 +2,14 @@
 	"use strict";
 	exports.xRtc = {};
 
-	exports.xRtc.Class = function () {
+	exports.xRtc.Class = function (name) {
 		var klass = function () {
 			this.init.apply(this, arguments);
 		};
 
 		klass.fn = klass.prototype;
 		klass.fn.init = function () { };
+		klass.fn.className = name;
 
 		klass.extend = function (obj) {
 			var extended = obj.extended;

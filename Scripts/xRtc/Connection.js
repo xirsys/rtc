@@ -1,14 +1,14 @@
 ﻿(function (exports) {
 	"use strict";
 	var xrtc = exports.xRtc;
-	xrtc.Connection = new xrtc.Class();
+	xrtc.Connection = new xrtc.Class('Connection');
 
+	xrtc.Connection.include(xrtc.EventDispatcher);
 	xrtc.Connection.include({
 		init: function (userData, handshakeController) {
 			var self = this;
 			this._logger = new xrtc.Logger();
 			this._peerConnection = null;
-			this._eventDispatcher = new xrtc.EventDispatcher();
 			this._handshakeController = handshakeController;
 			this._userData = userData;
 
@@ -18,21 +18,23 @@
 
 				self.trigger('iceAdded', request, iceCandidate);
 			});
-			
-			handshakeController.on('receiveOffer', function (response) {
-				var sessionDescription = new RTCSessionDescription(response.offer);
+
+			handshakeController.on(xrtc.HandshakeController.events.recieveOffer, function (response) {
+				var sdp = JSON.parse(response.sdp);
+				
+				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 				self._peerConnection.createAnswer(
-					function(desc) {
-						self._peerConnection.setLocalDescription(desc);
-						self._handshakeController.sendAnswer(response.participantId, JSON.stringify(desc));
+					function(answer) {
+						self._peerConnection.setLocalDescription(answer);
+						self._handshakeController.sendAnswer(response.socketId, JSON.stringify(answer));
 					},
 					function(e) {
 						//todo: add logic
 					},
 					{ mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: false } }); // todo: think to change this
 
-				self.trigger('offerAdded', request, sessionDescription);
+				self.trigger(xrtc.Connection.events.createOffer, response, sessionDescription);
 			});
 
 			handshakeController.on('receiveanswer', function(request) {
@@ -44,16 +46,30 @@
 		},
 
 		connect: function () {
+			var self = this;
+			
 			this._getToken(function (token) {
-				this._handshakeController.connect(token);
+				self._handshakeController.connect(token);
 			});
 		},
 
 		startSession: function (participantId) {
+			var self = this;
+			
 			this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
-			this._getToken(function (token) {
-				this._handshakeController.sendOffer(token);
-			});
+			self._peerConnection.createOffer(
+				function(offer) {
+					self._peerConnection.setLocalDescription(offer);
+					self._handshakeController.sendOffer(participantId, JSON.stringify(offer));
+				},
+				function(error) {
+					// todo: log and fire event
+				},
+				{
+					mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: true }
+				});
+			//this._getToken(function (token) {
+			//});
 		},
 		
 		endSession: function () {
@@ -70,24 +86,27 @@
 				//audioConstraints: true,
 				//videoConstraints: true,
 				audio: true,
-				video: true,
-				/*{
+				video: {
 					mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
-					optional: [{ minFrameRate: 24 }, { maxWidth: 640 }, { maxHeigth: 480 }]
-				}*/
+					optional: [{ minFrameRate: 24 }, { maxWidth: 300 }, { maxHeigth: 300 }]
+				}
 				//offerConstraints: { 'has_audio': true, 'has_video': true } // Chrome 24
 				//offerConstraints: { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': false } }
 			};
 
 			var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
+			if (!this._peerConnection) {
+				this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
+			}
+
+			//todo: pass own params
 			getUserMedia.call(
 				navigator,
 				opts,
-				function(e) {
-					//todo: pass own params
-					self.trigger.apply(self, xrtc.Connection.events.addStream, arguments);
-					self._peerConnection.addstream(e);
+				function(stream) {
+					self._peerConnection.addStream(stream);
+					self.trigger(xrtc.Connection.events.streamAdded, stream);
 					//xrtc.streams.push(stream);
 					//xrtc.initializedStreams++;
 
@@ -98,7 +117,7 @@
 					//}
 				}, function(e) {
 					//todo: pass own params
-					self.trigger.apply(self, xrtc.Connection.events.addStreamError, arguments);
+					self.trigger(xrtc.Connection.events.streamError, Array.prototype.slice.call(arguments));
 
 					//alert("Could not connect stream.");
 					//onFail();
@@ -107,24 +126,6 @@
 
 		createDataChannel: function () {
 
-		},
-
-		on: function (eventName, eventHandler) {
-			this._logger.info('Connection.on', arguments);
-
-			this._eventDispatcher.on(arguments);
-		},
-
-		off: function (eventName) {
-			this._logger.info('Connection.off', arguments);
-
-			this._eventDispatcher.off(arguments);
-		},
-
-		trigger: function (eventName) {
-			this._logger.info('Connection.trigger', arguments);
-
-			this._eventDispatcher.trigger(arguments);
 		},
 
 		_getToken: function (callback) {
@@ -174,11 +175,11 @@
 			return result;
 		}
 	});
-
+	
 	xrtc.Connection.extend({
 		events: {
-			addStream: "addstream",
-			addStreamError: "addstreamerror",
+			streamAdded: "streamadded",
+			streamError: "streamerror",
 			icecandidate: "icecandidate", //this._peerConnection.onicecandidate
 			createOffer: "createOffer",
 			createOfferError: "createOfferError",

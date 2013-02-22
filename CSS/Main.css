@@ -67,12 +67,13 @@ table.form .button-block {
 	height: 300px;
 	border: 5px solid #000;
 	background: #FFF url("../Images/video-bg.png") center center no-repeat;
+	/*overflow: hidden;*/
 }
 
 .person .video video {
 	height: 300px;
+	width: 300px;
 	display: none;
-
 }
 
 .person.my .name {

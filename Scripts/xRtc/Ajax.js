@@ -2,7 +2,7 @@
 	"use strict";
 	var xrtc = exports.xRtc;
 
-	xrtc.Ajax = xrtc.Class();
+	xrtc.Ajax = xrtc.Class('Ajax');
 
 	xrtc.Ajax.include({
 		init: function () {

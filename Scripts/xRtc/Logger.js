@@ -1,7 +1,7 @@
 ﻿(function (exports) {
 	"use strict";
 	var xrtc = exports.xRtc;
-	xrtc.Logger = new xrtc.Class();
+	xrtc.Logger = new xrtc.Class('Logger');
 
 	xrtc.Logger.include({
 		info: function () {

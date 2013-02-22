@@ -1,30 +1,30 @@
 ﻿(function (exports) {
 	"use strict";
 	var xrtc = exports.xRtc;
-	xrtc.HandshakeController = new xrtc.Class();
+	xrtc.HandshakeController = new xrtc.Class('HandshakeController');
 
+	xrtc.HandshakeController.include(xrtc.EventDispatcher);
 	xrtc.HandshakeController.include({
 		init: function (peerConnection, name) {
 			this._logger = new xrtc.Logger();
-			this._eventDispatcher = new xrtc.EventDispatcher();
 			this._socket = null;
 
 			//this._channel = new exports.DataChannel(peerConnection, name);
 
 			// this._channel.onopen = function (event) {
-			// 	self._eventDispatcher.trigger(xrtc.events.open, event);
+			// 	self.trigger(xrtc.HandshakeController.events.open, event);
 			// };
 			// this._channel.onmessage = function (event) {
-			// 	self._eventDispatcher.trigger(xrtc.events.message, event);
+			// 	self.trigger(xrtc.HandshakeController.events.message, event);
 			// };
 			// this._channel.onclose = function (event) {
-			// 	self._eventDispatcher.trigger(xrtc.events.close, event);
+			// 	self.trigger(xrtc.HandshakeController.events.close, event);
 			// };
 			// this._channel.onerror = function (event) {
-			// 	self._eventDispatcher.trigger(xrtc.events.error, event);
+			// 	self.trigger(xrtc.HandshakeController.events.error, event);
 			// };
 			// this._channel.ondatachannel = function () {
-			// 	self._eventDispatcher.trigger(xrtc.events.datachannel, event);
+			// 	self.trigger(xrtc.HandshakeController.events.datachannel, event);
 			// };
 		},
 
@@ -36,19 +36,16 @@
 			self._socket = new WebSocket(url);
 
 			self._socket.onopen = function (evt) {
-				debugger;
 				self._logger.info(evt);
 				self.trigger(events.connectionOpen, evt);
 			};
 
 			self._socket.onmessage = function (msg) {
-				debugger;
 				self._logger.info(msg);
 				self.trigger(events.message, msg);
 
-				//todo: parse ice/offer/answer
 				var message = self._parseMessage(msg);
-				self.trigger(message.name, message.data);
+				self.trigger(message.eventName, message.data);
 			};
 
 			self._socket.onclose = function (evt) {
@@ -87,38 +84,22 @@
 			};
 
 			var request = JSON.stringify(data);
+			this._logger.info('HandshakeController.sendOffer', request);
 			this._socket.send(request);
 		},
 
-		sendAnswer: function (participantId, answer) {
+		sendAnswer: function (token, answer) {
 			var data = {
 				eventName: "rtc_answer",
 				data: {
-					socketId: participantId,
+					socketId: token,
 					sdp: answer
 				}
 			};
 
 			var request = JSON.stringify(data);
+			this._logger.info('HandshakeController.sendAnswer', request);
 			this._socket.send(request);
-		},
-
-		on: function (eventName, eventHandler) {
-			this._logger.info('HandshakeController.on', Array.prototype.slice.call(arguments));
-
-			this._eventDispatcher.on.apply(this._eventDispatcher, arguments);
-		},
-
-		off: function (eventName) {
-			this._logger.info('HandshakeController.off', Array.prototype.slice.call(arguments));
-
-			this._eventDispatcher.off.apply(this._eventDispatcher, arguments);
-		},
-
-		trigger: function (eventName, data) {
-			this._logger.info('HandshakeController.trigger', Array.prototype.slice.call(arguments));
-
-			this._eventDispatcher.trigger.apply(this._eventDispatcher, arguments);
 		},
 		
 		_parseMessage: function(msg) {
@@ -152,7 +133,7 @@
 					json = JSON.parse(json.Message);
 					break;
 			}
-			return { name: xrtc.HandshakeController.eventMapping[json.eventName], data: json.data };
+			return { eventName: xrtc.HandshakeController.events[xrtc.HandshakeController.eventMapping[json.eventName]], data: json.data };
 		}
 	});
 
@@ -182,7 +163,7 @@
 			"peer_connected": "participantConnected",
 			"peer_removed": "participantDisconnected",
 			
-			"receive_offer": "recieveOffer",
+			"rtc_offer": "recieveOffer",
 			"rtc_ice_candidate": "recieveIce",
 			"rtc_answer": "recieveAnswer"
 		}

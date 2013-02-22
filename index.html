@@ -13,11 +13,12 @@
 	<script src="Scripts/xRtc/Connection.js"></script>
 
 	<script src="Scripts/jquery-1.9.1.min.js"></script>
+	<script src="Scripts/jquery.tmpl.min.js"></script>
 	<script src="Scripts/Script.js"></script>
 </head>
 <body>
 	<div id="step1">
-		<form id="form">
+		<form id="join-form">
 			<table class="form">
 				<tr>
 					<th class="text-left"><label for="domain">Domain</label></th>
@@ -51,7 +52,8 @@
 						<div class="person my">
 							<div class="name">Alex</div>
 							<div class="video">
-								<!--<video src="" autoplay="autoplay" />-->
+								<video id="videoRemote" autoplay></video>
+							</div>
 							</div>
 						</div>
 
@@ -64,59 +66,16 @@
 					</div>
 					<div class="clear"></div>
 				</td>
-				<td rowspan="2" id="contacts-cell">
-					<fieldset id="contacts-block">
-						<legend>www.example.com, my_app, my_room</legend>
-						<div id="contacts">
-							<div class="contact">
-								<div class="name">my_friend_name</div>
-								<div class="button"><button class="btn-inverse">Connect</button></div>
-								<div class="clear"></div>
-							</div>
-							<div class="contact">
-								<div class="name">my_2nd_friend_name</div>
-								<div class="button"><button class="btn-inverse">Connect</button></div>
-								<div class="clear"></div>
-							</div>
-							<div class="contact my">
-								<div class="name">my_name</div>
-								<div class="button"><button class="btn-inverse">Connect</button></div>
-								<div class="clear"></div>
-							</div>
-							<div class="contact">
-								<div class="name">my_3rd_friend_name</div>
-								<div class="button"><button class="btn-inverse">Connect</button></div>
-								<div class="clear"></div>
-							</div>
-						</div>
-					</fieldset>
-				</td>
+				<td rowspan="2" id="contacts-cell"></td>
 			</tr>
 
 			<tr>
 				<td id="chat-cell">
-					<div id="chat">
-						<div class="message my">
-							<span class="name">Alex:</span>
-							<span class="text">Hello! How are you?</span>
-						</div>
-						<div class="message">
-							<span class="name">Peter:</span>
-							<span class="text">I am fine!</span>
-						</div>
-						<div class="message">
-							<span class="name">Peter:</span>
-							<span class="text">What about you?</span>
-						</div>
-						<div class="message my">
-							<span class="name">Alex:</span>
-							<span class="text">Great! I've got a new car!</span>
-						</div>
-					</div>
+					<div id="chat"></div>
 					
 					<form id="chat-form">
 						<div class="chat-input">
-							<input type="text" name="message" value="How are you today?" placeholder="Input message here" />
+							<input type="text" name="message" value="" placeholder="Input message here" />
 						</div>
 						<div class="chat-button">
 							<input type="submit" class="btn-inverse" value="Send" />
@@ -127,5 +86,40 @@
 			</tr>
 		</table>
 	</div>
+	
+	<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
+		<fieldset id="contacts-block">
+			<legend>${roomInfo.domain}, ${roomInfo.application}, ${roomInfo.room}</legend>
+			<div id="contacts">
+				{{each contacts}}
+				<div class="contact {{if $value.isMe}}my{{/if}}" data-name="${$value.name}">
+					<div class="name">${$value.name}</div>
+					{{if !$value.isMe}}
+					<div class="button"><button class="btn-inverse">Connect</button></div>
+					{{/if}}
+					<div class="clear"></div>
+				</div>
+				{{/each}}
+			</div>
+		</fieldset>
+	</script>
+
+	<script type="text/x-jquery-tmpl" id="chat-message-tmpl">
+		<div class="message {{if isMy}}my{{/if}}">
+			<span class="name">${name}:</span>
+			<span class="text">${message}</span>
+		</div>
+	</script>
+
+	<script type="text/x-jquery-tmpl" id="video-tmpl">
+		{{each}}
+			<div class="person {{if $$value.isMe}}my{{/if}}">
+				<div class="name">${$value.name}</div>
+				<div class="video">
+					<video src="" autoplay="autoplay" />
+				</div>
+			</div>
+		{{/each}}
+	</script>
 </body>
 </html>
