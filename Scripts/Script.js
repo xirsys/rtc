@@ -34,7 +34,7 @@
 			exports.chat._userData = userData;
 
 			var handshake = exports.chat._handshakeController = new xRtc.HandshakeController();
-			handshake.on(xRtc.HandshakeController.events.participantsUpdated, function (data) {
+			handshake.on(xrtc.HandshakeController.events.participantsUpdated, function (data) {
 				var contacts = [],
 					currentName = exports.chat._userData.name;
 				

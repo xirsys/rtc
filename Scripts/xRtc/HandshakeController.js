@@ -32,15 +32,17 @@
 			var self = this,
 				events = xrtc.HandshakeController.events,
 				url = 'ws://turn.influxis.com:8002/ws/' + escape(token);
-
+			
 			self._socket = new WebSocket(url);
 
 			self._socket.onopen = function (evt) {
+				debugger;
 				self._logger.info(evt);
 				self.trigger(events.connectionOpen, evt);
 			};
 
 			self._socket.onmessage = function (msg) {
+				debugger;
 				self._logger.info(msg);
 				self.trigger(events.message, msg);
 
@@ -65,12 +67,13 @@
 			var data = {
 				eventName: "rtc_ice_candidate",
 				data: {
-					socketId: participantId,
-					candidate: ice
+					participantId: participantId,
+					iceCandidate: ice
 				}
 			};
 			
 			var request = JSON.stringify(data);
+			this._logger.info('HandshakeController.sendIce', request);
 			this._socket.send(request);
 		},
 
@@ -78,7 +81,7 @@
 			var data = {
 				eventName: "rtc_offer",
 				data: {
-					socketId: participantId,
+					participantId: participantId,
 					sdp: offer
 				}
 			};
@@ -88,11 +91,11 @@
 			this._socket.send(request);
 		},
 
-		sendAnswer: function (token, answer) {
+		sendAnswer: function (participantId, answer) {
 			var data = {
 				eventName: "rtc_answer",
 				data: {
-					socketId: token,
+					participantId: participantId,
 					sdp: answer
 				}
 			};

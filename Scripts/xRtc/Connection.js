@@ -12,36 +12,40 @@
 			this._handshakeController = handshakeController;
 			this._userData = userData;
 
-			handshakeController.on('receiveIce', function (request) {
-				var iceCandidate = new RTCIceCandidate(request);
+			handshakeController.on(xrtc.HandshakeController.events.recieveIce, function (response) {
+				debugger;
+				var iceCandidate = new RTCIceCandidate(JSON.parse(response.data).iceCandidate);
 				self._peerConnection.addIceCandidate(iceCandidate);
 
-				self.trigger('iceAdded', request, iceCandidate);
+				self.trigger(xrtc.Connection.events.iceAdded, request, iceCandidate);
 			});
 
 			handshakeController.on(xrtc.HandshakeController.events.recieveOffer, function (response) {
 				var sdp = JSON.parse(response.sdp);
+				debugger;
 				
 				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 				self._peerConnection.createAnswer(
 					function(answer) {
 						self._peerConnection.setLocalDescription(answer);
-						self._handshakeController.sendAnswer(response.socketId, JSON.stringify(answer));
-					},
-					function(e) {
-						//todo: add logic
-					},
-					{ mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: false } }); // todo: think to change this
+						self._handshakeController.sendAnswer(response.participantId, JSON.stringify(answer));
 
-				self.trigger(xrtc.Connection.events.createOffer, response, sessionDescription);
+						self.trigger(xrtc.Connection.events.answerSent, response, sessionDescription);
+					},
+					function (error) {
+						self.trigger(xrtc.Connection.events.answerError, error);
+					},
+					{ mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: true } }); // todo: think to change this
 			});
 
-			handshakeController.on('receiveanswer', function(request) {
-				var sessionDescription = new RTCSessionDescription(request);
+			handshakeController.on(xrtc.HandshakeController.events.recieveAnswer, function (response) {
+				var sdp = JSON.parse(response.sdp);
+				
+				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 
-				self.trigger('answerAdded', request, self._peerConnection.remoteStreams[0]);
+				self.trigger(xrtc.Connection.events.answerReceived, request, self._peerConnection.remoteStreams[0]);
 			});
 		},
 
@@ -56,7 +60,7 @@
 		startSession: function (participantId) {
 			var self = this;
 			
-			this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
+			this._initPeerConnection();
 			self._peerConnection.createOffer(
 				function(offer) {
 					self._peerConnection.setLocalDescription(offer);
@@ -96,31 +100,20 @@
 
 			var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 
-			if (!this._peerConnection) {
-				this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
-			}
+			this._initPeerConnection();
 
 			//todo: pass own params
 			getUserMedia.call(
 				navigator,
 				opts,
-				function(stream) {
+				function (stream) {
+					debugger;
 					self._peerConnection.addStream(stream);
 					self.trigger(xrtc.Connection.events.streamAdded, stream);
-					//xrtc.streams.push(stream);
-					//xrtc.initializedStreams++;
-
-					//jer-notify user method
-					//xrtc.onMediaResult(stream);
-					//if (xrtc.initializedStreams === xrtc.numStreams) {
-					//	xrtc.dispatcher.dispatch('ready');
-					//}
-				}, function(e) {
+				}, function(error) {
 					//todo: pass own params
-					self.trigger(xrtc.Connection.events.streamError, Array.prototype.slice.call(arguments));
-
-					//alert("Could not connect stream.");
-					//onFail();
+					debugger;
+					self.trigger(xrtc.Connection.events.streamError, error);
 				});
 		},
 
@@ -157,6 +150,21 @@
 			return { iceServers: [{ url: "stun:turn.influxis.com:3478" }] };
 		},
 		
+		_initPeerConnection: function () {
+			debugger;
+			if (!this._peerConnection) {
+				var self = this;
+				this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
+				/*this._peerConnection.onicecandidate = function (event) {
+					debugger;
+					if (!!event.candidate) {
+						self._handshakeController.sendIce(self._userData.name, event.candidate.candidate);
+						self.trigger(xrtc.Connection.events.iceSent, event);
+					}
+				};*/
+			}
+		},
+		
 		_getTokenRequestParams: function() {
 			var tokenParams = xrtc.Connection.settings.tokenParams,
 				userData = this._userData,
@@ -180,11 +188,16 @@
 		events: {
 			streamAdded: "streamadded",
 			streamError: "streamerror",
-			icecandidate: "icecandidate", //this._peerConnection.onicecandidate
-			createOffer: "createOffer",
-			createOfferError: "createOfferError",
-			createAnswer: "createAnswer",
-			createAnswerError: "createAnswerError"
+			
+			iceAdded: "iceadded",
+			iceSent: "icesent",
+			
+			offerSent: "offersent",
+			offerError: "offererror",
+			
+			answerSent: "answersent",
+			answerError: "answererror",
+			answerReceived: "answerreceived"
 		},
 		
 		settings: {
