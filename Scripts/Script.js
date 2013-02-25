@@ -1,4 +1,6 @@
-﻿(function (exports) {
+﻿"use strict";
+
+(function (exports) {
 	var xrtc = exports.xRtc;
 
 	exports.chat = {
@@ -15,14 +17,16 @@
 
 			$('#chat-form').on('submit', function(e) {
 				e.preventDefault();
+				var $form = $(this);
 				
-				var message = $(this).serializeObject();
+				var message = $form.serializeObject();
 				exports.chat.sendMessage(message);
+				$form.find(':text').val('');
 			});
 
 			$(document).on('click', '#contacts .button button', function (e) {
 				e.preventDefault();
-				
+
 				var contact = $(this).parents('.contact').data();
 				exports.chat.connect(contact.name);
 			});
@@ -51,8 +55,13 @@
 			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
 			connection.connect();
 
-			connection.on(xrtc.Connection.events.streamAdded, function (localStream) {
-				$('#video .video:first video').show().attr('src', exports.webkitURL.createObjectURL(localStream));
+			connection.on(xrtc.Connection.events.streamAdded, function (stream) {
+				exports.chat.addParticipant(stream);
+			});
+			
+			connection.on(xrtc.Connection.events.answerReceived, function (stream) {
+				debugger;
+				exports.chat.addParticipant(stream);
 			});
 
 			connection.addMedia();
@@ -64,11 +73,12 @@
 		
 		sendMessage: function (message) {
 			//todo: send message
-			console.log('Sending message...' ,message);
+			console.log('Sending message...', message);
+			exports.chat.addMessage(exports.chat._userData.name, message.message, true);
 		},
 		
 		addMessage: function (name, message, isMy) {
-			var messageData = { name: name, message: message, isMy: isMy };
+			var messageData = { name: name, message: message, isMy: !!isMy };
 			
 			var $chat = $('#chat');
 			$chat
@@ -94,9 +104,40 @@
 			$('#contacts-cell')
 				.empty()
 				.append($('#contacts-info-tmpl').tmpl(contactsData));
+		},
+
+		addParticipant: function (stream) {
+			var data = {
+				name: exports.chat._userData.name,
+				isMe: stream.constructor.name === 'LocalMediaStream'
+			};
+
+			var participantItem = $('#video-tmpl').tmpl(data);
+			$('#video').append(participantItem);
+
+			participantItem.find('video').show().attr('src', exports.webkitURL.createObjectURL(stream));
+		},
+		
+		removeParticipant: function (participantId) {
+			$('#video .person[data-name="' + participantId + '"]').remove();
 		}
 	};
 })(window);
+
+function getParams() {
+	var params = {};
+	var paramsArr = location.href.split('?');
+	
+	if (paramsArr.length > 1) {
+		paramsArr = paramsArr[1].split('&');
+		for (var i = 0; i < paramsArr.length; i++) {
+			var paramData = paramsArr[i].split('=');
+			params[paramData[0]] = paramData[1];
+		}
+	}
+
+	return params;
+}
 
 $(document).ready(function () {
 	$.fn.serializeObject = function() {
@@ -111,7 +152,13 @@ $(document).ready(function () {
 
 	chat.init();
 
-	//$('#join-form').trigger('submit');
+	debugger;
+	var username = getParams().name;
+	if(username){
+		$('#join-form').find(':text[name="name"]').val(username).end().trigger('submit');
+	}
+
+	//$('#join-form').find(':text[name="name"]').val('Alex' + Math.round(Math.random() * 1000)).end().trigger('submit');
 
 	//chat.addMessage('Alex', 'Hello! How are you?', true);
 	//chat.addMessage('Peter', 'I am fine!', false);

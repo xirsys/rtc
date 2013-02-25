@@ -1,5 +1,6 @@
-﻿(function (exports) {
-	"use strict";
+﻿"use strict";
+
+(function (exports) {
 	var xrtc = exports.xRtc;
 	xrtc.DataChannel = new xrtc.Class('DataChannel');
 
@@ -29,7 +30,7 @@
 		},
 		
 		send: function () {
-			this._logger.info('DataChannel.send', Array.prototype.slice.call(arguments));
+			this._logger.info('DataChannel.send', arguments);
 			//_channel
 		}
 	});

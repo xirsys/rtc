@@ -1,11 +1,12 @@
-﻿(function (exports) {
-	"use strict";
+﻿"use strict";
+
+(function (exports) {
 	var xrtc = exports.xRtc;
 
 	xrtc.EventDispatcher = {
 		on: function (eventName, callback) {
 			if (this._logger) {
-				this._logger.info(this.className + ".on", Array.prototype.slice.call(arguments));
+				this._logger.info(this.className + ".on", arguments);
 			}
 
 			this._events = this._events || {};
@@ -15,7 +16,7 @@
 
 		off: function (eventName) {
 			if (this._logger) {
-				this._logger.info(this.className + ".off", Array.prototype.slice.call(arguments));
+				this._logger.info(this.className + ".off", arguments);
 			}
 
 			this._events = this._events || {};
@@ -25,7 +26,7 @@
 
 		trigger: function (eventName) {
 			if (this._logger) {
-				this._logger.info(this.className + ".trigger", Array.prototype.slice.call(arguments));
+				this._logger.info(this.className + ".trigger", arguments);
 			}
 
 			this._events = this._events || {};

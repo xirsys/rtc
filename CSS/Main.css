@@ -165,3 +165,32 @@ table.form .button-block {
 #chat-form .chat-input input {
 	width: 100%;
 }
+
+/* Console */
+#console {
+	border: 1px solid #000;
+	height: 200px;
+	overflow: auto;
+	margin: 5px;
+	padding: 5px;
+}
+
+#console .item {
+	margin: 3px 0;	
+}
+
+#console .item.info {
+	color: #888;
+}
+
+#console .item.error {
+	color: #F00;
+}
+
+#console .item.warning {
+	color: #00F;
+}
+
+#console .item.debug {
+	color: #F55;
+}

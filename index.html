@@ -16,110 +16,95 @@
 	<script src="Scripts/jquery.tmpl.min.js"></script>
 	<script src="Scripts/Script.js"></script>
 </head>
-<body>
-	<div id="step1">
-		<form id="join-form">
-			<table class="form">
+	<body>
+		<div id="console"></div>
+
+		<div id="step1">
+			<form id="join-form">
+				<table class="form">
+					<tr>
+						<th class="text-left"><label for="domain">Domain</label></th>
+						<td><input type="text" id="domain" name="domain" value="www.example.com" /></td>
+					</tr>
+					<tr>
+						<th class="text-left"><label for="application">Application</label></th>
+						<td><input type="text" id="application" name="application" value="test_app" /></td>
+					</tr>
+					<tr>
+						<th class="text-left"><label for="room">Room</label></th>
+						<td><input type="text" id="room" name="room" value="test_room" /></td>
+					</tr>
+					<tr>
+						<th class="text-left"><label for="name">Name (identity)</label></th>
+						<td><input type="text" id="name" name="name" value="alex" /></td>
+					</tr>
+					<tr>
+						<td colspan="2" class="button-block"><input type="submit" value="Join" class="btn-inverse" /></td>
+					</tr>
+				</table>
+			
+			</form>
+		</div>
+
+		<div id="step2">
+			<table id="chat-table">
 				<tr>
-					<th class="text-left"><label for="domain">Domain</label></th>
-					<td><input type="text" id="domain" name="domain" value="www.example.com" /></td>
+					<td id="video-cell">
+						<div id="video"></div>
+						<div class="clear"></div>
+					</td>
+					<td rowspan="2" id="contacts-cell"></td>
 				</tr>
+
 				<tr>
-					<th class="text-left"><label for="application">Application</label></th>
-					<td><input type="text" id="application" name="application" value="test_app" /></td>
-				</tr>
-				<tr>
-					<th class="text-left"><label for="room">Room</label></th>
-					<td><input type="text" id="room" name="room" value="test_room" /></td>
-				</tr>
-				<tr>
-					<th class="text-left"><label for="name">Name (identity)</label></th>
-					<td><input type="text" id="name" name="name" value="alex" /></td>
-				</tr>
-				<tr>
-					<td colspan="2" class="button-block"><input type="submit" value="Join" class="btn-inverse" /></td>
+					<td id="chat-cell">
+						<div id="chat"></div>
+					
+						<form id="chat-form">
+							<div class="chat-input">
+								<input type="text" name="message" value="" placeholder="Input message here" />
+							</div>
+							<div class="chat-button">
+								<input type="submit" class="btn-inverse" value="Send" />
+							</div>
+							<div class="clear"></div>
+						</form>
+					</td>
 				</tr>
 			</table>
-			
-		</form>
-	</div>
-
-	<div id="step2">
-		<table id="chat-table">
-			<tr>
-				<td id="video-cell">
-					<div id="video">
-						<div class="person my">
-							<div class="name">Alex</div>
-							<div class="video">
-								<video id="videoRemote" autoplay></video>
-							</div>
-							</div>
-						</div>
-
-						<div class="person">
-							<div class="name">My Friend</div>
-							<div class="video">
-								<!--<video src="" autoplay="autoplay" />-->
-							</div>
-						</div>
-					</div>
-					<div class="clear"></div>
-				</td>
-				<td rowspan="2" id="contacts-cell"></td>
-			</tr>
-
-			<tr>
-				<td id="chat-cell">
-					<div id="chat"></div>
-					
-					<form id="chat-form">
-						<div class="chat-input">
-							<input type="text" name="message" value="" placeholder="Input message here" />
-						</div>
-						<div class="chat-button">
-							<input type="submit" class="btn-inverse" value="Send" />
-						</div>
-						<div class="clear"></div>
-					</form>
-				</td>
-			</tr>
-		</table>
-	</div>
-	
-	<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
-		<fieldset id="contacts-block">
-			<legend>${roomInfo.domain}, ${roomInfo.application}, ${roomInfo.room}</legend>
-			<div id="contacts">
-				{{each contacts}}
-				<div class="contact {{if $value.isMe}}my{{/if}}" data-name="${$value.name}">
-					<div class="name">${$value.name}</div>
-					{{if !$value.isMe}}
-					<div class="button"><button class="btn-inverse">Connect</button></div>
-					{{/if}}
-					<div class="clear"></div>
-				</div>
-				{{/each}}
-			</div>
-		</fieldset>
-	</script>
-
-	<script type="text/x-jquery-tmpl" id="chat-message-tmpl">
-		<div class="message {{if isMy}}my{{/if}}">
-			<span class="name">${name}:</span>
-			<span class="text">${message}</span>
 		</div>
-	</script>
+	
+		<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
+			<fieldset id="contacts-block">
+				<legend>${roomInfo.domain}, ${roomInfo.application}, ${roomInfo.room}</legend>
+				<div id="contacts">
+					{{each contacts}}
+					<div class="contact {{if $value.isMe}}my{{/if}}" data-name="${$value.name}">
+						<div class="name">${$value.name}</div>
+						{{if !$value.isMe}}
+						<div class="button"><button class="btn-inverse">Connect</button></div>
+						{{/if}}
+						<div class="clear"></div>
+					</div>
+					{{/each}}
+				</div>
+			</fieldset>
+		</script>
 
-	<script type="text/x-jquery-tmpl" id="video-tmpl">
-		{{each}}
-			<div class="person {{if $$value.isMe}}my{{/if}}">
-				<div class="name">${$value.name}</div>
+		<script type="text/x-jquery-tmpl" id="chat-message-tmpl">
+			<div class="message {{if isMy}}my{{/if}}">
+				<span class="name">${name}:</span>
+				<span class="text">${message}</span>
+			</div>
+		</script>
+
+		<script type="text/x-jquery-tmpl" id="video-tmpl">
+			<div class="person {{if isMe}}my{{/if}}" data-name="${name}">
+				<div class="name">${name}</div>
 				<div class="video">
-					<video src="" autoplay="autoplay" />
+					<video autoplay></video>
 				</div>
 			</div>
-		{{/each}}
-	</script>
-</body>
+		</script>
+	</body>
 </html>

@@ -1,5 +1,6 @@
-﻿(function (exports) {
-	"use strict";
+﻿"use strict";
+
+(function (exports) {
 	var xrtc = exports.xRtc;
 
 	xrtc.Ajax = xrtc.Class('Ajax');

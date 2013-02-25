@@ -1,5 +1,6 @@
-﻿(function (exports) {
-	"use strict";
+﻿"use strict";
+
+(function (exports) {
 	exports.xRtc = {};
 
 	exports.xRtc.Class = function (name) {

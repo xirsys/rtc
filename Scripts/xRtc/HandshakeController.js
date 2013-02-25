@@ -1,5 +1,6 @@
-﻿(function (exports) {
-	"use strict";
+﻿"use strict";
+
+(function (exports) {
 	var xrtc = exports.xRtc;
 	xrtc.HandshakeController = new xrtc.Class('HandshakeController');
 
@@ -41,29 +42,34 @@
 			};
 
 			self._socket.onmessage = function (msg) {
-				self._logger.info(msg);
+				if (msg.data === 'null') {
+					return;
+				}
 				self.trigger(events.message, msg);
 
 				var message = self._parseMessage(msg);
+				self._logger.info('HandshakeController.onmessage', msg, message);
 				self.trigger(message.eventName, message.data);
 			};
 
 			self._socket.onclose = function (evt) {
-				self._logger.info(evt);
+				debugger;
+				self._logger.debug(evt);
 				self.trigger(events.connectionClose, evt);
 			};
 
 			self._socket.onerror = function (evt) {
+				debugger;
 				self._logger.error(evt);
 				self.trigger(events.connectionError, evt);
 			};
 		},
 
-		sendIce: function (participantId, ice) {
+		sendIce: function (receiverId, ice) {
 			var data = {
 				eventName: "rtc_ice_candidate",
 				data: {
-					participantId: participantId,
+					receiverId: receiverId,
 					iceCandidate: ice
 				}
 			};
@@ -73,11 +79,11 @@
 			this._socket.send(request);
 		},
 
-		sendOffer: function (participantId, offer) {
+		sendOffer: function (receiverId, offer) {
 			var data = {
 				eventName: "rtc_offer",
 				data: {
-					participantId: participantId,
+					receiverId: receiverId,
 					sdp: offer
 				}
 			};
@@ -87,11 +93,11 @@
 			this._socket.send(request);
 		},
 
-		sendAnswer: function (participantId, answer) {
+		sendAnswer: function (receiverId, answer) {
 			var data = {
 				eventName: "rtc_answer",
 				data: {
-					participantId: participantId,
+					receiverId: receiverId,
 					sdp: answer
 				}
 			};
@@ -102,10 +108,14 @@
 		},
 		
 		_parseMessage: function(msg) {
-			var json = JSON.parse(msg.data);
+			var json = JSON.parse(msg.data), result;
+			if (!json || !json.Type) {
+				debugger;
+			}
+			
 			switch (json.Type) {
 				case "peers":
-					json = {
+					result = {
 						eventName: json.Type,
 						data: {
 							connections: JSON.parse(json.Message)
@@ -113,7 +123,7 @@
 					};
 					break;
 				case "peer_connected":
-					json = {
+					result = {
 						eventName: json.Type,
 						data: {
 							paticipantId: json.Message
@@ -121,7 +131,7 @@
 					};
 					break;
 				case "peer_removed":
-					json = {
+					result = {
 						eventName: json.Type,
 						data: {
 							paticipantId: json.Message
@@ -129,10 +139,11 @@
 					};
 					break;
 				default:
-					json = JSON.parse(json.Message);
+					result = JSON.parse(json.Message);
 					break;
 			}
-			return { eventName: xrtc.HandshakeController.events[xrtc.HandshakeController.eventMapping[json.eventName]], data: json.data };
+			result.data.senderId = json.UserId;
+			return { eventName: xrtc.HandshakeController.events[xrtc.HandshakeController.eventMapping[result.eventName]], data: result.data };
 		}
 	});
 

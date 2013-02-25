@@ -1,5 +1,6 @@
-﻿(function (exports) {
-	"use strict";
+﻿"use strict";
+
+(function (exports) {
 	var xrtc = exports.xRtc;
 	xrtc.Connection = new xrtc.Class('Connection');
 
@@ -9,28 +10,29 @@
 			var self = this;
 			this._logger = new xrtc.Logger();
 			this._peerConnection = null;
+			this._remoteParticipant = null;
 			this._handshakeController = handshakeController;
 			this._userData = userData;
 
 			handshakeController.on(xrtc.HandshakeController.events.recieveIce, function (response) {
-				debugger;
-				var iceCandidate = new RTCIceCandidate(JSON.parse(response.data).iceCandidate);
+				self._logger.debug('Connection.receiveice', response.senderId);
+				
+				var iceCandidate = new RTCIceCandidate(response.iceCandidate);
 				self._peerConnection.addIceCandidate(iceCandidate);
 
-				self.trigger(xrtc.Connection.events.iceAdded, request, iceCandidate);
+				self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
 			});
 
 			handshakeController.on(xrtc.HandshakeController.events.recieveOffer, function (response) {
+				self._logger.debug('Connection.receiveoffer', response.senderId);
 				var sdp = JSON.parse(response.sdp);
-				$('#chat-form :text').val(response.participantId);
 				
 				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 				self._peerConnection.createAnswer(
-					function (answer) {
-						debugger;
+					function(answer) {
 						self._peerConnection.setLocalDescription(answer);
-						self._handshakeController.sendAnswer(response.participantId, JSON.stringify(answer));
+						self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
 
 						self.trigger(xrtc.Connection.events.answerSent, response, sessionDescription);
 					},
@@ -41,12 +43,13 @@
 			});
 
 			handshakeController.on(xrtc.HandshakeController.events.recieveAnswer, function (response) {
+				self._logger.debug('Connection.receiveanswer', response.senderId);
 				var sdp = JSON.parse(response.sdp);
 				
 				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 
-				self.trigger(xrtc.Connection.events.answerReceived, request, self._peerConnection.remoteStreams[0]);
+				self.trigger(xrtc.Connection.events.answerReceived, response, self._peerConnection.remoteStreams[0]);
 			});
 		},
 
@@ -60,12 +63,13 @@
 
 		startSession: function (participantId) {
 			var self = this;
-			
+
+			this._remoteParticipant = participantId;
 			this._initPeerConnection();
 			self._peerConnection.createOffer(
-				function (offer) {
+				function(offer) {
 					self._peerConnection.setLocalDescription(offer);
-					self._handshakeController.sendOffer(participantId, JSON.stringify(offer));
+					self._handshakeController.sendOffer(self._remoteParticipant, JSON.stringify(offer));
 				},
 				function(error) {
 					// todo: log and fire event
@@ -112,6 +116,7 @@
 					self.trigger(xrtc.Connection.events.streamAdded, stream);
 				}, function(error) {
 					//todo: pass own params
+					debugger;
 					self.trigger(xrtc.Connection.events.streamError, error);
 				});
 		},
@@ -153,11 +158,10 @@
 			if (!this._peerConnection) {
 				var self = this;
 				this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
-				this._peerConnection.onicecandidate = function (event) {
-					debugger;
-					if (!!event.candidate) {
-						self._handshakeController.sendIce(self._userData.name, event.candidate.candidate);
-						self.trigger(xrtc.Connection.events.iceSent, event);
+				this._peerConnection.onicecandidate = function (evt) {
+					if (!!evt.candidate) {
+						self._handshakeController.sendIce(self._remoteParticipant, evt.candidate);
+						self.trigger(xrtc.Connection.events.iceSent, evt);
 					}
 				};
 			}
