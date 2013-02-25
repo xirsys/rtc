@@ -109,9 +109,6 @@
 		
 		_parseMessage: function(msg) {
 			var json = JSON.parse(msg.data), result;
-			if (!json || !json.Type) {
-				debugger;
-			}
 			
 			switch (json.Type) {
 				case "peers":
@@ -139,6 +136,7 @@
 					};
 					break;
 				default:
+					this._logger.debug('HandshakeController._parseMessage', msg.data);
 					result = JSON.parse(json.Message);
 					break;
 			}
@@ -159,13 +157,15 @@
 			participantsUpdated: "participantsupdated",
 			participantConnected: "participantconnected",
 			participantDisconnected: "participantdisconnected",
-			
-			recieveIce: "recieveice",
-			recieveOffer: "recieveoffer",
-			recieveAnswer: "recieveanswer",
+
 			sendIce: "sendIce",
+			receiveIce: "recieveice",
+			
 			sendOffer: "sendOffer",
-			sendAnswer: "sendAnswer"
+			receiveOffer: "recieveoffer",
+			
+			sendAnswer: "sendAnswer",
+			receiveAnswer: "recieveanswer"
 		},
 		
 		eventMapping: {
@@ -173,9 +173,9 @@
 			"peer_connected": "participantConnected",
 			"peer_removed": "participantDisconnected",
 			
-			"rtc_offer": "recieveOffer",
-			"rtc_ice_candidate": "recieveIce",
-			"rtc_answer": "recieveAnswer"
+			"rtc_offer": "receiveOffer",
+			"rtc_ice_candidate": "receiveIce",
+			"rtc_answer": "receiveAnswer"
 		}
 	});
 })(window);

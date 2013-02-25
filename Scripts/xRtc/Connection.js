@@ -14,7 +14,7 @@
 			this._handshakeController = handshakeController;
 			this._userData = userData;
 
-			handshakeController.on(xrtc.HandshakeController.events.recieveIce, function (response) {
+			handshakeController.on(xrtc.HandshakeController.events.receiveIce, function (response) {
 				self._logger.debug('Connection.receiveice', response.senderId);
 				
 				var iceCandidate = new RTCIceCandidate(response.iceCandidate);
@@ -23,7 +23,7 @@
 				self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
 			});
 
-			handshakeController.on(xrtc.HandshakeController.events.recieveOffer, function (response) {
+			handshakeController.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
 				self._logger.debug('Connection.receiveoffer', response.senderId);
 				var sdp = JSON.parse(response.sdp);
 				
@@ -42,7 +42,7 @@
 					{ mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: true } }); // todo: think to change this
 			});
 
-			handshakeController.on(xrtc.HandshakeController.events.recieveAnswer, function (response) {
+			handshakeController.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
 				self._logger.debug('Connection.receiveanswer', response.senderId);
 				var sdp = JSON.parse(response.sdp);
 				
@@ -198,8 +198,8 @@
 			offerError: "offererror",
 			
 			answerSent: "answersent",
-			answerError: "answererror",
-			answerReceived: "answerreceived"
+			answerReceived: "answerreceived",
+			answerError: "answererror"
 		},
 		
 		settings: {
