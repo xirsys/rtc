@@ -1,4 +1,4 @@
-﻿"use strict";
+﻿'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -55,14 +55,13 @@
 			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
 			connection.connect();
 
-			connection.on(xrtc.Connection.events.streamAdded, function (stream) {
-				exports.chat.addParticipant(stream);
-			});
-			
-			connection.on(xrtc.Connection.events.answerReceived, function (stream) {
-				debugger;
-				exports.chat.addParticipant(stream);
-			});
+			connection
+				.on(xrtc.Connection.events.streamAdded, function(data) {
+					exports.chat.addParticipant(data);
+				})
+				.on(xrtc.Connection.events.answerReceived, function(data) {
+					exports.chat.addParticipant(data);
+				});
 
 			connection.addMedia();
 		},
@@ -106,16 +105,16 @@
 				.append($('#contacts-info-tmpl').tmpl(contactsData));
 		},
 
-		addParticipant: function (stream) {
+		addParticipant: function (streamData) {
 			var data = {
 				name: exports.chat._userData.name,
-				isMe: stream.constructor.name === 'LocalMediaStream'
+				isMe: streamData.stream.constructor.name === 'LocalMediaStream'
 			};
 
 			var participantItem = $('#video-tmpl').tmpl(data);
 			$('#video').append(participantItem);
 
-			participantItem.find('video').show().attr('src', exports.webkitURL.createObjectURL(stream));
+			participantItem.find('video').show().attr('src', streamData.url);
 		},
 		
 		removeParticipant: function (participantId) {
@@ -152,13 +151,10 @@ $(document).ready(function () {
 
 	chat.init();
 
-	debugger;
 	var username = getParams().name;
 	if(username){
 		$('#join-form').find(':text[name="name"]').val(username).end().trigger('submit');
 	}
-
-	//$('#join-form').find(':text[name="name"]').val('Alex' + Math.round(Math.random() * 1000)).end().trigger('submit');
 
 	//chat.addMessage('Alex', 'Hello! How are you?', true);
 	//chat.addMessage('Peter', 'I am fine!', false);

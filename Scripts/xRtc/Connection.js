@@ -1,6 +1,12 @@
-﻿"use strict";
+﻿'use strict';
 
 (function (exports) {
+	var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia,
+		URL = exports.URL || exports.webkitURL || exports.msURL || exports.oURL,
+		RTCPeerConnection = exports.PeerConnection || exports.webkitPeerConnection00 || exports.webkitRTCPeerConnection,
+		RTCIceCandidate = exports.RTCIceCandidate,
+		RTCSessionDescription = exports.RTCSessionDescription;
+	
 	var xrtc = exports.xRtc;
 	xrtc.Connection = new xrtc.Class('Connection');
 
@@ -27,6 +33,13 @@
 				self._logger.debug('Connection.receiveoffer', response.senderId);
 				var sdp = JSON.parse(response.sdp);
 				
+				// todo: remove it
+				self._remoteParticipant = response.senderId; 
+				if (response.receiverId !== self._userData.name) {
+					return;
+				}
+				// todo: remove it
+				
 				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 				self._peerConnection.createAnswer(
@@ -39,7 +52,7 @@
 					function (error) {
 						self.trigger(xrtc.Connection.events.answerError, error);
 					},
-					{ mandatory: { OfferToReceiveAudio: true, OfferToReceiveVideo: true } }); // todo: think to change this
+					xrtc.Connection.settings.answerOptions);
 			});
 
 			handshakeController.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
@@ -49,7 +62,13 @@
 				var sessionDescription = new RTCSessionDescription(sdp);
 				self._peerConnection.setRemoteDescription(sessionDescription);
 
-				self.trigger(xrtc.Connection.events.answerReceived, response, self._peerConnection.remoteStreams[0]);
+				var stream = self._peerConnection.remoteStreams[0],
+					data = {
+						stream: stream,
+						url: URL.createObjectURL(stream)
+					};
+				
+				self.trigger(xrtc.Connection.events.answerReceived, data);
 			});
 		},
 
@@ -90,7 +109,7 @@
 		addMedia: function (options) {
 			var self = this;
 			var opts = {
-				//peerConnectionServers: { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] },//{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] }
+				//peerConnectionServers: { iceServers: [{ url: 'turn:user123@86.57.152.233', credential: '1234567' }] },//{ 'iceServers': [{ 'url': 'stun:stun.l.google.com:19302' }] }
 				//peerConnectionConfiguration: { optional: [{ RtpDataChannels: true }] },
 				//audioConstraints: true,
 				//videoConstraints: true,
@@ -103,8 +122,6 @@
 				//offerConstraints: { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': false } }
 			};
 
-			var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-
 			this._initPeerConnection();
 
 			//todo: pass own params
@@ -112,8 +129,13 @@
 				navigator,
 				opts,
 				function (stream) {
+					var data = {
+						stream: stream,
+						url: URL.createObjectURL(stream)
+					};
+					
 					self._peerConnection.addStream(stream);
-					self.trigger(xrtc.Connection.events.streamAdded, stream);
+					self.trigger(xrtc.Connection.events.streamAdded, data);
 				}, function(error) {
 					//todo: pass own params
 					debugger;
@@ -132,16 +154,16 @@
 			ajax.request(
 				xrtc.Connection.settings.URL + 'getToken',
 				xrtc.Ajax.methods.POST,
-				"data=" + JSON.stringify(this._getTokenRequestParams()),
+				'data=' + JSON.stringify(this._getTokenRequestParams()),
 				function (response) {
 					var auth = JSON.parse(response.responseText);
-					if (!!auth && !!auth.E && auth.E != "") {
+					if (!!auth && !!auth.E && auth.E != '') {
 						//todo: fire event
-						console.log("Error creating authentication token: " + auth.E);
+						console.log('Error creating authentication token: ' + auth.E);
 						return;
 					}
 					
-					if (typeof (callback) == "function") {
+					if (typeof (callback) == 'function') {
 						var token = auth.D.token;
 						self._logger.info('Connection._getToken', token);
 						callback.call(self, token);
@@ -151,13 +173,13 @@
 		},
 
 		_getIceServers: function () {
-			return { iceServers: [{ url: "stun:turn.influxis.com:3478" }] };
+			return { iceServers: [{ url: 'stun:turn.influxis.com:3478' }] };
 		},
 		
 		_initPeerConnection: function () {
 			if (!this._peerConnection) {
 				var self = this;
-				this._peerConnection = new webkitRTCPeerConnection(this._getIceServers());
+				this._peerConnection = new RTCPeerConnection(this._getIceServers());
 				this._peerConnection.onicecandidate = function (evt) {
 					if (!!evt.candidate) {
 						self._handshakeController.sendIce(self._remoteParticipant, evt.candidate);
@@ -188,26 +210,35 @@
 	
 	xrtc.Connection.extend({
 		events: {
-			streamAdded: "streamadded",
-			streamError: "streamerror",
+			streamAdded: 'streamadded',
+			streamError: 'streamerror',
 			
-			iceAdded: "iceadded",
-			iceSent: "icesent",
+			iceAdded: 'iceadded',
+			iceSent: 'icesent',
 			
-			offerSent: "offersent",
-			offerError: "offererror",
+			offerSent: 'offersent',
+			offerError: 'offererror',
 			
-			answerSent: "answersent",
-			answerReceived: "answerreceived",
-			answerError: "answererror"
+			answerSent: 'answersent',
+			answerReceived: 'answerreceived',
+			answerError: 'answererror'
 		},
 		
 		settings: {
 			URL: 'http://turn.influxis.com/',
+			
 			tokenParams: {
-				type: "token_request",
-				authentication: "public",
+				type: 'token_request',
+				authentication: 'public',
 				authorization: null,
+			},
+			
+			// todo: think to change this
+			answerOptions: {
+				mandatory: {
+					OfferToReceiveAudio: true,
+					OfferToReceiveVideo: true
+				}
 			}
 		}
 	});

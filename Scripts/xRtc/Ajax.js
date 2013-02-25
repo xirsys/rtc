@@ -1,4 +1,4 @@
-﻿"use strict";
+﻿'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -11,10 +11,10 @@
 
 			var xmlhttp;
 			try {
-				xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+				xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
 			} catch (e) {
 				try {
-					xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+					xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
 				} catch (e) {
 					try {
 						xmlhttp = new XMLHttpRequest();
@@ -40,18 +40,18 @@
 
 			try {
 				if (httpMethod === xrtc.Ajax.methods.GET) {
-					xmlhttp.open(httpMethod, url + "?" + params, true);
-					params = "";
+					xmlhttp.open(httpMethod, url + '?' + params, true);
+					params = '';
 				} else {
 					xmlhttp.open(httpMethod, url, true);
-					xmlhttp.setRequestHeader("method", "POST " + url + " HTTP/1.1");
-					xmlhttp.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+					xmlhttp.setRequestHeader('method', 'POST ' + url + ' HTTP/1.1');
+					xmlhttp.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
 				}
 
 				xmlhttp.onreadystatechange = function () {
 					if (xmlhttp.readyState == 4 && !fin) {
 						fin = true;
-						if (typeof (callback) == "function") {
+						if (typeof (callback) === 'function') {
 							callback(xmlhttp);
 						}
 					}

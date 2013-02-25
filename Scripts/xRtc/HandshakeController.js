@@ -1,4 +1,4 @@
-﻿"use strict";
+﻿'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -32,7 +32,7 @@
 		connect: function (token) {
 			var self = this,
 				events = xrtc.HandshakeController.events,
-				url = 'ws://turn.influxis.com:8002/ws/' + escape(token);
+				url = xrtc.HandshakeController.settings.URL + escape(token);
 			
 			self._socket = new WebSocket(url);
 
@@ -67,7 +67,8 @@
 
 		sendIce: function (receiverId, ice) {
 			var data = {
-				eventName: "rtc_ice_candidate",
+				eventName: 'rtc_ice_candidate',
+				targetUserId: receiverId,
 				data: {
 					receiverId: receiverId,
 					iceCandidate: ice
@@ -81,7 +82,8 @@
 
 		sendOffer: function (receiverId, offer) {
 			var data = {
-				eventName: "rtc_offer",
+				eventName: 'rtc_offer',
+				targetUserId: receiverId,
 				data: {
 					receiverId: receiverId,
 					sdp: offer
@@ -95,7 +97,8 @@
 
 		sendAnswer: function (receiverId, answer) {
 			var data = {
-				eventName: "rtc_answer",
+				eventName: 'rtc_answer',
+				targetUserId: receiverId,
 				data: {
 					receiverId: receiverId,
 					sdp: answer
@@ -111,7 +114,7 @@
 			var json = JSON.parse(msg.data), result;
 			
 			switch (json.Type) {
-				case "peers":
+				case 'peers':
 					result = {
 						eventName: json.Type,
 						data: {
@@ -119,7 +122,7 @@
 						}
 					};
 					break;
-				case "peer_connected":
+				case 'peer_connected':
 					result = {
 						eventName: json.Type,
 						data: {
@@ -127,7 +130,7 @@
 						}
 					};
 					break;
-				case "peer_removed":
+				case 'peer_removed':
 					result = {
 						eventName: json.Type,
 						data: {
@@ -147,35 +150,39 @@
 
 	xrtc.HandshakeController.extend({
 		events: {
-			connectionOpen: "connectionopen",
-			connectionClose: "connectionclose",
-			connectionError: "connectionerror",
+			connectionOpen: 'connectionopen',
+			connectionClose: 'connectionclose',
+			connectionError: 'connectionerror',
 			
-			message: "message",
-			connected: "connected",
+			message: 'message',
+			connected: 'connected',
 			
-			participantsUpdated: "participantsupdated",
-			participantConnected: "participantconnected",
-			participantDisconnected: "participantdisconnected",
+			participantsUpdated: 'participantsupdated',
+			participantConnected: 'participantconnected',
+			participantDisconnected: 'participantdisconnected',
 
-			sendIce: "sendIce",
-			receiveIce: "recieveice",
+			sendIce: 'sendIce',
+			receiveIce: 'recieveice',
 			
-			sendOffer: "sendOffer",
-			receiveOffer: "recieveoffer",
+			sendOffer: 'sendOffer',
+			receiveOffer: 'recieveoffer',
 			
-			sendAnswer: "sendAnswer",
-			receiveAnswer: "recieveanswer"
+			sendAnswer: 'sendAnswer',
+			receiveAnswer: 'recieveanswer'
 		},
 		
 		eventMapping: {
-			"peers": "participantsUpdated",
-			"peer_connected": "participantConnected",
-			"peer_removed": "participantDisconnected",
+			'peers': 'participantsUpdated',
+			'peer_connected': 'participantConnected',
+			'peer_removed': 'participantDisconnected',
 			
-			"rtc_offer": "receiveOffer",
-			"rtc_ice_candidate": "receiveIce",
-			"rtc_answer": "receiveAnswer"
+			'rtc_offer': 'receiveOffer',
+			'rtc_ice_candidate': 'receiveIce',
+			'rtc_answer': 'receiveAnswer'
+		},
+		
+		settings: {
+			URL: 'ws://turn.influxis.com:8002/ws/'
 		}
 	});
 })(window);
