@@ -59,8 +59,11 @@
 				.on(xrtc.Connection.events.streamAdded, function(data) {
 					exports.chat.addParticipant(data);
 				})
-				.on(xrtc.Connection.events.answerReceived, function(data) {
-					exports.chat.addParticipant(data);
+				.on(xrtc.Connection.events.answerReceived, function () {
+					exports.chat._textChannel = connection.createDataChannel('textChat');
+					exports.chat._textChannel.on(xrtc.DataChannel.events.message, function(messageData) {
+						exports.chat.addMessage('TEMP', messageData.message);
+					});
 				});
 
 			connection.addMedia();
@@ -73,6 +76,7 @@
 		sendMessage: function (message) {
 			//todo: send message
 			console.log('Sending message...', message);
+			exports.chat._textChannel.send(message.message);
 			exports.chat.addMessage(exports.chat._userData.name, message.message, true);
 		},
 		

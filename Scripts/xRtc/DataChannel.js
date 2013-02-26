@@ -6,32 +6,51 @@
 
 	xrtc.DataChannel.include(xrtc.EventDispatcher);
 	xrtc.DataChannel.include({
-		init: function (peerConnection, name) {
+		init: function (dataChannel) {
 			this._logger = new xrtc.Logger();
-			var self = this;
+			var self = this,
+				events = xrtc.DataChannel.events;
 
-			this._channel = new exports.DataChannel(peerConnection, name);
+			this._channel = dataChannel;
 			
-			this._channel.onopen = function (event) {
-				self.trigger(xrtc.events.open, event);
+			this._channel.onopen = function (evt) {
+				var data = { event: evt };
+				self._logger.debug('DataChannel.open', data);
+				self.trigger(events.open, data);
 			};
-			this._channel.onmessage = function (event) {
-				self.trigger(xrtc.events.message, event);
+			this._channel.onmessage = function (evt) {
+				var data = {
+					event: evt,
+					message: evt.data
+				};
+				self._logger.debug('DataChannel.message', data);
+				self.trigger(events.message, data);
 			};
-			this._channel.onclose = function (event) {
-				self.trigger(xrtc.events.close, event);
+			this._channel.onclose = function (evt) {
+				var data = { event: evt };
+				self._logger.debug('DataChannel.close', data);
+				self.trigger(events.close, data);
 			};
-			this._channel.onerror = function (event) {
-				self.trigger(xrtc.events.error, event);
+			this._channel.onerror = function (evt) {
+				var data = { event: evt };
+				self._logger.debug('DataChannel.error', data);
+				self.trigger(events.error, data);
 			};
-			this._channel.ondatachannel = function () {
-				self.trigger(xrtc.events.datachannel, event);
+			this._channel.ondatachannel = function (evt) {
+				var data = { event: evt };
+				self._logger.debug('DataChannel.datachannel', data);
+				self.trigger(events.dataChannel, data);
 			};
 		},
 		
-		send: function () {
+		send: function (message) {
 			this._logger.info('DataChannel.send', arguments);
-			//_channel
+
+			var data = {
+				message: message
+			};
+
+			this._channel.send(JSON.stringify(data));
 		}
 	});
 
@@ -41,7 +60,7 @@
 			message: 'message',
 			close: 'close',
 			error: 'error',
-			datachannel: 'datachannel'
+			dataChannel: 'datachannel'
 		}
 	});
 })(window);

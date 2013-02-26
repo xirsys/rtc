@@ -7,7 +7,7 @@
 		var klass = function () {
 			this.init.apply(this, arguments);
 		};
-
+		
 		klass.fn = klass.prototype;
 		klass.fn.init = function () { };
 		klass.fn.className = name;
