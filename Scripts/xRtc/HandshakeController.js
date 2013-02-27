@@ -6,27 +6,9 @@
 
 	xrtc.HandshakeController.include(xrtc.EventDispatcher);
 	xrtc.HandshakeController.include({
-		init: function (peerConnection, name) {
+		init: function () {
 			this._logger = new xrtc.Logger();
 			this._socket = null;
-
-			//this._channel = new exports.DataChannel(peerConnection, name);
-
-			// this._channel.onopen = function (event) {
-			// 	self.trigger(xrtc.HandshakeController.events.open, event);
-			// };
-			// this._channel.onmessage = function (event) {
-			// 	self.trigger(xrtc.HandshakeController.events.message, event);
-			// };
-			// this._channel.onclose = function (event) {
-			// 	self.trigger(xrtc.HandshakeController.events.close, event);
-			// };
-			// this._channel.onerror = function (event) {
-			// 	self.trigger(xrtc.HandshakeController.events.error, event);
-			// };
-			// this._channel.ondatachannel = function () {
-			// 	self.trigger(xrtc.HandshakeController.events.datachannel, event);
-			// };
 		},
 
 		connect: function (token) {
@@ -49,6 +31,7 @@
 				
 				//todo: remove it
 				if (msg.data === 'null') {
+					self._logger.error('HandshakeController.message', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
 					return;
 				}
 				//todo: remove it
@@ -72,58 +55,16 @@
 				self.trigger(events.connectionError, data);
 			};
 		},
-
-		sendIce: function (receiverId, ice) {
-			var data = {
-				eventName: 'rtc_ice_candidate',
-				TargetUserId: receiverId, // todo: make starts from small letter
-				data: {
-					receiverId: receiverId,
-					iceCandidate: ice
-				}
-			};
-			
-			var request = JSON.stringify(data);
-			this._logger.info('HandshakeController.sendIce', data, request);
-			this.trigger(xrtc.HandshakeController.events.sendIce, data);
-			this._socket.send(request);
-		},
-
-		sendOffer: function (receiverId, offer) {
-			var data = {
-				eventName: 'rtc_offer',
-				TargetUserId: receiverId, // todo: make starts from small letter
-				data: {
-					receiverId: receiverId,
-					sdp: offer
-				}
-			};
-
-			var request = JSON.stringify(data);
-			this._logger.info('HandshakeController.sendOffer', data, request);
-			this.trigger(xrtc.HandshakeController.events.sendOffer, data);
-			this._socket.send(request);
-		},
-
-		sendAnswer: function (receiverId, answer) {
-			var data = {
-				eventName: 'rtc_answer',
-				TargetUserId: receiverId, // todo: make starts from small letter
-				data: {
-					receiverId: receiverId,
-					sdp: answer
-				}
-			};
-
-			var request = JSON.stringify(data);
-			this._logger.info('HandshakeController.sendAnswer', data, request);
-			this.trigger(xrtc.HandshakeController.events.sendAnswer, data);
-			this._socket.send(request);
-		},
 		
-		_parseMessage: function(msg) {
+		disconnect: function () {
+			// todo: check
+			this._socket.close();
+			this._socket = null;
+		},
+
+		_parseMessage: function (msg) {
 			var json = JSON.parse(msg.data), result;
-			
+
 			switch (json.Type) {
 				case 'peers':
 					result = {
@@ -134,13 +75,6 @@
 					};
 					break;
 				case 'peer_connected':
-					result = {
-						eventName: json.Type,
-						data: {
-							paticipantId: json.Message
-						}
-					};
-					break;
 				case 'peer_removed':
 					result = {
 						eventName: json.Type,
@@ -156,6 +90,59 @@
 			}
 			result.data.senderId = json.UserId;
 			return { eventName: xrtc.HandshakeController.events[xrtc.HandshakeController.eventMapping[result.eventName]], data: result.data };
+		},
+
+		sendIce: function (receiverId, ice) {
+			var data = {
+				eventName: 'rtc_ice_candidate',
+				TargetUserId: receiverId, // todo: make starts from small letter
+				data: {
+					receiverId: receiverId,
+					iceCandidate: ice
+				}
+			};
+			
+			this._send(data, xrtc.HandshakeController.events.sendIce);
+		},
+
+		sendOffer: function (receiverId, offer) {
+			var data = {
+				eventName: 'rtc_offer',
+				TargetUserId: receiverId, // todo: make starts from small letter
+				data: {
+					receiverId: receiverId,
+					sdp: offer
+				}
+			};
+
+			this._send(data, xrtc.HandshakeController.events.sendOffer);
+		},
+
+		sendAnswer: function (receiverId, answer) {
+			var data = {
+				eventName: 'rtc_answer',
+				TargetUserId: receiverId, // todo: make starts from small letter
+				data: {
+					receiverId: receiverId,
+					sdp: answer
+				}
+			};
+			
+			this._send(data, xrtc.HandshakeController.events.sendAnswer);
+		},
+
+		_send: function (data, event) {
+			if (!this._socket) {
+				this._logger.error('HandshakeController.' + event, 'Trying to call method without established connection');
+				throw {
+					error: 'WebSocket is not connected!'
+				};
+			}
+
+			var request = JSON.stringify(data);
+			this._logger.info('HandshakeController.' + event, data, request);
+			this.trigger(event, data);
+			this._socket.send(request);
 		}
 	});
 

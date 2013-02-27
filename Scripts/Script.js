@@ -60,6 +60,8 @@
 					exports.chat.addParticipant(data);
 				})
 				.on(xrtc.Connection.events.answerReceived, function () {
+					//debugger;
+					// todo: check and fix
 					exports.chat._textChannel = connection.createDataChannel('textChat');
 					exports.chat._textChannel.on(xrtc.DataChannel.events.message, function(messageData) {
 						exports.chat.addMessage('TEMP', messageData.message);

@@ -36,12 +36,18 @@
 		if (cssClass !== 'debug') {
 			return;
 		}
+		
 		var message = $('<div />')
 			.addClass('item ' + cssClass)
 			.append($('<b />').text(type + ': '));
 
 		for (var index = 0, len = args.length; index < len; index++) {
-			message.append($('<span />').text(args[index].toString()));
+			var arg = args[index], text = arg.toString();
+			if (typeof arg === "object") {
+				text = JSON.stringify(arg);
+			}
+
+			message.append($('<span />').text(text || ''));
 			
 			if (index !== (len - 1)) {
 				message.append(', ');

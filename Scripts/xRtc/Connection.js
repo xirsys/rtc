@@ -85,6 +85,7 @@
 				self._peerConnection.setRemoteDescription(sessionDescription);
 				self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
 
+
 				/***********************************************/
 				// todo: think to refactor this
 				var stream = self._peerConnection.remoteStreams[0],
@@ -233,13 +234,7 @@
 						}
 
 						// todo: say Lee to fix iceServers message format and remove replacement
-						var iceServers = serverMessage.D
-							.replace(' url', ' "url"')
-							.replace(' url', ' "url"')
-							.replace('credential', '"credential"')
-							.replace('iceServers', '"iceServers"');
-
-						iceServers = JSON.parse(iceServers);
+						var iceServers = JSON.parse(serverMessage.D);
 						self._logger.info('Connection._getIceServers', iceServers);
 
 						if (typeof (callback) == 'function') {
