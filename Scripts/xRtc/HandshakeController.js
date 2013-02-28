@@ -140,7 +140,7 @@
 			}
 
 			var request = JSON.stringify(data);
-			this._logger.info('HandshakeController.' + event, data, request);
+			this._logger.debug('HandshakeController.' + event, data, request);
 			this.trigger(event, data);
 			this._socket.send(request);
 		}
@@ -159,14 +159,14 @@
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',
 
-			sendIce: 'sendIce',
-			receiveIce: 'recieveice',
+			sendIce: 'sendice',
+			receiveIce: 'receiveice',
 			
-			sendOffer: 'sendOffer',
-			receiveOffer: 'recieveoffer',
+			sendOffer: 'sendoffer',
+			receiveOffer: 'receiveoffer',
 			
-			sendAnswer: 'sendAnswer',
-			receiveAnswer: 'recieveanswer'
+			sendAnswer: 'sendanswer',
+			receiveAnswer: 'receiveanswer'
 		},
 		
 		eventMapping: {

@@ -56,19 +56,29 @@
 			connection.connect();
 
 			connection
-				.on(xrtc.Connection.events.streamAdded, function(data) {
+				.on(xrtc.Connection.events.streamAdded, function (data) {
 					exports.chat.addParticipant(data);
 				})
-				.on(xrtc.Connection.events.answerReceived, function () {
-					//debugger;
-					// todo: check and fix
+				.on(xrtc.Connection.events.peerConnectionCreation, function () {
 					exports.chat._textChannel = connection.createDataChannel('textChat');
-					exports.chat._textChannel.on(xrtc.DataChannel.events.message, function(messageData) {
-						exports.chat.addMessage('TEMP', messageData.message);
-					});
+					if (exports.chat._textChannel) {
+						exports.chat.subscribe(exports.chat._textChannel, xrtc.DataChannel.events);
+
+						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
+							var message = JSON.parse(messageData.message);
+							debugger;
+							exports.chat.addMessage(message.participantId, message.message);
+						});
+					}
+				})
+				.on(xrtc.Connection.events.connectionEstablished, function () {
+					console.log('Connection is established.');
 				});
 
 			connection.addMedia();
+
+			exports.chat.subscribe(connection, xrtc.Connection.events);
+			exports.chat.subscribe(handshake, xrtc.HandshakeController.events);
 		},
 		
 		leaveRoom: function() {
@@ -76,10 +86,13 @@
 		},
 		
 		sendMessage: function (message) {
-			//todo: send message
 			console.log('Sending message...', message);
-			exports.chat._textChannel.send(message.message);
-			exports.chat.addMessage(exports.chat._userData.name, message.message, true);
+			if (exports.chat._textChannel) {
+				exports.chat._textChannel.send(message.message);
+				exports.chat.addMessage(exports.chat._userData.name, message.message, true);
+			} else {
+				exports.chat.addMessage('SYSTEM', 'Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag');
+			}
 		},
 		
 		addMessage: function (name, message, isMy) {
@@ -113,8 +126,8 @@
 
 		addParticipant: function (streamData) {
 			var data = {
-				name: exports.chat._userData.name,
-				isMe: streamData.stream.constructor.name === 'LocalMediaStream'
+				name: streamData.participantId,
+				isMe: streamData.isLocal
 			};
 
 			var participantItem = $('#video-tmpl').tmpl(data);
@@ -125,6 +138,18 @@
 		
 		removeParticipant: function (participantId) {
 			$('#video .person[data-name="' + participantId + '"]').remove();
+		},
+		
+		subscribe: function(eventDispatcher, events) {
+			if (typeof eventDispatcher.on === "function") {
+				for (var eventPropertyName in events) {
+					(function(eventName) {
+						eventDispatcher.on(eventName, function() {
+							console.log('CHAT', eventDispatcher.className, eventName, Array.prototype.slice.call(arguments));
+						});
+					})(events[eventPropertyName]);
+				}
+			}
 		}
 	};
 })(window);
@@ -161,25 +186,4 @@ $(document).ready(function () {
 	if(username){
 		$('#join-form').find(':text[name="name"]').val(username).end().trigger('submit');
 	}
-
-	//chat.addMessage('Alex', 'Hello! How are you?', true);
-	//chat.addMessage('Peter', 'I am fine!', false);
-	//chat.addMessage('Peter', 'What is about you?', false);
-	//chat.addMessage('Alex', 'Great! I have got a new car!', true);
-	//chat.addMessage('Alex', 'Hello! How are you?', true);
-	//chat.addMessage('Peter', 'I am fine!', false);
-	//chat.addMessage('Peter', 'What is about you?', false);
-	//chat.addMessage('Alex', 'Great! I have got a new car!', true);
-	//chat.addMessage('Alex', 'Hello! How are you?', true);
-	//chat.addMessage('Peter', 'I am fine!', false);
-	//chat.addMessage('Peter', 'What is about you?', false);
-	//chat.addMessage('Alex', 'Great! I have got a new car!', true);
-	//chat.addMessage('Alex', 'Hello! How are you?', true);
-	//chat.addMessage('Peter', 'I am fine!', false);
-	//chat.addMessage('Peter', 'What is about you?', false);
-	//chat.addMessage('Alex', 'Great! I have got a new car!', true);
-	//chat.addMessage('Alex', 'Hello! How are you?', true);
-	//chat.addMessage('Peter', 'I am fine!', false);
-	//chat.addMessage('Peter', 'What is about you?', false);
-	//chat.addMessage('Alex', 'Great! I have got a new car!', true);
 });

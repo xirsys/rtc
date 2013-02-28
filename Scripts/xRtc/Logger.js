@@ -6,56 +6,21 @@
 
 	xrtc.Logger.include({
 		info: function () {
-			log('Info', arguments);
+			console.info('Info: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
 		},
 
 		debug: function () {
-			log('Debug', arguments);
+			console.debug('Debug: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
 		},
 
 		warning: function () {
-			log('Warning', arguments);
+			console.warn('Warning: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
 		},
 
 		error: function () {
-			log('Error', arguments);
+			console.error('Error: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
 		}
 	});
-
-	function log(type) {
-		console.log(type + ': ', convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
-
-		logHtml.apply(null, Array.prototype.slice.call(arguments));
-	}
-
-	function logHtml(type) {
-		var $console = $('#console'),
-			args = convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)),
-			cssClass = type.toLowerCase();
-
-		if (cssClass !== 'debug') {
-			return;
-		}
-		
-		var message = $('<div />')
-			.addClass('item ' + cssClass)
-			.append($('<b />').text(type + ': '));
-
-		for (var index = 0, len = args.length; index < len; index++) {
-			var arg = args[index], text = arg.toString();
-			if (typeof arg === "object") {
-				text = JSON.stringify(arg);
-			}
-
-			message.append($('<span />').text(text || ''));
-			
-			if (index !== (len - 1)) {
-				message.append(', ');
-			}
-		}
-
-		$console.append(message).scrollTop(message.position().top + message.outerHeight(true));
-	}
 
 	function convertArgumentsToArray() {
 		var args = [], arg,
@@ -79,5 +44,47 @@
 		}
 
 		return args;
+	}
+
+	function log(type) {
+		console.log(type + ': ', convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+
+		logHtml.apply(null, Array.prototype.slice.call(arguments));
+	}
+
+	function logHtml(type) {
+		var $console = $('#console'),
+			args = convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)),
+			cssClass = type.toLowerCase();
+
+		if ((args[0].indexOf('.on') > 0) || (args[0].indexOf('.trigger') > 0)) {
+			args = [args[0], args[1]];
+		} else {
+			if (typeof args[1] === "string") {
+				args = [args[0], args[1].substr(0, 30)];
+			} else {
+				args = [args[0]];
+			}
+		}
+		$console.height(400);
+
+		var message = $('<div />')
+			.addClass('item ' + cssClass)
+			.append($('<b />').text(type + ': '));
+
+		for (var index = 0, len = args.length; index < len; index++) {
+			var arg = args[index], text = arg.toString();
+			if (typeof arg === "object") {
+				text = JSON.stringify(arg);
+			}
+
+			message.append($('<span />').text(text || ''));
+
+			if (index !== (len - 1)) {
+				message.append(', ');
+			}
+		}
+
+		$console.append(message).scrollTop(message.offset().top + message.outerHeight(true));
 	}
 })(window);

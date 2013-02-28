@@ -59,7 +59,7 @@
 
 				xmlhttp.send(params);
 			} catch (ex) {
-				this._logger.debug(ex);
+				this._logger.error('Ajax.request', ex);
 			}
 		}
 	});
