@@ -6,6 +6,7 @@
 	exports.chat = {
 		_handshakeController: null,
 		_connection: null,
+		isLocalStreamAdded: false,
 
 		init: function () {
 			$('#join-form').on('submit', function (e) {
@@ -37,20 +38,24 @@
 			exports.chat._userData = userData;
 
 			var handshake = exports.chat._handshakeController = new xRtc.HandshakeController();
-			handshake.on(xrtc.HandshakeController.events.participantsUpdated, function (data) {
-				var contacts = [],
-					currentName = exports.chat._userData.name;
-				
-				for (var i = 0, len = data.connections.length; i < len; i++) {
-					var name = data.connections[i];
-					contacts[i] = {
-						name: name,
-						isMe: name === currentName
-					};
-				}
+			handshake
+				.on(xrtc.HandshakeController.events.participantsUpdated, function(data) {
+					var contacts = [],
+						currentName = exports.chat._userData.name;
 
-				exports.chat.refreshContactsList(contacts);
-			});
+					for (var i = 0, len = data.connections.length; i < len; i++) {
+						var name = data.connections[i];
+						contacts[i] = {
+							name: name,
+							isMe: name === currentName
+						};
+					}
+
+					exports.chat.refreshContactsList(contacts);
+				})
+				.on(xrtc.HandshakeController.events.connectionClose, function(data) {
+					exports.chat.refreshContactsList([]);
+				});
 
 			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
 			connection.connect();
@@ -58,6 +63,10 @@
 			connection
 				.on(xrtc.Connection.events.streamAdded, function (data) {
 					exports.chat.addParticipant(data);
+					if (data.isLocal) {
+						exports.chat.isLocalStreamAdded = true;
+						$('#contacts-cell').find('button').removeClass('hide');
+					}
 				})
 				.on(xrtc.Connection.events.peerConnectionCreation, function () {
 					exports.chat._textChannel = connection.createDataChannel('textChat');
@@ -66,7 +75,6 @@
 
 						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
 							var message = JSON.parse(messageData.message);
-							debugger;
 							exports.chat.addMessage(message.participantId, message.message);
 						});
 					}
@@ -122,6 +130,10 @@
 			$('#contacts-cell')
 				.empty()
 				.append($('#contacts-info-tmpl').tmpl(contactsData));
+			
+			if (exports.chat.isLocalStreamAdded) {
+				$('#contacts-cell').find('button').removeClass('hide');
+			}
 		},
 
 		addParticipant: function (streamData) {
