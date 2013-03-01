@@ -29,37 +29,35 @@
 			self._localStreams = [];
 
 			handshakeController.on(xrtc.HandshakeController.events.receiveIce, function (response) {
-				if (response.receiverId != self._userData.name) {
+				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 					return;
 				}
-				
-				self._initPeerConnection(response.senderId, function (peerConnection) {
-					self._logger.debug('Connection.receiveIce', response);
 
-					var iceCandidate = new RTCIceCandidate(response.iceCandidate);
-					peerConnection.addIceCandidate(iceCandidate);
+				self._logger.debug('Connection.receiveIce', response);
 
-					self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
-				});
+				var iceCandidate = new RTCIceCandidate(response.iceCandidate);
+				self._peerConnection.addIceCandidate(iceCandidate);
+
+				self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
 			});
-			
+
 			handshakeController.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
 				if (response.receiverId != self._userData.name) {
 					return;
 				}
-				
+
 				self._initPeerConnection(response.senderId, function (peerConnection) {
 					self._logger.debug('Connection.receiveOffer', response);
 					var sdp = JSON.parse(response.sdp);
-					
+
 					var sessionDescription = new RTCSessionDescription(sdp);
-					
+
 					peerConnection.setRemoteDescription(sessionDescription);
-					
+
 					peerConnection.createAnswer(
 						function (answer) {
 							peerConnection.setLocalDescription(answer);
-							
+
 							self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
 
 							self._logger.debug('Connection.sendAnswer', response, answer);
@@ -76,8 +74,6 @@
 								};
 
 							self.trigger(xrtc.Connection.events.streamAdded, data);
-							self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
-
 							/***********************************************/
 						},
 						function (error) {
@@ -90,33 +86,38 @@
 			});
 
 			handshakeController.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
-				if (response.receiverId != self._userData.name) {
+				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 					return;
 				}
 
-				self._initPeerConnection(response.senderId, function (peerConnection) {
-					self._logger.debug('Connection.receiveAnswer', response);
-					var sdp = JSON.parse(response.sdp);
+				self._logger.debug('Connection.receiveAnswer', response);
+				var sdp = JSON.parse(response.sdp);
 
-					var sessionDescription = new RTCSessionDescription(sdp);
-					peerConnection.setRemoteDescription(sessionDescription);
-					self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
+				var sessionDescription = new RTCSessionDescription(sdp);
+				self._peerConnection.setRemoteDescription(sessionDescription);
+				self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
 
 
-					/***********************************************/
-					// todo: think to refactor this
-					var stream = peerConnection.remoteStreams[0],
-						data = {
-							stream: stream,
-							url: URL.createObjectURL(stream),
-							isLocal: false,
-							participantId: self._remoteParticipant
-						};
-					
-					self.trigger(xrtc.Connection.events.streamAdded, data);
-					self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
-					/***********************************************/
-				});
+				/***********************************************/
+				// todo: think to refactor this
+				var stream = self._peerConnection.remoteStreams[0],
+					data = {
+						stream: stream,
+						url: URL.createObjectURL(stream),
+						isLocal: false,
+						participantId: self._remoteParticipant
+					};
+
+				self.trigger(xrtc.Connection.events.streamAdded, data);
+				/***********************************************/
+			});
+
+			handshakeController.on(xrtc.HandshakeController.events.receiveBye, function (response) {
+				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
+					return;
+				}
+
+				self._reset();
 			});
 		},
 
@@ -143,7 +144,7 @@
 						peerConnection.setLocalDescription(offer);
 						self._logger.debug('Connection.sendOffer', self._remoteParticipant, offer);
 						self._handshakeController.sendOffer(self._remoteParticipant, JSON.stringify(offer));
-						
+
 						self.trigger(xrtc.Connection.events.offerSent, self._remoteParticipant, offer);
 					},
 					function (error) {
@@ -157,11 +158,11 @@
 		},
 
 		endSession: function () {
-			if (this._peerConnection) {
-				this._peerConnection.close();
-				this._peerConnection = null;
-				this._remoteParticipant = null;
+			if (this._handshakeController && this._remoteParticipant) {
+				this._handshakeController.sendBye(this._remoteParticipant);
 			}
+
+			this._reset();
 		},
 
 		addMedia: function (options) {
@@ -188,7 +189,7 @@
 					var data = {
 						error: error
 					};
-					
+
 					self._logger.error('Connection.addMedia', data);
 					self.trigger(xrtc.Connection.events.streamError, data);
 				});
@@ -200,7 +201,7 @@
 
 			try {
 				dataChannel = new xrtc.DataChannel(this._peerConnection.createDataChannel(name, { reliable: false }), this._remoteParticipant);
-			} catch(ex) {
+			} catch (ex) {
 				var error = {
 					exception: ex
 				};
@@ -208,6 +209,15 @@
 			}
 
 			return dataChannel;
+		},
+
+		_reset: function () {
+			if (this._peerConnection) {
+				this._peerConnection.onicecandidate = null;
+				this._peerConnection.close();
+				this._peerConnection = null;
+				this._remoteParticipant = null;
+			}
 		},
 
 		_getToken: function (callback) {
@@ -248,11 +258,11 @@
 			var self = this;
 
 			if (this._iceServers) {
-				if (typeof(callback) == 'function') {
+				if (typeof (callback) == 'function') {
 					callback.call(this, this._iceServers);
 				}
 			} else {
-				self._getToken(function(token) {
+				self._getToken(function (token) {
 					self._getIceServersByToken(token, callback);
 				});
 			}
@@ -260,7 +270,7 @@
 
 		_getIceServersByToken: function (token, callback) {
 			if (this._iceServers) {
-				if (typeof(callback) == 'function') {
+				if (typeof (callback) == 'function') {
 					callback.call(this, this._iceServers);
 				}
 			} else {
@@ -271,7 +281,7 @@
 					xrtc.Connection.settings.URL + 'getIceServers',
 					xrtc.Ajax.methods.POST,
 					'token=' + token,
-					function(response) {
+					function (response) {
 						//todo: remove try/catch. say Lee to fix empty response
 						try {
 							self._logger.debug('Connection._getIceServers', response);
@@ -282,15 +292,15 @@
 								self.trigger(xrtc.Connection.events.serverError, errorData);
 								return;
 							}
-							
+
 							var iceServers = JSON.parse(response.D);
 							self._logger.info('Connection._getIceServers', iceServers);
 
-							if (typeof(callback) == 'function') {
+							if (typeof (callback) == 'function') {
 								callback.call(self, iceServers);
 							}
 
-						} catch(e) {
+						} catch (e) {
 							self._getIceServersByToken(token, callback);
 						}
 					}
@@ -298,8 +308,8 @@
 			}
 		},
 
-		_initPeerConnection: function (participant, callback) {
-			this._remoteParticipant = participant;
+		_initPeerConnection: function (userId, callback) {
+			this._remoteParticipant = userId;
 			var self = this;
 
 			function callCallback() {
@@ -324,7 +334,26 @@
 							self.trigger(xrtc.Connection.events.iceSent, { event: evt });
 						}
 					};
-					
+
+					//self._peerConnection.onstatechange = function (evt) {
+						//self._peerConnection.readyState
+
+						//"new"
+						//"opening"
+						//"active"
+
+
+						//self._peerConnection.iceState //"starting"
+						//self._peerConnection.iceGatheringState //"new"
+					//};
+
+					self._peerConnection.onopen = function () {
+						self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
+					};
+
+					//self._peerConnection.onnegotiationneeded = function (evt) {
+					//};
+
 					for (var i = 0, len = self._localStreams.length; i < len; i++) {
 						this._peerConnection.addStream(self._localStreams[i]);
 					}
@@ -373,9 +402,9 @@
 			dataChannelCreationError: 'datachannelcreationerror',
 
 			serverError: 'servererror',
-			
+
 			connectionEstablished: 'connectionestablished',
-			
+
 			peerConnectionCreation: 'peerconnectioncreation'
 		},
 

@@ -28,7 +28,7 @@
 				var data = { event: msg };
 				self._logger.debug('HandshakeController.message', data);
 				self.trigger(events.message, msg);
-				
+
 				//todo: remove it
 				if (msg.data === 'null') {
 					self._logger.error('HandshakeController.message', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
@@ -42,14 +42,12 @@
 			};
 
 			self._socket.onclose = function (evt) {
-				debugger;
 				var data = { event: evt };
 				self._logger.debug('HandshakeController.close', data);
 				self.trigger(events.connectionClose, data);
 			};
 
 			self._socket.onerror = function (evt) {
-				debugger;
 				var data = { event: evt };
 				self._logger.error('HandshakeController.error', data);
 				self.trigger(events.connectionError, data);
@@ -127,7 +125,19 @@
 					sdp: answer
 				}
 			};
-			
+
+			this._send(data, xrtc.HandshakeController.events.sendAnswer);
+		},
+
+		sendBye: function (receiverId) {
+			var data = {
+				eventName: 'rtc_bye',
+				targetUserId: receiverId,
+				data: {
+					receiverId: receiverId
+				}
+			};
+
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
 		},
 
@@ -151,7 +161,7 @@
 			connectionOpen: 'connectionopen',
 			connectionClose: 'connectionclose',
 			connectionError: 'connectionerror',
-			
+
 			message: 'message',
 			
 			participantsUpdated: 'participantsupdated',
@@ -163,9 +173,12 @@
 			
 			sendOffer: 'sendoffer',
 			receiveOffer: 'receiveoffer',
-			
+
 			sendAnswer: 'sendanswer',
-			receiveAnswer: 'receiveanswer'
+			receiveAnswer: 'receiveanswer',
+
+			sendBye: 'sendbye',
+			receiveBye: 'receivebye'
 		},
 		
 		eventMapping: {
@@ -175,7 +188,8 @@
 			
 			'rtc_offer': 'receiveOffer',
 			'rtc_ice_candidate': 'receiveIce',
-			'rtc_answer': 'receiveAnswer'
+			'rtc_answer': 'receiveAnswer',
+			'rtc_bye': 'receiveBye'
 		},
 		
 		settings: {

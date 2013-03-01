@@ -56,10 +56,14 @@
 					exports.chat.contactsList.addParticipant({ name: data.paticipantId, isMe: false });
 				})
 				.on(xrtc.HandshakeController.events.participantDisconnected, function (data) {
-					exports.chat.contactsList.removeParticipant(data);
+					exports.chat.contactsList.removeParticipant(data.paticipantId);
 				})
 				.on(xrtc.HandshakeController.events.connectionClose, function (data) {
 					exports.chat.contactsList.refreshParticipants([]);
+				})
+				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
+					exports.chat.removeParticipant(data.senderId);
+					$('#contacts').removeClass().addClass('ready');
 				});
 
 			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
@@ -88,7 +92,7 @@
 					console.log('Connection is established.');
 					$('#contacts')
 						.removeClass().addClass('connected')
-						.find('.contact[data="' + participantId + '"]').addClass('current');
+						.find('.contact[data-name="' + participantId + '"]').addClass('current');
 				});
 
 			connection.addMedia();
