@@ -16,45 +16,42 @@
 				exports.chat.joinRoom(userData);
 			});
 
-			$('#chat-form').on('submit', function(e) {
+			$('#chat-form')
+				.on('submit', function (e) {
+					e.preventDefault();
+					var $form = $(this);
+
+					var message = $form.serializeObject();
+					exports.chat.sendMessage(message);
+					$form.find(':text').val('');
+				});
+
+			$(document).on('click', '#contacts .buttons .connect', function (e) {
 				e.preventDefault();
-				var $form = $(this);
 				
-				var message = $form.serializeObject();
-				exports.chat.sendMessage(message);
-				$form.find(':text').val('');
-			});
-
-			$(document).on('click', '#contacts .button button', function (e) {
-				e.preventDefault();
-
-				var contact = $(this).parents('.contact').data();
+				$('#contacts').removeClass().addClass('connecting');
+				var contact = $(this).parents('.contact').addClass('current').data();
 				exports.chat.connect(contact.name);
 			});
 		},
-		
+
 		joinRoom: function (userData) {
 			$('#step1, #step2').toggle();
 			exports.chat._userData = userData;
 
 			var handshake = exports.chat._handshakeController = new xRtc.HandshakeController();
 			handshake
-				.on(xrtc.HandshakeController.events.participantsUpdated, function(data) {
-					var contacts = [],
-						currentName = exports.chat._userData.name;
-
-					for (var i = 0, len = data.connections.length; i < len; i++) {
-						var name = data.connections[i];
-						contacts[i] = {
-							name: name,
-							isMe: name === currentName
-						};
-					}
-
-					exports.chat.refreshContactsList(contacts);
+				.on(xrtc.HandshakeController.events.participantsUpdated, function (data) {
+					exports.chat.contactsList.refreshParticipants(exports.chat.contactsList.convertContacts(data));
 				})
-				.on(xrtc.HandshakeController.events.connectionClose, function(data) {
-					exports.chat.refreshContactsList([]);
+				.on(xrtc.HandshakeController.events.participantConnected, function (data) {
+					exports.chat.contactsList.addParticipant({ name: data.paticipantId, isMe: false });
+				})
+				.on(xrtc.HandshakeController.events.participantDisconnected, function (data) {
+					exports.chat.contactsList.removeParticipant(data);
+				})
+				.on(xrtc.HandshakeController.events.connectionClose, function (data) {
+					exports.chat.contactsList.refreshParticipants([]);
 				});
 
 			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
@@ -65,7 +62,7 @@
 					exports.chat.addParticipant(data);
 					if (data.isLocal) {
 						exports.chat.isLocalStreamAdded = true;
-						$('#contacts-cell').find('button').removeClass('hide');
+						$('#contacts').removeClass().addClass('ready');
 					}
 				})
 				.on(xrtc.Connection.events.peerConnectionCreation, function () {
@@ -79,8 +76,11 @@
 						});
 					}
 				})
-				.on(xrtc.Connection.events.connectionEstablished, function () {
+				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
+					$('#contacts')
+						.removeClass().addClass('connected')
+						.find('.contact[data="' + participantId + '"]').addClass('current');
 				});
 
 			connection.addMedia();
@@ -88,11 +88,11 @@
 			exports.chat.subscribe(connection, xrtc.Connection.events);
 			exports.chat.subscribe(handshake, xrtc.HandshakeController.events);
 		},
-		
-		leaveRoom: function() {
-			
+
+		leaveRoom: function () {
+
 		},
-		
+
 		sendMessage: function (message) {
 			console.log('Sending message...', message);
 			if (exports.chat._textChannel) {
@@ -102,37 +102,64 @@
 				exports.chat.addMessage('SYSTEM', 'Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag');
 			}
 		},
-		
+
 		addMessage: function (name, message, isMy) {
 			var messageData = { name: name, message: message, isMy: !!isMy };
-			
+
 			var $chat = $('#chat');
 			$chat
 				.append($('#chat-message-tmpl').tmpl(messageData))
 				.scrollTop($chat.children(':last-child').position().top);
 		},
-		
+
 		connect: function (contact) {
 			console.log('Connecting to participant...', contact);
 			this._connection.startSession(contact);
 		},
-		
-		refreshContactsList: function(contacts) {
-			var contactsData = {
-				roomInfo: {
-					domain: exports.chat._userData.domain,
-					application: exports.chat._userData.application,
-					room: exports.chat._userData.room
-				},
-				contacts: contacts
-			};
 
-			$('#contacts-cell')
-				.empty()
-				.append($('#contacts-info-tmpl').tmpl(contactsData));
-			
-			if (exports.chat.isLocalStreamAdded) {
-				$('#contacts-cell').find('button').removeClass('hide');
+		contactsList: {
+			addParticipant: function (participant) {
+				$('#contacts').append($('#contact-info-tmpl').tmpl(participant));
+			},
+
+			removeParticipant: function (participant) {
+				$('#contacts').find('.contact[data-name="' + participant.name + '"]').remove();
+			},
+
+			refreshParticipants: function (contacts) {
+				var userData = exports.chat._userData,
+					contactsData = {
+						roomInfo: {
+							domain: userData.domain,
+							application: userData.application,
+							room: userData.room
+						}
+					};
+
+				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
+
+				for (var index = 0, len = contacts.length; index < len; index++) {
+					this.addParticipant(contacts[index]);
+				}
+
+				if (exports.chat.isLocalStreamAdded) {
+					$('#contacts').removeClass().addClass('ready');
+				}
+			},
+
+			convertContacts: function (data) {
+				var contacts = [],
+					currentName = exports.chat._userData.name;
+
+				for (var i = 0, len = data.connections.length; i < len; i++) {
+					var name = data.connections[i];
+					contacts[i] = {
+						name: name,
+						isMe: name === currentName
+					};
+				}
+
+				return contacts;
 			}
 		},
 
@@ -145,18 +172,18 @@
 			var participantItem = $('#video-tmpl').tmpl(data);
 			$('#video').append(participantItem);
 
-			participantItem.find('video').show().attr('src', streamData.url);
+			participantItem.find('video').attr('src', streamData.url).removeClass('hide');
 		},
-		
+
 		removeParticipant: function (participantId) {
 			$('#video .person[data-name="' + participantId + '"]').remove();
 		},
-		
-		subscribe: function(eventDispatcher, events) {
+
+		subscribe: function (eventDispatcher, events) {
 			if (typeof eventDispatcher.on === "function") {
 				for (var eventPropertyName in events) {
-					(function(eventName) {
-						eventDispatcher.on(eventName, function() {
+					(function (eventName) {
+						eventDispatcher.on(eventName, function () {
 							console.log('CHAT', eventDispatcher.className, eventName, Array.prototype.slice.call(arguments));
 						});
 					})(events[eventPropertyName]);
@@ -169,7 +196,7 @@
 function getParams() {
 	var params = {};
 	var paramsArr = location.href.split('?');
-	
+
 	if (paramsArr.length > 1) {
 		paramsArr = paramsArr[1].split('&');
 		for (var i = 0; i < paramsArr.length; i++) {
@@ -182,7 +209,7 @@ function getParams() {
 }
 
 $(document).ready(function () {
-	$.fn.serializeObject = function() {
+	$.fn.serializeObject = function () {
 		var formArray = this.serializeArray(), formData = {};
 
 		for (var i = 0, len = formArray.length; i < len; i++) {
@@ -195,7 +222,15 @@ $(document).ready(function () {
 	chat.init();
 
 	var username = getParams().name;
-	if(username){
+	if (username) {
 		$('#join-form').find(':text[name="name"]').val(username).end().trigger('submit');
 	}
+
+	/*chat.contactsList.refreshParticipants([
+		{ name: 'Alex', isMe: true },
+		{ name: 'Alex2', isMe: false },
+		{ name: 'Alex3', isMe: false },
+		{ name: 'Alex4', isMe: false },
+		{ name: 'Alex5', isMe: false }
+	]);*/
 });

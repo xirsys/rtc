@@ -33,7 +33,6 @@
 					self._logger.debug('Connection.receiveIce', response);
 
 					var iceCandidate = new RTCIceCandidate(response.iceCandidate);
-					//var iceCandidate = new RTCIceCandidate(JSON.parse(response.iceCandidate));
 					peerConnection.addIceCandidate(iceCandidate);
 
 					self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
@@ -67,7 +66,6 @@
 
 							/***********************************************/
 							// todo: check and refactor
-							//peerConnection.onaddstream = function (stream) {
 							var stream = self._peerConnection.remoteStreams[0],
 								data = {
 									stream: stream,
@@ -76,9 +74,8 @@
 									participantId: self._remoteParticipant
 								};
 
-								self.trigger(xrtc.Connection.events.streamAdded, data);
-								self.trigger(xrtc.Connection.events.connectionEstablished, data);
-							//};
+							self.trigger(xrtc.Connection.events.streamAdded, data);
+							self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
 
 							/***********************************************/
 						},
@@ -110,8 +107,9 @@
 							isLocal: false,
 							participantId: self._remoteParticipant
 						};
+					
 					self.trigger(xrtc.Connection.events.streamAdded, data);
-					self.trigger(xrtc.Connection.events.connectionEstablished, data);
+					self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
 					/***********************************************/
 				});
 			});
@@ -120,7 +118,7 @@
 		connect: function () {
 			var self = this;
 
-			this._getToken(function (token) {
+			self._getToken(function (token) {
 				self._getIceServersByToken(token, function (iceServers) {
 					self._iceServers = iceServers;
 					self._handshakeController.connect(token);
@@ -176,13 +174,15 @@
 
 					self._localStreams.push(stream);
 
+					self._logger.debug('Connection.addMedia', data);
 					self.trigger(xrtc.Connection.events.streamAdded, data);
 				},
 				function (error) {
 					var data = {
 						error: error
 					};
-
+					
+					self._logger.error('Connection.addMedia', data);
 					self.trigger(xrtc.Connection.events.streamError, data);
 				});
 		},
@@ -212,20 +212,18 @@
 				xrtc.Ajax.methods.POST,
 				'data=' + JSON.stringify(this._getTokenRequestParams()),
 				function (response) {
-
 					//todo: remove try/catch. say Lee to fix empty response
 					try {
 						self._logger.debug('Connection._getToken', response);
 
-						var serverMessage = JSON.parse(response.responseText);
-						if (!!serverMessage && !!serverMessage.E && serverMessage.E != '') {
-							var errorData = { method: 'getToken', error: serverMessage.E };
+						if (!!response && !!response.E && response.E != '') {
+							var errorData = { method: 'getToken', error: response.E };
 							self._logger.error('Connection._getToken', errorData);
 							self.trigger(xrtc.Connection.events.serverError, errorData);
 							return;
 						}
 
-						var token = serverMessage.D.token;
+						var token = response.D.token;
 						self._logger.info('Connection._getToken', token);
 
 						if (typeof (callback) == 'function') {
@@ -271,16 +269,14 @@
 						try {
 							self._logger.debug('Connection._getIceServers', response);
 
-							var serverMessage = JSON.parse(response.responseText);
-							if (!!serverMessage && !!serverMessage.E && serverMessage.E != '') {
-								var errorData = { method: 'getIceServers', error: serverMessage.E };
+							if (!!response && !!response.E && response.E != '') {
+								var errorData = { method: 'getIceServers', error: response.E };
 								self._logger.error('Connection._getIceServers', errorData);
 								self.trigger(xrtc.Connection.events.serverError, errorData);
 								return;
 							}
-
-							// todo: say Lee to fix iceServers message format and remove replacement
-							var iceServers = JSON.parse(serverMessage.D);
+							
+							var iceServers = JSON.parse(response.D);
 							self._logger.info('Connection._getIceServers', iceServers);
 
 							if (typeof(callback) == 'function') {
@@ -402,8 +398,8 @@
 			mediaOptions: {
 				audio: true,
 				video: {
-					mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
-					optional: [{ minFrameRate: 24 }, { maxWidth: 300 }, { maxHeigth: 300 }]
+					//mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
+					optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
 				}
 			},
 

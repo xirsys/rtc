@@ -153,7 +153,6 @@
 			connectionError: 'connectionerror',
 			
 			message: 'message',
-			connected: 'connected',
 			
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',

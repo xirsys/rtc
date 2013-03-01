@@ -53,7 +53,6 @@ table.form .button-block {
 /* Video */
 .person {
 	float: left;
-	width: 300px;
 	margin: 0 10px 10px 0;
 }
 
@@ -64,16 +63,12 @@ table.form .button-block {
 }
 
 .person .video {
-	height: 300px;
-	border: 5px solid #000;
+	border: 3px solid #666;
 	background: #FFF url("../Images/video-bg.png") center center no-repeat;
-	/*overflow: hidden;*/
 }
 
 .person .video video {
-	height: 300px;
-	width: 300px;
-	display: none;
+	display: block;
 }
 
 .person.my .name {
@@ -100,27 +95,48 @@ table.form .button-block {
 }
 
 .contact {
-	height: 25px;
+	height: 30px;
 	margin: 5px 0;
 	padding: 2px 0;
 	border-bottom: 1px dashed #666;
 }
 
 .contact .name {
-	font: 600 14px/25px Arial;
+	font: 600 14px/30px Arial;
 	color: #000;
 	float: left;
 }
 
-.contact .button {
+.contact .buttons {
 	float: right;
+}
+
+.contact .buttons * {
+	display: none;	
 }
 
 .contact.my .name {
 	color: #F00;
 }
-.contact.my .button {
+
+.contact.my .buttons {
 	display: none;
+}
+
+#contacts.not-ready .buttons * {
+	display: none;
+}
+
+#contacts.ready	.buttons .connect {
+	display: inline-block;
+}
+
+#contacts.connecting .contact.current .buttons .connecting {
+	display: inline;
+}
+
+#contacts.connected .contact.current .buttons .disconnect {
+	display: inline-block;
 }
 
 /* Chat */
