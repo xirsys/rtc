@@ -60,6 +60,7 @@
 				})
 				.on(xrtc.HandshakeController.events.connectionClose, function (data) {
 					exports.chat.contactsList.refreshParticipants([]);
+					alert("Ups, you was disconnected by the server. For more information see browser log.");
 				})
 				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
 					exports.chat.removeParticipant(data.senderId);
