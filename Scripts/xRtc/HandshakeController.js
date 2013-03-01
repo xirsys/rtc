@@ -95,7 +95,7 @@
 		sendIce: function (receiverId, ice) {
 			var data = {
 				eventName: 'rtc_ice_candidate',
-				TargetUserId: receiverId, // todo: make starts from small letter
+				targetUserId: receiverId,
 				data: {
 					receiverId: receiverId,
 					iceCandidate: ice
@@ -108,7 +108,7 @@
 		sendOffer: function (receiverId, offer) {
 			var data = {
 				eventName: 'rtc_offer',
-				TargetUserId: receiverId, // todo: make starts from small letter
+				targetUserId: receiverId,
 				data: {
 					receiverId: receiverId,
 					sdp: offer
@@ -121,7 +121,7 @@
 		sendAnswer: function (receiverId, answer) {
 			var data = {
 				eventName: 'rtc_answer',
-				TargetUserId: receiverId, // todo: make starts from small letter
+				targetUserId: receiverId,
 				data: {
 					receiverId: receiverId,
 					sdp: answer
