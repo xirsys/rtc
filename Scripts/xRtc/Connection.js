@@ -29,6 +29,10 @@
 			self._localStreams = [];
 
 			handshakeController.on(xrtc.HandshakeController.events.receiveIce, function (response) {
+				if (response.receiverId != self._userData.name) {
+					return;
+				}
+				
 				self._initPeerConnection(response.senderId, function (peerConnection) {
 					self._logger.debug('Connection.receiveIce', response);
 
@@ -40,17 +44,14 @@
 			});
 			
 			handshakeController.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
+				if (response.receiverId != self._userData.name) {
+					return;
+				}
+				
 				self._initPeerConnection(response.senderId, function (peerConnection) {
 					self._logger.debug('Connection.receiveOffer', response);
 					var sdp = JSON.parse(response.sdp);
-
-					// todo: remove it
-					self._remoteParticipant = response.senderId;
-					if (response.receiverId !== self._userData.name) {
-						return;
-					}
-					// todo: remove it
-
+					
 					var sessionDescription = new RTCSessionDescription(sdp);
 					
 					peerConnection.setRemoteDescription(sessionDescription);
@@ -89,6 +90,10 @@
 			});
 
 			handshakeController.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
+				if (response.receiverId != self._userData.name) {
+					return;
+				}
+
 				self._initPeerConnection(response.senderId, function (peerConnection) {
 					self._logger.debug('Connection.receiveAnswer', response);
 					var sdp = JSON.parse(response.sdp);
@@ -154,6 +159,8 @@
 		endSession: function () {
 			if (this._peerConnection) {
 				this._peerConnection.close();
+				this._peerConnection = null;
+				this._remoteParticipant = null;
 			}
 		},
 
@@ -398,7 +405,7 @@
 			mediaOptions: {
 				audio: true,
 				video: {
-					//mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
+					mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
 					optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
 				}
 			},

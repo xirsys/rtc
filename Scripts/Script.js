@@ -26,13 +26,21 @@
 					$form.find(':text').val('');
 				});
 
-			$(document).on('click', '#contacts .buttons .connect', function (e) {
-				e.preventDefault();
-				
-				$('#contacts').removeClass().addClass('connecting');
-				var contact = $(this).parents('.contact').addClass('current').data();
-				exports.chat.connect(contact.name);
-			});
+			$(document)
+				.on('click', '#contacts .buttons .connect', function(e) {
+					e.preventDefault();
+
+					$('#contacts').removeClass().addClass('connecting');
+					var contact = $(this).parents('.contact').addClass('current').data();
+					exports.chat.connect(contact.name);
+				})
+				.on('click', '#contacts .buttons .disconnect', function(e) {
+					e.preventDefault();
+
+					$('#contacts').removeClass().addClass(exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready');
+					var contact = $(this).parents('.contact').removeClass('current').data();
+					exports.chat.disconnect(contact.name);
+				});
 		},
 
 		joinRoom: function (userData) {
@@ -116,6 +124,12 @@
 			console.log('Connecting to participant...', contact);
 			this._connection.startSession(contact);
 		},
+		
+		disconnect: function (contact) {
+			console.log('Disconnection from participant...', contact);
+			this._connection.endSession();
+			this.removeParticipant(contact);
+		},
 
 		contactsList: {
 			addParticipant: function (participant) {
@@ -142,9 +156,7 @@
 					this.addParticipant(contacts[index]);
 				}
 
-				if (exports.chat.isLocalStreamAdded) {
-					$('#contacts').removeClass().addClass('ready');
-				}
+				$('#contacts').removeClass().addClass(exports.chat.isLocalStreamAdded? 'ready' : 'not-ready');
 			},
 
 			convertContacts: function (data) {
