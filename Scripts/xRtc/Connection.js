@@ -40,7 +40,6 @@
 
 				self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
 			});
-
 			handshakeController.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
 				if (response.receiverId != self._userData.name) {
 					return;
@@ -84,7 +83,6 @@
 						xrtc.Connection.settings.answerOptions);
 				});
 			});
-
 			handshakeController.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
 				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 					return;
@@ -111,13 +109,12 @@
 				self.trigger(xrtc.Connection.events.streamAdded, data);
 				/***********************************************/
 			});
-
 			handshakeController.on(xrtc.HandshakeController.events.receiveBye, function (response) {
 				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 					return;
 				}
 
-				self._reset();
+				self._close();
 			});
 		},
 
@@ -133,6 +130,10 @@
 		},
 
 		startSession: function (participantId, options) {
+			if (!participantId) {
+				throw { error: 'participantId should be specified.' };
+			}
+
 			var self = this, opts = {};
 
 			extend(opts, xrtc.Connection.settings.offerOptions);
@@ -162,7 +163,7 @@
 				this._handshakeController.sendBye(this._remoteParticipant);
 			}
 
-			this._reset();
+			this._close();
 		},
 
 		addMedia: function (options) {
@@ -176,7 +177,7 @@
 					var data = {
 						stream: stream,
 						url: URL.createObjectURL(stream),
-						isLocal: true, //stream.constructor.name === 'LocalMediaStream'
+						isLocal: true,
 						participantId: self._userData.name
 					};
 
@@ -211,12 +212,16 @@
 			return dataChannel;
 		},
 
-		_reset: function () {
+		_close: function () {
 			if (this._peerConnection) {
 				this._peerConnection.onicecandidate = null;
 				this._peerConnection.close();
 				this._peerConnection = null;
+
+				var closedParticipant = this._remoteParticipant;
 				this._remoteParticipant = null;
+
+				this.trigger(xrtc.Connection.events.connectionClosed, closedParticipant);
 			}
 		},
 
@@ -336,15 +341,15 @@
 					};
 
 					//self._peerConnection.onstatechange = function (evt) {
-						//self._peerConnection.readyState
+					//self._peerConnection.readyState
 
-						//"new"
-						//"opening"
-						//"active"
+					//"new"
+					//"opening"
+					//"active"
 
 
-						//self._peerConnection.iceState //"starting"
-						//self._peerConnection.iceGatheringState //"new"
+					//self._peerConnection.iceState //"starting"
+					//self._peerConnection.iceGatheringState //"new"
 					//};
 
 					self._peerConnection.onopen = function () {
@@ -404,6 +409,7 @@
 			serverError: 'servererror',
 
 			connectionEstablished: 'connectionestablished',
+			connectionClosed: 'connectionclosed',
 
 			peerConnectionCreation: 'peerconnectioncreation'
 		},

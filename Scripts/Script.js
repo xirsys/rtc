@@ -7,6 +7,7 @@
 		_handshakeController: null,
 		_connection: null,
 		isLocalStreamAdded: false,
+		systemName: 'SYSTEM',
 
 		init: function () {
 			$('#join-form').on('submit', function (e) {
@@ -54,17 +55,20 @@
 				})
 				.on(xrtc.HandshakeController.events.participantConnected, function (data) {
 					exports.chat.contactsList.addParticipant({ name: data.paticipantId, isMe: false });
+					exports.chat.addSystemMessage(data.paticipantId + '  entered the room.');
 				})
 				.on(xrtc.HandshakeController.events.participantDisconnected, function (data) {
 					exports.chat.contactsList.removeParticipant(data.paticipantId);
+					exports.chat.addSystemMessage(data.paticipantId + ' left the room.');
 				})
 				.on(xrtc.HandshakeController.events.connectionClose, function (data) {
 					exports.chat.contactsList.refreshParticipants([]);
-					alert("Ups, you was disconnected by the server. For more information see browser log.");
+					exports.chat.addSystemMessage('You was disconnected by the server.');
 				})
 				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
 					exports.chat.removeParticipant(data.senderId);
 					$('#contacts').removeClass().addClass('ready');
+					exports.chat.addSystemMessage(data.senderId + ' closed p2p connection.');
 				});
 
 			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
@@ -94,6 +98,9 @@
 					$('#contacts')
 						.removeClass().addClass('connected')
 						.find('.contact[data-name="' + participantId + '"]').addClass('current');
+					exports.chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
+				}).on(xrtc.Connection.events.connectionClosed, function (participantId) {
+					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				});
 
 			connection.addMedia();
@@ -112,7 +119,7 @@
 				exports.chat._textChannel.send(message.message);
 				exports.chat.addMessage(exports.chat._userData.name, message.message, true);
 			} else {
-				exports.chat.addMessage('SYSTEM', 'Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag');
+				exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 			}
 		},
 
@@ -123,6 +130,10 @@
 			$chat
 				.append($('#chat-message-tmpl').tmpl(messageData))
 				.scrollTop($chat.children(':last-child').position().top);
+		},
+
+		addSystemMessage: function (message) {
+			this.addMessage(exports.chat.systemName, message);
 		},
 
 		connect: function (contact) {
@@ -141,8 +152,8 @@
 				$('#contacts').append($('#contact-info-tmpl').tmpl(participant));
 			},
 
-			removeParticipant: function (participant) {
-				$('#contacts').find('.contact[data-name="' + participant.name + '"]').remove();
+			removeParticipant: function (participantId) {
+				$('#contacts').find('.contact[data-name="' + participantId + '"]').remove();
 			},
 
 			refreshParticipants: function (contacts) {

@@ -38,7 +38,9 @@
 
 				var message = self._parseMessage(msg);
 				self._logger.info('HandshakeController.message', msg, message);
-				self.trigger(message.eventName, message.data);
+				if (message) {
+					self.trigger(message.eventName, message.data);
+				}
 			};
 
 			self._socket.onclose = function (evt) {
@@ -61,14 +63,17 @@
 		},
 
 		_parseMessage: function (msg) {
-			var json = JSON.parse(msg.data), result;
+			var json, result;
+			try {
+				json = JSON.parse(msg.data);
 
-			switch (json.Type) {
+				switch (json.Type) {
 				case 'peers':
 					result = {
 						eventName: json.Type,
 						data: {
-							connections: JSON.parse(json.Message)
+							connections: JSON.parse(json.Message),
+							senderId: json.UserId
 						}
 					};
 					break;
@@ -77,65 +82,64 @@
 					result = {
 						eventName: json.Type,
 						data: {
-							paticipantId: json.Message
+							paticipantId: json.Message,
+							senderId: json.UserId
 						}
 					};
 					break;
 				default:
 					this._logger.debug('HandshakeController._parseMessage', msg.data);
 					result = JSON.parse(json.Message);
+					result.data.senderId = json.UserId;
 					break;
+				}
 			}
-			result.data.senderId = json.UserId;
-			return { eventName: xrtc.HandshakeController.events[xrtc.HandshakeController.eventMapping[result.eventName]], data: result.data };
+			catch (e)
+			{
+				this._logger.error('Message format error.', e, msg);
+				self.trigger(events.messageFormatError, msg);
+			}
+
+			return result
+				? { eventName: xrtc.HandshakeController.events[xrtc.HandshakeController.eventsMapping[result.eventName]], data: result.data }
+				: null;
 		},
 
-		sendIce: function (receiverId, ice) {
+		sendIce: function (targetUserId, ice) {
 			var data = {
-				eventName: 'rtc_ice_candidate',
-				targetUserId: receiverId,
-				data: {
-					receiverId: receiverId,
-					iceCandidate: ice
-				}
+				eventName: xrtc.HandshakeController.events.receiveIce,
+				targetUserId: targetUserId,
+				data: { iceCandidate: ice, receiverId: targetUserId }
 			};
 			
 			this._send(data, xrtc.HandshakeController.events.sendIce);
 		},
 
-		sendOffer: function (receiverId, offer) {
+		sendOffer: function (targetUserId, offer) {
 			var data = {
-				eventName: 'rtc_offer',
-				targetUserId: receiverId,
-				data: {
-					receiverId: receiverId,
-					sdp: offer
-				}
+				eventName: xrtc.HandshakeController.events.receiveOffer,
+				targetUserId: targetUserId,
+				data: { sdp: offer, receiverId: targetUserId }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendOffer);
 		},
 
-		sendAnswer: function (receiverId, answer) {
+		sendAnswer: function (targetUserId, answer) {
 			var data = {
-				eventName: 'rtc_answer',
-				targetUserId: receiverId,
-				data: {
-					receiverId: receiverId,
-					sdp: answer
-				}
+				eventName: xrtc.HandshakeController.events.receiveAnswer,
+				targetUserId: targetUserId,
+				data: { sdp: answer, receiverId: targetUserId }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
 		},
 
-		sendBye: function (receiverId) {
+		sendBye: function (targetUserId) {
 			var data = {
-				eventName: 'rtc_bye',
-				targetUserId: receiverId,
-				data: {
-					receiverId: receiverId
-				}
+				eventName: xrtc.HandshakeController.events.receiveBye,
+				targetUserId: targetUserId,
+				data: { receiverId: targetUserId }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
@@ -162,8 +166,10 @@
 			connectionClose: 'connectionclose',
 			connectionError: 'connectionerror',
 
+			messageFormatError: 'messageFormatError',
+
 			message: 'message',
-			
+
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',
@@ -180,18 +186,18 @@
 			sendBye: 'sendbye',
 			receiveBye: 'receivebye'
 		},
-		
-		eventMapping: {
+
+		eventsMapping: {
 			'peers': 'participantsUpdated',
 			'peer_connected': 'participantConnected',
 			'peer_removed': 'participantDisconnected',
-			
-			'rtc_offer': 'receiveOffer',
-			'rtc_ice_candidate': 'receiveIce',
-			'rtc_answer': 'receiveAnswer',
-			'rtc_bye': 'receiveBye'
+
+			receiveice: 'receiveIce',
+			receiveoffer: 'receiveOffer',
+			receiveanswer: 'receiveAnswer',
+			receivebye: 'receiveBye'
 		},
-		
+
 		settings: {
 			URL: 'ws://turn.influxis.com:8002/ws/'
 		}
