@@ -15,7 +15,7 @@
 			var self = this,
 				events = xrtc.HandshakeController.events,
 				url = xrtc.HandshakeController.settings.URL + escape(token);
-			
+
 			self._socket = new WebSocket(url);
 
 			self._socket.onopen = function (evt) {
@@ -55,7 +55,7 @@
 				self.trigger(events.connectionError, data);
 			};
 		},
-		
+
 		disconnect: function () {
 			// todo: check
 			this._socket.close();
@@ -68,34 +68,33 @@
 				json = JSON.parse(msg.data);
 
 				switch (json.Type) {
-				case 'peers':
-					result = {
-						eventName: json.Type,
-						data: {
-							connections: JSON.parse(json.Message),
-							senderId: json.UserId
-						}
-					};
-					break;
-				case 'peer_connected':
-				case 'peer_removed':
-					result = {
-						eventName: json.Type,
-						data: {
-							paticipantId: json.Message,
-							senderId: json.UserId
-						}
-					};
-					break;
-				default:
-					this._logger.debug('HandshakeController._parseMessage', msg.data);
-					result = JSON.parse(json.Message);
-					result.data.senderId = json.UserId;
-					break;
+					case 'peers':
+						result = {
+							eventName: json.Type,
+							data: {
+								connections: JSON.parse(json.Message),
+								senderId: json.UserId
+							}
+						};
+						break;
+					case 'peer_connected':
+					case 'peer_removed':
+						result = {
+							eventName: json.Type,
+							data: {
+								paticipantId: json.Message,
+								senderId: json.UserId
+							}
+						};
+						break;
+					default:
+						this._logger.debug('HandshakeController._parseMessage', msg.data);
+						result = JSON.parse(json.Message);
+						result.data.senderId = json.UserId;
+						break;
 				}
 			}
-			catch (e)
-			{
+			catch (e) {
 				this._logger.error('Message format error.', e, msg);
 				self.trigger(events.messageFormatError, msg);
 			}
@@ -105,21 +104,21 @@
 				: null;
 		},
 
-		sendIce: function (targetUserId, ice) {
+		sendIce: function (targetUserId, iceCandidate) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveIce,
-				targetUserId: targetUserId,
-				data: { iceCandidate: ice, receiverId: targetUserId }
+				targetUserId: targetUserId.toString(),
+				data: { receiverId: targetUserId.toString(), iceCandidate: iceCandidate }
 			};
-			
+
 			this._send(data, xrtc.HandshakeController.events.sendIce);
 		},
 
 		sendOffer: function (targetUserId, offer) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveOffer,
-				targetUserId: targetUserId,
-				data: { sdp: offer, receiverId: targetUserId }
+				targetUserId: targetUserId.toString(),
+				data: { receiverId: targetUserId.toString(), sdp: offer }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendOffer);
@@ -128,8 +127,8 @@
 		sendAnswer: function (targetUserId, answer) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveAnswer,
-				targetUserId: targetUserId,
-				data: { sdp: answer, receiverId: targetUserId }
+				targetUserId: targetUserId.toString(),
+				data: { receiverId: targetUserId.toString(), sdp: answer }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
@@ -138,8 +137,8 @@
 		sendBye: function (targetUserId) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveBye,
-				targetUserId: targetUserId,
-				data: { receiverId: targetUserId }
+				targetUserId: targetUserId.toString(),
+				data: { receiverId: targetUserId.toString() }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
@@ -176,7 +175,7 @@
 
 			sendIce: 'sendice',
 			receiveIce: 'receiveice',
-			
+
 			sendOffer: 'sendoffer',
 			receiveOffer: 'receiveoffer',
 

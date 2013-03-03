@@ -35,7 +35,7 @@
 
 				self._logger.debug('Connection.receiveIce', response);
 
-				var iceCandidate = new RTCIceCandidate(response.iceCandidate);
+				var iceCandidate = new RTCIceCandidate(JSON.parse((response.iceCandidate)));
 				self._peerConnection.addIceCandidate(iceCandidate);
 
 				self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
@@ -335,7 +335,7 @@
 
 					self._peerConnection.onicecandidate = function (evt) {
 						if (!!evt.candidate) {
-							self._handshakeController.sendIce(self._remoteParticipant, evt.candidate);
+							self._handshakeController.sendIce(self._remoteParticipant, JSON.stringify(evt.candidate));
 							self.trigger(xrtc.Connection.events.iceSent, { event: evt });
 						}
 					};
