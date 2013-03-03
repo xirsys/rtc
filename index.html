@@ -16,100 +16,132 @@
 	<script src="Scripts/jquery.tmpl.min.js"></script>
 	<script src="Scripts/Script.js"></script>
 </head>
-	<body>
-		<!--<div id="console"></div>-->
-		<!--<button class="btn btn-danger btn-large" onclick="chat._connection._getToken()">Get token</button>-->
+<body>
+	<!--<div id="console"></div>-->
+	<!--<button class="btn btn-danger btn-large" onclick="chat._connection._getToken()">Get token</button>-->
 
-		<div id="step1">
-			<form id="join-form">
-				<table class="form">
-					<tr>
-						<th class="text-left"><label for="domain">Domain</label></th>
-						<td><input type="text" id="domain" name="domain" value="www.example.com" /></td>
-					</tr>
-					<tr>
-						<th class="text-left"><label for="application">Application</label></th>
-						<td><input type="text" id="application" name="application" value="test_app" /></td>
-					</tr>
-					<tr>
-						<th class="text-left"><label for="room">Room</label></th>
-						<td><input type="text" id="room" name="room" value="test_room" /></td>
-					</tr>
-					<tr>
-						<th class="text-left"><label for="name">Name (identity)</label></th>
-						<td><input type="text" id="name" name="name" value="alex" /></td>
-					</tr>
-					<tr>
-						<td colspan="2" class="button-block"><input type="submit" value="Join" class="btn-inverse" /></td>
-					</tr>
-				</table>
-			
-			</form>
-		</div>
-
-		<div id="step2">
-			<table id="chat-table">
+	<div id="step1">
+		<form id="join-form">
+			<table class="form">
 				<tr>
-					<td id="video-cell">
-						<div id="video"></div>
-						<div class="clear"></div>
-					</td>
-					<td rowspan="2" id="contacts-cell"></td>
+					<th class="text-left">
+						<label for="domain">Domain</label></th>
+					<td>
+						<input type="text" id="domain" name="domain" value="www.example.com" /></td>
 				</tr>
-
 				<tr>
-					<td id="chat-cell">
-						<div id="chat"></div>
-					
-						<form id="chat-form">
-							<div class="chat-input">
-								<input type="text" name="message" value="" placeholder="Input message here" />
+					<th class="text-left">
+						<label for="application">Application</label></th>
+					<td>
+						<input type="text" id="application" name="application" value="test_app" /></td>
+				</tr>
+				<tr>
+					<th class="text-left">
+						<label for="room">Room</label></th>
+					<td>
+						<input type="text" id="room" name="room" value="test_room" /></td>
+				</tr>
+				<tr>
+					<th class="text-left">
+						<label for="name">Name (identity)</label></th>
+					<td>
+						<input type="text" id="name" name="name" value="alex" /></td>
+				</tr>
+				<tr>
+					<td colspan="2" class="button-block">
+						<input type="submit" value="Join" class="btn-inverse" /></td>
+				</tr>
+			</table>
+
+		</form>
+	</div>
+
+	<div id="step2">
+		<table id="chat-table">
+			<tr>
+				<td id="video-cell">
+					<div id="video"></div>
+					<div class="clear"></div>
+				</td>
+				<td rowspan="2" id="contacts-cell"></td>
+			</tr>
+
+			<tr>
+				<td id="chat-cell">
+					<div id="chat"></div>
+
+					<form id="chat-form">
+						<div class="chat-input">
+							<input type="text" name="message" value="" placeholder="Input message here" />
+						</div>
+						<div class="chat-button">
+							<input type="submit" class="btn btn-info" value="Send" />
+						</div>
+						<div class="clear"></div>
+					</form>
+
+					<fieldset>
+						<legend>Websockets functionlity (for test purpose)</legend>
+						<div class="ws-targetUser">
+							<input type="text" value="alex" placeholder="Input user name here" />
+						</div>
+						<div class="ws-message-type">
+							<select>
+								<option value="sendOffer">Offer</option>
+								<option value="sendAnswer">Answer</option>
+								<option value="sendIce">Ice</option>
+							</select>
+						</div>
+						<form id="ws-form">
+							<div class="ws-message">
+								<textarea placeholder="Input message here"></textarea>
 							</div>
-							<div class="chat-button">
-								<input type="submit" class="btn btn-info" value="Send" />
+							<div class="ws-button">
+								<input type="submit" class="btn btn-info" value="Send via WebSokets" />
 							</div>
 							<div class="clear"></div>
 						</form>
-					</td>
-				</tr>
-			</table>
-		</div>
-	
-		<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
-			<fieldset id="contacts-block">
-				<legend>${roomInfo.domain}, ${roomInfo.application}, ${roomInfo.room}</legend>
-				<div id="contacts"></div>
-			</fieldset>
-		</script>
-	
-		<script type="text/x-jquery-tmpl" id="contact-info-tmpl">
-			<div class="contact {{if isMe}}my{{/if}}" data-name="${name}">
-				<div class="name">${name}</div>
-				{{if !isMe}}
+					</fieldset>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
+		<fieldset id="contacts-block">
+			<legend>${roomInfo.domain}, ${roomInfo.application}, ${roomInfo.room}</legend>
+			<div id="contacts"></div>
+		</fieldset>
+	</script>
+
+	<script type="text/x-jquery-tmpl" id="contact-info-tmpl">
+		<div class="contact {{if isMe}}my{{/if}}" data-name="${name}">
+			<div class="name">${name}</div>
+			{{if !isMe}}
 				<div class="buttons">
 					<button class="btn btn-info connect">Connect</button>
 					<span class="label connecting">Connecting...</span>
 					<button class="btn btn-danger disconnect">Disconnect</button>
 				</div>
-				{{/if}}
+			{{/if}}
 				<div class="clear"></div>
-			</div>
-		</script>
+		</div>
+	</script>
 
-		<script type="text/x-jquery-tmpl" id="chat-message-tmpl">
-			<div class="message {{if isMy}}my{{/if}}">
-				<span class="name">${name}:</span>
-				<span class="text">${message}</span>
-			</div>
-		</script>
+	<script type="text/x-jquery-tmpl" id="chat-message-tmpl">
+		<div class="message {{if isMy}}my{{/if}}">
+			<span class="name">${name}:</span>
+			<span class="text">${message}</span>
+		</div>
+	</script>
 
-		<script type="text/x-jquery-tmpl" id="video-tmpl">
-			<div class="person {{if isMe}}my{{/if}}" data-name="${name}">
-				<div class="name">${name}</div>
-				<div class="video">
-					<video autoplay class="hide"></video>
-				</div>
+	<script type="text/x-jquery-tmpl" id="video-tmpl">
+		<div class="person {{if isMe}}my{{/if}}" data-name="${name}">
+			<div class="name">${name}</div>
+			<div class="video">
+				<video autoplay class="hide"></video>
 			</div>
-		</script>
-	</body>
+		</div>
+	</script>
+</body>
 </html>

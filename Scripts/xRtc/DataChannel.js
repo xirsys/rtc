@@ -6,10 +6,10 @@
 
 	xrtc.DataChannel.include(xrtc.EventDispatcher);
 	xrtc.DataChannel.include({
-		init: function (dataChannel, participantId) {
+		init: function (dataChannel, userId) {
 			this._logger = new xrtc.Logger();
 			this._channel = dataChannel;
-			this._participantId = participantId;
+			this._userId = userId;
 			
 			var self = this,
 				events = xrtc.DataChannel.events;
@@ -52,8 +52,8 @@
 			this._logger.info('DataChannel.send', arguments);
 
 			var data = {
-				message: message,
-				participantId: this._participantId
+				userId: this._userId,
+				message: message
 			};
 
 			this._channel.send(JSON.stringify(data));

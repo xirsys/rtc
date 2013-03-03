@@ -166,20 +166,28 @@ table.form .button-block {
 	color: #666;
 }
 
+
 #chat-form .chat-input {
 	float: left;
 	width: 90%;
 }
 
-#chat-form .chat-button {
+#chat-form .chat-button, #ws-form .chat-button {
 	float: right;
 	width: 10%;
 	text-align: right;
 	padding: 3px 0 0;
 }
 
-#chat-form .chat-input input {
+#chat-form .chat-input input, #ws-form .chat-input input {
 	width: 100%;
+}
+
+/*WS Test Area*/
+
+#ws-form .ws-message textarea {
+	width: 90%;
+	height: 200px;
 }
 
 /* Console */

@@ -56,7 +56,6 @@
 					peerConnection.createAnswer(
 						function (answer) {
 							peerConnection.setLocalDescription(answer);
-
 							self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
 
 							self._logger.debug('Connection.sendAnswer', response, answer);
@@ -201,7 +200,7 @@
 			var dataChannel = null;
 
 			try {
-				dataChannel = new xrtc.DataChannel(this._peerConnection.createDataChannel(name, { reliable: false }), this._remoteParticipant);
+				dataChannel = new xrtc.DataChannel(this._peerConnection.createDataChannel(name, { reliable: false }), this._userData.name);
 			} catch (ex) {
 				var error = {
 					exception: ex
