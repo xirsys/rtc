@@ -128,6 +128,10 @@
 					}
 				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
+					
+					//todo(bug): when connection will be established, then the button "Disconnect" will appear.
+					// and if at this point someone else has connected to you
+					// (additional button "Disconnect" will appear), the old button "disconnect" will not be updated.
 					console.log('Connection is established.');
 					$('#contacts')
 						.removeClass().addClass('connected')
@@ -232,6 +236,12 @@
 				name: streamData.participantId,
 				isMe: streamData.isLocal
 			};
+
+			$.each($('#video .person'), function (index, value) {
+				if (!$(value).hasClass('my')) {
+					value.remove();
+				}
+			});
 
 			var participantItem = $('#video-tmpl').tmpl(data);
 			$('#video').append(participantItem);
