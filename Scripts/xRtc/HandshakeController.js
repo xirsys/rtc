@@ -11,6 +11,8 @@
 			this._socket = null;
 		},
 
+		/// <summary>Connects with server</summary>
+		/// <param name="token" type="string">Is used like unique name of user</param>
 		connect: function (token) {
 			var self = this,
 				events = xrtc.HandshakeController.events,
@@ -49,6 +51,7 @@
 			};
 		},
 
+		/// <summary>Disconnects from server</summary>
 		disconnect: function () {
 			this._socket.close();
 			this._socket = null;
@@ -97,6 +100,9 @@
 				: null;
 		},
 
+		/// <summary>Sends ICE servers to remote user</summary>
+		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+		/// <param name="iceCandidate" type="object">WebRTC internal object. Will be converted to JSON</param>
 		sendIce: function (targetUserId, iceCandidate) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveIce,
@@ -107,6 +113,9 @@
 			this._send(data, xrtc.HandshakeController.events.sendIce);
 		},
 
+		/// <summary>Sends offer to remote user</summary>
+		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+		/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
 		sendOffer: function (targetUserId, offer) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveOffer,
@@ -117,6 +126,9 @@
 			this._send(data, xrtc.HandshakeController.events.sendOffer);
 		},
 
+		/// <summary>Sends answer to remote user</summary>
+		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+		/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
 		sendAnswer: function (targetUserId, answer) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveAnswer,
@@ -127,6 +139,8 @@
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
 		},
 
+		/// <summary>Sends disconnection message to remote user</summary>
+		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 		sendBye: function (targetUserId) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveBye,

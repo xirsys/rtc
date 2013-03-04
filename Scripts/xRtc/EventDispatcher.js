@@ -4,6 +4,9 @@
 	var xrtc = exports.xRtc;
 
 	xrtc.EventDispatcher = {
+		/// <summary>Subscribes on event</summary>
+		/// <param name="eventName" type="string">The name of event</param>
+		/// <param name="callback" type="function">Callback function</param>
 		on: function (eventName, callback) {
 			if (this._logger) {
 				this._logger.info(this.className + '.on', arguments);
@@ -16,6 +19,8 @@
 			return this;
 		},
 
+		/// <summary>Unsubscribes from event</summary>
+		/// <param name="eventName" type="string">The name of event</param>
 		off: function (eventName) {
 			if (this._logger) {
 				this._logger.info(this.className + '.off', arguments);
@@ -28,6 +33,9 @@
 			return this;
 		},
 
+		/// <summary>Triggers event</summary>
+		/// <param name="eventName" type="string">The name of event</param>
+		/// <param name="arguments" type="array">Parameters of event. Can be absent</param>
 		trigger: function (eventName) {
 			if (this._logger) {
 				this._logger.info(this.className + '.trigger', arguments);

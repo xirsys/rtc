@@ -47,7 +47,9 @@
 				self.trigger(events.dataChannel, data);
 			};
 		},
-		
+
+		/// <summary>Sends a message to remote user</summary>
+		/// <param name="mesage" type="object">Message to send</param>
 		send: function (message) {
 			this._logger.info('DataChannel.send', arguments);
 

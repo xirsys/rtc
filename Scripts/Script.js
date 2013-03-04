@@ -40,12 +40,15 @@
 		}
 	};*/
 
+
 	exports.chat = {
+		
 		_handshakeController: null,
 		_connection: null,
 		isLocalStreamAdded: false,
 		systemName: 'SYSTEM',
 
+		/// <summary>The method for the initializing of chat</summary>
 		init: function () {
 			$('#join-form').on('submit', function (e) {
 				e.preventDefault();
@@ -131,11 +134,9 @@
 				})
 				.on(xrtc.Connection.events.connectionEstablished, function(participantId) {
 					console.log('Connection is established.');
-					//$('#contacts .contact[data-name="' + participantId + '"]').addClass('current');
 					exports.chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
 				})
 				.on(xrtc.Connection.events.connectionClosed, function (participantId) {
-					//$('#contacts .contact[data-name="' + participantId + '"]').removeClass('current');
 					exports.chat.removeParticipant(participantId);
 					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				})

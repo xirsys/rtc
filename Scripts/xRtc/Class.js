@@ -3,6 +3,7 @@
 (function (exports) {
 	exports.xRtc = {};
 
+	/// <summary>The base type of all classes</summary>
 	exports.xRtc.Class = function (name) {
 		var klass = function () {
 			this.init.apply(this, arguments);
@@ -12,6 +13,7 @@
 		klass.fn.init = function () { };
 		klass.fn.className = name;
 
+		/// <summary>Extends the instance of concrete object</summary>
 		klass.extend = function (obj) {
 			var extended = obj.extended;
 
@@ -24,6 +26,7 @@
 			}
 		};
 
+		/// <summary>Extends the prototype of concrete object</summary>
 		klass.include = function (obj) {
 			var included = obj.included;
 

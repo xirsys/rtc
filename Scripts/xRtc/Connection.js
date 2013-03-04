@@ -124,6 +124,7 @@
 				});
 		},
 
+		/// <summary>Initiate connection with server via HandshakeController</summary>
 		connect: function () {
 			var self = this;
 
@@ -135,6 +136,9 @@
 			});
 		},
 
+		/// <summary>Starts the process of p2p connection establishment</summary>
+		/// <param name="participantId" type="string">Name of remote participant</param>
+		/// <param name="options" type="object">Optional param. Offer options</param>
 		startSession: function (participantId, options) {
 			if (!participantId) {
 				throw { error: 'participantId should be specified.' };
@@ -164,6 +168,7 @@
 			});
 		},
 
+		/// <summary>Ends p2p connection</summary>
 		endSession: function () {
 			if (this._handshakeController && this._remoteParticipant) {
 				this._handshakeController.sendBye(this._remoteParticipant);
@@ -172,6 +177,8 @@
 			this._close();
 		},
 
+		/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
+		/// <param name="options" type="object">Optional param. Local media options</param>
 		addMedia: function (options) {
 			var self = this, opts = {};
 
@@ -202,6 +209,8 @@
 				});
 		},
 
+		/// <summary>Creates new instance of DataChannel</summary>
+		/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
 		createDataChannel: function (name) {
 			var dataChannel = null;
 
@@ -215,6 +224,8 @@
 			return dataChannel;
 		},
 
+
+		/// <summary>Returns state of p2p connection</summary>
 		getState: function () {
 			if (!this._peerConnection) {
 				return 'notinitialized';
