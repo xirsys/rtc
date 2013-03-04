@@ -3,39 +3,16 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	exports.chat = {
-		_handshakeController: null,
-		_connection: null,
-		isLocalStreamAdded: false,
-		systemName: 'SYSTEM',
-
-		init: function () {
-			$('#join-form').on('submit', function (e) {
+	/*exports.wsTest = {
+		init: function() {
+			$('#ws-form').on('submit', function(e) {
 				e.preventDefault();
+				var $form = $(this);
 
-				var userData = $(this).serializeObject();
-				exports.chat.joinRoom(userData);
+				exports.chat._handshakeController[$(".ws-message-type select").val()](
+					$(".ws-targetUser input").val(),
+					$form.find('.ws-message textarea').val());
 			});
-
-			$('#chat-form')
-				.on('submit', function (e) {
-					e.preventDefault();
-					var $form = $(this);
-
-					var message = $form.serializeObject();
-					exports.chat.sendMessage(message);
-					$form.find(':text').val('');
-				});
-
-			$('#ws-form')
-				.on('submit', function (e) {
-					e.preventDefault();
-					var $form = $(this);
-
-					exports.chat._handshakeController[$(".ws-message-type select").val()](
-						$(".ws-targetUser input").val(),
-						$form.find('.ws-message textarea').val());
-				});
 
 			var testMessages = {
 				sendAnswer: '{"sdp":"v=0\r\no=- 3874791739 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE audio video data\r\na=msid-semantic: WMS sOgD2pf8Xowrauq7sHYGsPljbiBEPHENGfR4\r\nm=audio 1 RTP/SAVPF 103 104 111 0 8 107 106 105 13 126\r\nc=IN IP4 0.0.0.0\r\na=rtcp:1 IN IP4 0.0.0.0\r\na=ice-ufrag:zRKq8SCBdGu29Vhf\r\na=ice-pwd:Pv20ls9jSJFmQkf+pPZ2FZZu\r\na=sendrecv\r\na=mid:audio\r\na=rtcp-mux\r\na=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:7DAXeeCikIi0PXEXIRpLqn1U3iBFY+Xy1B8CyqUU\r\na=rtpmap:103 ISAC/16000\r\na=rtpmap:104 ISAC/32000\r\na=rtpmap:111 opus/48000/2\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:107 CN/48000\r\na=rtpmap:106 CN/32000\r\na=rtpmap:105 CN/16000\r\na=rtpmap:13 CN/8000\r\na=rtpmap:126 telephone-event/8000\r\na=ssrc:4184440986 cname:rgVnvNfHQXXKpYCY\r\na=ssrc:4184440986 msid:sOgD2pf8Xowrauq7sHYGsPljbiBEPHENGfR4 a0\r\na=ssrc:4184440986 mslabel:sOgD2pf8Xowrauq7sHYGsPljbiBEPHENGfR4\r\na=ssrc:4184440986 label:sOgD2pf8Xowrauq7sHYGsPljbiBEPHENGfR4a0\r\nm=video 1 RTP/SAVPF 100 116 117\r\nc=IN IP4 0.0.0.0\r\na=rtcp:1 IN IP4 0.0.0.0\r\na=ice-ufrag:zRKq8SCBdGu29Vhf\r\na=ice-pwd:Pv20ls9jSJFmQkf+pPZ2FZZu\r\na=recvonly\r\na=mid:video\r\na=rtcp-mux\r\na=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:7DAXeeCikIi0PXEXIRpLqn1U3iBFY+Xy1B8CyqUU\r\na=rtpmap:100 VP8/90000\r\na=rtpmap:116 red/90000\r\na=rtpmap:117 ulpfec/90000\r\nm=application 1 RTP/SAVPF 101\r\nc=IN IP4 0.0.0.0\r\na=rtcp:1 IN IP4 0.0.0.0\r\na=ice-ufrag:zRKq8SCBdGu29Vhf\r\na=ice-pwd:Pv20ls9jSJFmQkf+pPZ2FZZu\r\na=sendrecv\r\na=mid:data\r\nb=AS:30\r\na=rtcp-mux\r\na=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:7DAXeeCikIi0PXEXIRpLqn1U3iBFY+Xy1B8CyqUU\r\na=rtpmap:101 google-data/90000\r\na=ssrc:1707929458 cname:+bmREs1Qepw4c9FC\r\na=ssrc:1707929458 msid:textChat d0\r\na=ssrc:1707929458 mslabel:textChat\r\na=ssrc:1707929458 label:textChat\r\n","type":"answer"}',
@@ -60,20 +37,43 @@
 				});
 
 			$('#ws-form .ws-message textarea').val(testMessages[$(".ws-message-type select").val()]);
+		}
+	};*/
+
+	exports.chat = {
+		_handshakeController: null,
+		_connection: null,
+		isLocalStreamAdded: false,
+		systemName: 'SYSTEM',
+
+		init: function () {
+			$('#join-form').on('submit', function (e) {
+				e.preventDefault();
+
+				var userData = $(this).serializeObject();
+				exports.chat.joinRoom(userData);
+			});
+
+			$('#chat-form').on('submit', function(e) {
+				e.preventDefault();
+				var $form = $(this);
+
+				var message = $form.serializeObject();
+				exports.chat.sendMessage(message);
+				$form.find(':text').val('');
+			});
 
 			$(document)
 				.on('click', '#contacts .buttons .connect', function (e) {
 					e.preventDefault();
 
-					$('#contacts').removeClass().addClass('connecting');
 					var contact = $(this).parents('.contact').addClass('current').data();
 					exports.chat.connect(contact.name);
 				})
 				.on('click', '#contacts .buttons .disconnect', function (e) {
 					e.preventDefault();
 
-					$('#contacts').removeClass().addClass(exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready');
-					var contact = $(this).parents('.contact').removeClass('current').data();
+					var contact = $(this).data();
 					exports.chat.disconnect(contact.name);
 				});
 		},
@@ -101,7 +101,6 @@
 				})
 				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
 					exports.chat.removeParticipant(data.senderId);
-					$('#contacts').removeClass().addClass('ready');
 					exports.chat.addSystemMessage(data.senderId + ' closed p2p connection.');
 				});
 
@@ -109,36 +108,39 @@
 			connection.connect();
 
 			connection
-				.on(xrtc.Connection.events.streamAdded, function (data) {
+				.on(xrtc.Connection.events.streamAdded, function(data) {
 					exports.chat.addParticipant(data);
 					if (data.isLocal) {
 						exports.chat.isLocalStreamAdded = true;
-						$('#contacts').removeClass().addClass('ready');
+						exports.chat.contactsList.updateState();
 					}
 				})
-				.on(xrtc.Connection.events.peerConnectionCreation, function () {
+				.on(xrtc.Connection.events.negotiationNeeded, function() {
 					exports.chat._textChannel = connection.createDataChannel('textChat');
+					
 					if (exports.chat._textChannel) {
 						exports.chat.subscribe(exports.chat._textChannel, xrtc.DataChannel.events);
 
-						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
+						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function(messageData) {
 							var message = JSON.parse(messageData.message);
 							exports.chat.addMessage(message.userId, message.message);
 						});
+					} else {
+						exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
-				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
-					
-					//todo(bug): when connection will be established, then the button "Disconnect" will appear.
-					// and if at this point someone else has connected to you
-					// (additional button "Disconnect" will appear), the old button "disconnect" will not be updated.
+				.on(xrtc.Connection.events.connectionEstablished, function(participantId) {
 					console.log('Connection is established.');
-					$('#contacts')
-						.removeClass().addClass('connected')
-						.find('.contact[data-name="' + participantId + '"]').addClass('current');
+					//$('#contacts .contact[data-name="' + participantId + '"]').addClass('current');
 					exports.chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
-				}).on(xrtc.Connection.events.connectionClosed, function (participantId) {
+				})
+				.on(xrtc.Connection.events.connectionClosed, function (participantId) {
+					//$('#contacts .contact[data-name="' + participantId + '"]').removeClass('current');
+					exports.chat.removeParticipant(participantId);
 					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
+				})
+				.on(xrtc.Connection.events.stateChaged, function (state) {
+					exports.chat.contactsList.updateState(state);
 				});
 
 			connection.addMedia();
@@ -157,7 +159,7 @@
 				exports.chat._textChannel.send(message.message);
 				exports.chat.addMessage(exports.chat._userData.name, message.message, true);
 			} else {
-				exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
+				exports.chat.addSystemMessage('DataChannel is not created. Please, see log.');
 			}
 		},
 
@@ -169,7 +171,7 @@
 			//todo: need to fix chat scrolling behaviour
 			$chat
 				.append($('#chat-message-tmpl').tmpl(messageData))
-				.scrollTop($chat.children(':last-child').position().top);
+				.scrollTop($chat.children().last().position().top + $chat.children().last().height());
 		},
 
 		addSystemMessage: function (message) {
@@ -189,6 +191,7 @@
 
 		contactsList: {
 			addParticipant: function (participant) {
+				//todo: sort participants
 				$('#contacts').append($('#contact-info-tmpl').tmpl(participant));
 			},
 
@@ -205,6 +208,14 @@
 							room: userData.room
 						}
 					};
+				
+				contacts.sort(function(a, b) {
+					if (a.name < b.name)
+						return -1;
+					if (a.name > b.name)
+						return 1;
+					return 0;
+				});
 
 				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
 
@@ -212,7 +223,7 @@
 					this.addParticipant(contacts[index]);
 				}
 
-				$('#contacts').removeClass().addClass(exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready');
+				this.updateState();
 			},
 
 			convertContacts: function (data) {
@@ -228,6 +239,28 @@
 				}
 
 				return contacts;
+			},
+			
+			updateState: function(state) {
+				state = state || exports.chat._connection.getState();
+				
+				var states = {
+					'notinitialized': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
+					'new': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
+					'opening': 'connecting',
+					'active': 'connected',
+					'closing': 'disconnecting',
+					'closed': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready'
+				};
+
+				var cssClass = states[state];
+				$('#contacts').removeClass().addClass(cssClass);
+
+				if ((cssClass === 'ready') || (cssClass === 'not-ready')) {
+					$('#contacts .contact').removeClass('current');
+				} else {
+					$('#contacts .contact').filter('[data-name="' + exports.chat._connection._remoteParticipant + '"]').addClass('current');
+				}
 			}
 		},
 
@@ -294,17 +327,10 @@ $(document).ready(function () {
 	};
 
 	chat.init();
+	wsTest.init();
 
 	var username = getParams().name;
 	if (username) {
 		$('#join-form').find(':text[name="name"]').val(username).end().trigger('submit');
 	}
-
-	/*chat.contactsList.refreshParticipants([
-		{ name: 'Alex', isMe: true },
-		{ name: 'Alex2', isMe: false },
-		{ name: 'Alex3', isMe: false },
-		{ name: 'Alex4', isMe: false },
-		{ name: 'Alex5', isMe: false }
-	]);*/
 });

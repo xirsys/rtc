@@ -29,13 +29,6 @@
 				self._logger.debug('HandshakeController.message', data);
 				self.trigger(events.message, msg);
 
-				//todo: remove it
-				if (msg.data === 'null') {
-					self._logger.error('HandshakeController.message', '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-					return;
-				}
-				//todo: remove it
-
 				var message = self._parseMessage(msg);
 				self._logger.info('HandshakeController.message', msg, message);
 				if (message) {
@@ -57,7 +50,6 @@
 		},
 
 		disconnect: function () {
-			// todo: check
 			this._socket.close();
 			this._socket = null;
 		},
@@ -91,6 +83,7 @@
 						this._logger.debug('HandshakeController._parseMessage', msg.data);
 						result = JSON.parse(json.Message);
 						result.data.senderId = json.UserId;
+						result.data.receiverId = json.TargetUserId;
 						break;
 				}
 			}
@@ -108,7 +101,7 @@
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveIce,
 				targetUserId: targetUserId.toString(),
-				data: { receiverId: targetUserId.toString(), iceCandidate: iceCandidate }
+				data: { iceCandidate: iceCandidate }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendIce);
@@ -118,7 +111,7 @@
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveOffer,
 				targetUserId: targetUserId.toString(),
-				data: { receiverId: targetUserId.toString(), sdp: offer }
+				data: { sdp: offer }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendOffer);
@@ -128,7 +121,7 @@
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveAnswer,
 				targetUserId: targetUserId.toString(),
-				data: { receiverId: targetUserId.toString(), sdp: answer }
+				data: { sdp: answer }
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
@@ -137,8 +130,7 @@
 		sendBye: function (targetUserId) {
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveBye,
-				targetUserId: targetUserId.toString(),
-				data: { receiverId: targetUserId.toString() }
+				targetUserId: targetUserId.toString()
 			};
 
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
@@ -165,9 +157,8 @@
 			connectionClose: 'connectionclose',
 			connectionError: 'connectionerror',
 
-			messageFormatError: 'messageFormatError',
-
 			message: 'message',
+			messageFormatError: 'messageformaterror',
 
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
@@ -187,9 +178,9 @@
 		},
 
 		eventsMapping: {
-			'peers': 'participantsUpdated',
-			'peer_connected': 'participantConnected',
-			'peer_removed': 'participantDisconnected',
+			peers: 'participantsUpdated',
+			peer_connected: 'participantConnected',
+			peer_removed: 'participantDisconnected',
 
 			receiveice: 'receiveIce',
 			receiveoffer: 'receiveOffer',

@@ -139,6 +139,10 @@ table.form .button-block {
 	display: inline-block;
 }
 
+#contacts.disconnecting .contact.current .buttons .disconnecting {
+	display: inline;
+}
+
 /* Chat */
 #chat {
 	border: 1px solid #000;

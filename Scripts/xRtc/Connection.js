@@ -28,93 +28,100 @@
 			self._userData = userData;
 			self._localStreams = [];
 
-			handshakeController.on(xrtc.HandshakeController.events.receiveIce, function (response) {
-				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
-					return;
-				}
+			handshakeController
+				.on(xrtc.HandshakeController.events.receiveIce, function(response) {
+					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
+						return;
+					}
 
-				self._logger.debug('Connection.receiveIce', response);
+					self._logger.debug('Connection.receiveIce', response);
 
-				var iceCandidate = new RTCIceCandidate(JSON.parse((response.iceCandidate)));
-				self._peerConnection.addIceCandidate(iceCandidate);
+					var iceCandidate = new RTCIceCandidate(JSON.parse((response.iceCandidate)));
+					self._peerConnection.addIceCandidate(iceCandidate);
 
-				self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
-			});
-			handshakeController.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
-				if (response.receiverId != self._userData.name) {
-					return;
-				}
+					self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
+				})
+				.on(xrtc.HandshakeController.events.receiveOffer, function(response) {
+					if (response.receiverId != self._userData.name) {
+						return;
+					}
 
-				self._initPeerConnection(response.senderId, function (peerConnection) {
-					self._logger.debug('Connection.receiveOffer', response);
+					if (self.getState() === 'active') {
+						//todo: perhaps in next version this event will be replaced by another
+						//todo: or logic of using one Connection will be removed
+						self._handshakeController.sendBye(response.senderId);
+						return;
+					}
+
+					self._initPeerConnection(response.senderId, function(peerConnection) {
+						self._logger.debug('Connection.receiveOffer', response);
+						var sdp = JSON.parse(response.sdp);
+
+						var sessionDescription = new RTCSessionDescription(sdp);
+						peerConnection.setRemoteDescription(sessionDescription);
+
+						peerConnection.createAnswer(
+							function(answer) {
+								peerConnection.setLocalDescription(answer);
+								self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
+
+								self._logger.debug('Connection.sendAnswer', response, answer);
+								self.trigger(xrtc.Connection.events.answerSent, response, answer);
+
+								/***********************************************/
+								// todo: in next version it should be wrapped
+								var stream = self._peerConnection.remoteStreams[0],
+									data = {
+										stream: stream,
+										url: URL.createObjectURL(stream),
+										isLocal: false,
+										participantId: self._remoteParticipant
+									};
+
+								self.trigger(xrtc.Connection.events.streamAdded, data);
+								/***********************************************/
+							},
+							function(error) {
+								var data = { error: error };
+								self._logger.error('Connection.sendAnswer', data);
+								self.trigger(xrtc.Connection.events.answerError, data);
+							},
+							xrtc.Connection.settings.answerOptions);
+					});
+				})
+				.on(xrtc.HandshakeController.events.receiveAnswer, function(response) {
+					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
+						return;
+					}
+
+					self._logger.debug('Connection.receiveAnswer', response);
 					var sdp = JSON.parse(response.sdp);
 
 					var sessionDescription = new RTCSessionDescription(sdp);
+					self._peerConnection.setRemoteDescription(sessionDescription);
+					self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
 
-					peerConnection.setRemoteDescription(sessionDescription);
 
-					peerConnection.createAnswer(
-						function (answer) {
-							peerConnection.setLocalDescription(answer);
-							self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
+					/***********************************************/
+					// todo: in next version it should be wrapped
+					var stream = self._peerConnection.remoteStreams[0],
+						data = {
+							stream: stream,
+							url: URL.createObjectURL(stream),
+							isLocal: false,
+							participantId: self._remoteParticipant
+						};
 
-							self._logger.debug('Connection.sendAnswer', response, answer);
-							self.trigger(xrtc.Connection.events.answerSent, response, answer);
+					self.trigger(xrtc.Connection.events.streamAdded, data);
+					/***********************************************/
+				})
+				.on(xrtc.HandshakeController.events.receiveBye, function(response) {
+					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
+						return;
+					}
 
-							/***********************************************/
-							// todo: check and refactor
-							var stream = self._peerConnection.remoteStreams[0],
-								data = {
-									stream: stream,
-									url: URL.createObjectURL(stream),
-									isLocal: false,
-									participantId: self._remoteParticipant
-								};
-
-							self.trigger(xrtc.Connection.events.streamAdded, data);
-							/***********************************************/
-						},
-						function (error) {
-							var data = { error: error };
-							self._logger.error('Connection.sendAnswer', data);
-							self.trigger(xrtc.Connection.events.answerError, data);
-						},
-						xrtc.Connection.settings.answerOptions);
+					self._close();
 				});
-			});
-			handshakeController.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
-				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
-					return;
-				}
-
-				self._logger.debug('Connection.receiveAnswer', response);
-				var sdp = JSON.parse(response.sdp);
-
-				var sessionDescription = new RTCSessionDescription(sdp);
-				self._peerConnection.setRemoteDescription(sessionDescription);
-				self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
-
-
-				/***********************************************/
-				// todo: think to refactor this
-				var stream = self._peerConnection.remoteStreams[0],
-					data = {
-						stream: stream,
-						url: URL.createObjectURL(stream),
-						isLocal: false,
-						participantId: self._remoteParticipant
-					};
-
-				self.trigger(xrtc.Connection.events.streamAdded, data);
-				/***********************************************/
-			});
-			handshakeController.on(xrtc.HandshakeController.events.receiveBye, function (response) {
-				if (self._remoteParticipant != response.senderId || !self._peerConnection) {
-					return;
-				}
-
-				self._close();
-			});
 		},
 
 		connect: function () {
@@ -196,19 +203,24 @@
 		},
 
 		createDataChannel: function (name) {
-			// todo: check negative flows
 			var dataChannel = null;
 
 			try {
 				dataChannel = new xrtc.DataChannel(this._peerConnection.createDataChannel(name, { reliable: false }), this._userData.name);
 			} catch (ex) {
-				var error = {
-					exception: ex
-				};
+				var error = { error: ex };
 				this.trigger(xrtc.Connection.events.dataChannelCreationError, error);
 			}
 
 			return dataChannel;
+		},
+
+		getState: function () {
+			if (!this._peerConnection) {
+				return 'notinitialized';
+			}
+
+			return this._peerConnection.readyState;
 		},
 
 		_close: function () {
@@ -233,10 +245,10 @@
 				xrtc.Ajax.methods.POST,
 				'data=' + JSON.stringify(this._getTokenRequestParams()),
 				function (response) {
-					//todo: remove try/catch. say Lee to fix empty response
 					try {
+						response = JSON.parse(response);
 						self._logger.debug('Connection._getToken', response);
-
+						
 						if (!!response && !!response.E && response.E != '') {
 							var errorData = { method: 'getToken', error: response.E };
 							self._logger.error('Connection._getToken', errorData);
@@ -253,7 +265,6 @@
 					} catch (e) {
 						self._getToken(callback);
 					}
-					//todo: remove try/catch
 				}
 			);
 		},
@@ -286,8 +297,8 @@
 					xrtc.Ajax.methods.POST,
 					'token=' + token,
 					function (response) {
-						//todo: remove try/catch. say Lee to fix empty response
 						try {
+							response = JSON.parse(response);
 							self._logger.debug('Connection._getIceServers', response);
 
 							if (!!response && !!response.E && response.E != '') {
@@ -330,7 +341,6 @@
 				this._getIceServers(function (iceServers) {
 					self._peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
 					self._logger.info('Connection._initPeerConnection', 'PeerConnection created.');
-					self.trigger(xrtc.Connection.events.peerConnectionCreation);
 
 					self._peerConnection.onicecandidate = function (evt) {
 						if (!!evt.candidate) {
@@ -339,24 +349,17 @@
 						}
 					};
 
-					//self._peerConnection.onstatechange = function (evt) {
-					//self._peerConnection.readyState
-
-					//"new"
-					//"opening"
-					//"active"
-
-
-					//self._peerConnection.iceState //"starting"
-					//self._peerConnection.iceGatheringState //"new"
-					//};
-
-					self._peerConnection.onopen = function () {
+					self._peerConnection.onstatechange = function (e) {
+						self.trigger(xrtc.Connection.events.stateChaged, self.getState());
+					};
+					
+					self._peerConnection.onnegotiationneeded = function (e) {
+						self.trigger(xrtc.Connection.events.negotiationNeeded);
+					};
+					
+					self._peerConnection.onopen = function (e) {
 						self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
 					};
-
-					//self._peerConnection.onnegotiationneeded = function (evt) {
-					//};
 
 					for (var i = 0, len = self._localStreams.length; i < len; i++) {
 						this._peerConnection.addStream(self._localStreams[i]);
@@ -410,7 +413,8 @@
 			connectionEstablished: 'connectionestablished',
 			connectionClosed: 'connectionclosed',
 
-			peerConnectionCreation: 'peerconnectioncreation'
+			negotiationNeeded: 'negotiationeeded',
+			stateChaged: 'statechanged'
 		},
 
 		settings: {

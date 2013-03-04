@@ -29,7 +29,6 @@
 		},
 
 		request: function (url, httpMethod, params, callback) {
-			var self = true;
 			if (!this._xmlhttp) {
 				return;
 			}
@@ -50,44 +49,20 @@
 				}
 
 				xmlhttp.onreadystatechange = function () {
-					try {
-						if (xmlhttp.readyState == 4 && !fin) {
-							fin = true;
-							if (typeof (callback) === 'function') {
-								callback(JSON.parse(xmlhttp.responseText));
-							}
+					if (xmlhttp.readyState == 4 && !fin) {
+						fin = true;
+						if (typeof (callback) === 'function') {
+							callback(xmlhttp.responseText);
 						}
-					} catch (e) {
-						console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!ERORRRRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!', e);
-						self._logger.error('Ajax.request.onreadystatechange', e);
 					}
-				};
-				xmlhttp.onerror = function (error) {
-					console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!ERORRRRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!', Array.prototype.slice.call(arguments));
-					console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!DETAILLLLLLLLLSSSSSSSSSSSSSSS!!!!!!!', xmlhttp);
 				};
 
 				xmlhttp.send(params);
 			} catch (ex) {
 				console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!ERORRRRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!', ex);
 				this._logger.error('Ajax.request', ex);
+				throw ex;
 			}
-
-
-			/*$.ajax({
-				method: httpMethod,
-				url: url,
-				data: params,
-				success: function (data) {
-					if (typeof (callback) === 'function') {
-						callback(data);
-					}
-				},
-				error: function (data) {
-					console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!ERORRRRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!', Array.prototype.slice.call(arguments));
-					console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!DETAILLLLLLLLLSSSSSSSSSSSSSSS!!!!!!!', data);
-				}
-			});*/
 		}
 	});
 
