@@ -115,7 +115,7 @@
 						exports.chat.contactsList.updateState();
 					}
 				})
-				.on(xrtc.Connection.events.negotiationNeeded, function() {
+				.on(xrtc.Connection.events.initialized, function () {
 					exports.chat._textChannel = connection.createDataChannel('textChat');
 					
 					if (exports.chat._textChannel) {

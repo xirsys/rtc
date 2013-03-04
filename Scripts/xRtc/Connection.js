@@ -353,10 +353,6 @@
 						self.trigger(xrtc.Connection.events.stateChaged, self.getState());
 					};
 					
-					self._peerConnection.onnegotiationneeded = function (e) {
-						self.trigger(xrtc.Connection.events.negotiationNeeded);
-					};
-					
 					self._peerConnection.onopen = function (e) {
 						self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
 					};
@@ -364,6 +360,9 @@
 					for (var i = 0, len = self._localStreams.length; i < len; i++) {
 						this._peerConnection.addStream(self._localStreams[i]);
 					}
+
+
+					self.trigger(xrtc.Connection.events.initialized);
 
 					callCallback();
 				});
@@ -413,7 +412,7 @@
 			connectionEstablished: 'connectionestablished',
 			connectionClosed: 'connectionclosed',
 
-			negotiationNeeded: 'negotiationeeded',
+			initialized: 'initialized',
 			stateChaged: 'statechanged'
 		},
 
