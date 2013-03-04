@@ -327,7 +327,7 @@ $(document).ready(function () {
 	};
 
 	chat.init();
-	wsTest.init();
+	//wsTest.init();
 
 	var username = getParams().name;
 	if (username) {
