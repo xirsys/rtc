@@ -140,7 +140,7 @@
 					exports.chat.removeParticipant(participantId);
 					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				})
-				.on(xrtc.Connection.events.stateChaged, function (state) {
+				.on(xrtc.Connection.events.stateChanged, function (state) {
 					exports.chat.contactsList.updateState(state);
 				});
 

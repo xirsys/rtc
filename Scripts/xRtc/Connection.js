@@ -361,7 +361,7 @@
 					};
 
 					self._peerConnection.onstatechange = function (e) {
-						self.trigger(xrtc.Connection.events.stateChaged, self.getState());
+						self.trigger(xrtc.Connection.events.stateChanged, self.getState());
 					};
 					
 					self._peerConnection.onopen = function (e) {
@@ -424,7 +424,7 @@
 			connectionClosed: 'connectionclosed',
 
 			initialized: 'initialized',
-			stateChaged: 'statechanged'
+			stateChanged: 'statechanged'
 		},
 
 		settings: {
