@@ -7,21 +7,15 @@
 		RTCIceCandidate = exports.RTCIceCandidate,
 		RTCSessionDescription = exports.RTCSessionDescription;
 
-	// todo: move to another place
-	function extend(destinationObj, sourceObj) {
-		for (var i in sourceObj) {
-			destinationObj[i] = sourceObj[i];
-		}
-	}
-
 	var xrtc = exports.xRtc;
-	xrtc.Connection = new xrtc.Class('Connection');
+	xrtc.Connection = xrtc.Class('Connection');
 
 	xrtc.Connection.include(xrtc.EventDispatcher);
+	xrtc.Connection.include(xrtc.Ajax);
 	xrtc.Connection.include({
 		init: function (userData, handshakeController) {
 			var self = this;
-			self._logger = new xrtc.Logger();
+			self._logger = new xrtc.Logger(this.className);
 			self._peerConnection = null;
 			self._remoteParticipant = null;
 			self._handshakeController = handshakeController;
@@ -34,7 +28,7 @@
 						return;
 					}
 
-					self._logger.debug('Connection.receiveIce', response);
+					self._logger.debug('receiveIce', response);
 
 					var iceCandidate = new RTCIceCandidate(JSON.parse((response.iceCandidate)));
 					self._peerConnection.addIceCandidate(iceCandidate);
@@ -54,7 +48,7 @@
 					}
 
 					self._initPeerConnection(response.senderId, function(peerConnection) {
-						self._logger.debug('Connection.receiveOffer', response);
+						self._logger.debug('receiveOffer', response);
 						var sdp = JSON.parse(response.sdp);
 
 						var sessionDescription = new RTCSessionDescription(sdp);
@@ -65,7 +59,7 @@
 								peerConnection.setLocalDescription(answer);
 								self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
 
-								self._logger.debug('Connection.sendAnswer', response, answer);
+								self._logger.debug('sendAnswer', response, answer);
 								self.trigger(xrtc.Connection.events.answerSent, response, answer);
 
 								/***********************************************/
@@ -83,7 +77,7 @@
 							},
 							function(error) {
 								var data = { error: error };
-								self._logger.error('Connection.sendAnswer', data);
+								self._logger.error('sendAnswer', data);
 								self.trigger(xrtc.Connection.events.answerError, data);
 							},
 							xrtc.Connection.settings.answerOptions);
@@ -94,7 +88,7 @@
 						return;
 					}
 
-					self._logger.debug('Connection.receiveAnswer', response);
+					self._logger.debug('receiveAnswer', response);
 					var sdp = JSON.parse(response.sdp);
 
 					var sessionDescription = new RTCSessionDescription(sdp);
@@ -146,21 +140,20 @@
 
 			var self = this, opts = {};
 
-			extend(opts, xrtc.Connection.settings.offerOptions);
-			extend(opts, options || {});
+			xrtc.Class.extend(opts, xrtc.Connection.settings.offerOptions, options || {});
 
 			this._initPeerConnection(participantId, function (peerConnection) {
 				peerConnection.createOffer(
 					function (offer) {
 						peerConnection.setLocalDescription(offer);
-						self._logger.debug('Connection.sendOffer', self._remoteParticipant, offer);
+						self._logger.debug('sendOffer', self._remoteParticipant, offer);
 						self._handshakeController.sendOffer(self._remoteParticipant, JSON.stringify(offer));
 
 						self.trigger(xrtc.Connection.events.offerSent, self._remoteParticipant, offer);
 					},
 					function (error) {
 						var data = { error: error };
-						self._logger.error('Connection.sendOffer', data);
+						self._logger.error('sendOffer', data);
 						self.trigger(xrtc.Connection.events.offerError, data);
 					},
 					opts
@@ -182,8 +175,7 @@
 		addMedia: function (options) {
 			var self = this, opts = {};
 
-			extend(opts, xrtc.Connection.settings.mediaOptions);
-			extend(opts, options || {});
+			xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
 
 			getUserMedia.call(navigator, opts,
 				function (stream) {
@@ -196,7 +188,7 @@
 
 					self._localStreams.push(stream);
 
-					self._logger.debug('Connection.addMedia', data);
+					self._logger.debug('addMedia', data);
 					self.trigger(xrtc.Connection.events.streamAdded, data);
 				},
 				function (error) {
@@ -204,7 +196,7 @@
 						error: error
 					};
 
-					self._logger.error('Connection.addMedia', data);
+					self._logger.error('addMedia', data);
 					self.trigger(xrtc.Connection.events.streamError, data);
 				});
 		},
@@ -248,27 +240,26 @@
 		},
 
 		_getToken: function (callback) {
-			var self = this,
-				ajax = new xrtc.Ajax();
+			var self = this;
 
-			ajax.request(
+			this.ajax(
 				xrtc.Connection.settings.URL + 'getToken',
-				xrtc.Ajax.methods.POST,
+				'POST',
 				'data=' + JSON.stringify(this._getTokenRequestParams()),
 				function (response) {
 					try {
 						response = JSON.parse(response);
-						self._logger.debug('Connection._getToken', response);
+						self._logger.debug('_getToken', response);
 						
 						if (!!response && !!response.E && response.E != '') {
 							var errorData = { method: 'getToken', error: response.E };
-							self._logger.error('Connection._getToken', errorData);
+							self._logger.error('_getToken', errorData);
 							self.trigger(xrtc.Connection.events.serverError, errorData);
 							return;
 						}
 
 						var token = response.D.token;
-						self._logger.info('Connection._getToken', token);
+						self._logger.info('_getToken', token);
 
 						if (typeof (callback) == 'function') {
 							callback.call(self, token);
@@ -300,27 +291,26 @@
 					callback.call(this, this._iceServers);
 				}
 			} else {
-				var self = this,
-					ajax = new xrtc.Ajax();
+				var self = this;
 
-				ajax.request(
+				this.ajax(
 					xrtc.Connection.settings.URL + 'getIceServers',
-					xrtc.Ajax.methods.POST,
+					'POST',
 					'token=' + token,
 					function (response) {
 						try {
 							response = JSON.parse(response);
-							self._logger.debug('Connection._getIceServers', response);
+							self._logger.debug('_getIceServers', response);
 
 							if (!!response && !!response.E && response.E != '') {
 								var errorData = { method: 'getIceServers', error: response.E };
-								self._logger.error('Connection._getIceServers', errorData);
+								self._logger.error('_getIceServers', errorData);
 								self.trigger(xrtc.Connection.events.serverError, errorData);
 								return;
 							}
 
 							var iceServers = JSON.parse(response.D);
-							self._logger.info('Connection._getIceServers', iceServers);
+							self._logger.info('_getIceServers', iceServers);
 
 							if (typeof (callback) == 'function') {
 								callback.call(self, iceServers);
@@ -351,7 +341,7 @@
 			if (!this._peerConnection) {
 				this._getIceServers(function (iceServers) {
 					self._peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
-					self._logger.info('Connection._initPeerConnection', 'PeerConnection created.');
+					self._logger.info('_initPeerConnection', 'PeerConnection created.');
 
 					self._peerConnection.onicecandidate = function (evt) {
 						if (!!evt.candidate) {
@@ -395,7 +385,7 @@
 					Ident: userData.name
 				};
 
-			this._logger.info('Connection._getTokenRequestParams', result);
+			this._logger.info('_getTokenRequestParams', result);
 
 			return result;
 		}

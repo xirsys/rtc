@@ -2,18 +2,19 @@
 
 (function (exports) {
 	var xrtc = exports.xRtc;
-	xrtc.HandshakeController = new xrtc.Class('HandshakeController');
+	xrtc.HandshakeController = xrtc.Class('HandshakeController');
 
 	xrtc.HandshakeController.include(xrtc.EventDispatcher);
 	xrtc.HandshakeController.include({
 		init: function () {
-			this._logger = new xrtc.Logger();
+			this._logger = new xrtc.Logger(this.className);
 			this._socket = null;
 		},
 
-		/// <summary>Connects with server</summary>
-		/// <param name="token" type="string">Is used like unique name of user</param>
 		connect: function (token) {
+			/// <summary>Connects with server</summary>
+			/// <param name="token" type="string">Is used like unique name of user</param>
+			
 			var self = this,
 				events = xrtc.HandshakeController.events,
 				url = xrtc.HandshakeController.settings.URL + escape(token);
@@ -22,17 +23,17 @@
 
 			self._socket.onopen = function (evt) {
 				var data = { event: evt };
-				self._logger.debug('HandshakeController.open', data);
+				self._logger.debug('open', data);
 				self.trigger(events.connectionOpen, data);
 			};
 
 			self._socket.onmessage = function (msg) {
 				var data = { event: msg };
-				self._logger.debug('HandshakeController.message', data);
+				self._logger.debug('message', data);
 				self.trigger(events.message, msg);
 
 				var message = self._parseMessage(msg);
-				self._logger.info('HandshakeController.message', msg, message);
+				self._logger.info('message', msg, message);
 				if (message) {
 					self.trigger(message.eventName, message.data);
 				}
@@ -40,19 +41,20 @@
 
 			self._socket.onclose = function (evt) {
 				var data = { event: evt };
-				self._logger.debug('HandshakeController.close', data);
+				self._logger.debug('close', data);
 				self.trigger(events.connectionClose, data);
 			};
 
 			self._socket.onerror = function (evt) {
 				var data = { event: evt };
-				self._logger.error('HandshakeController.error', data);
+				self._logger.error('error', data);
 				self.trigger(events.connectionError, data);
 			};
 		},
 
-		/// <summary>Disconnects from server</summary>
 		disconnect: function () {
+			/// <summary>Disconnects from server</summary>
+			
 			this._socket.close();
 			this._socket = null;
 		},
@@ -83,7 +85,7 @@
 						};
 						break;
 					default:
-						this._logger.debug('HandshakeController._parseMessage', msg.data);
+						this._logger.debug('_parseMessage', msg.data);
 						result = JSON.parse(json.Message);
 						result.data.senderId = json.UserId;
 						result.data.receiverId = json.TargetUserId;
@@ -91,7 +93,8 @@
 				}
 			}
 			catch (e) {
-				this._logger.error('Message format error.', e, msg);
+				//todo: make generic error
+				this._logger.error('_parseMessage', 'Message format error.', e, msg);
 				self.trigger(events.messageFormatError, msg);
 			}
 
@@ -100,10 +103,11 @@
 				: null;
 		},
 
-		/// <summary>Sends ICE servers to remote user</summary>
-		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
-		/// <param name="iceCandidate" type="object">WebRTC internal object. Will be converted to JSON</param>
 		sendIce: function (targetUserId, iceCandidate) {
+			/// <summary>Sends ICE servers to remote user</summary>
+			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+			/// <param name="iceCandidate" type="object">WebRTC internal object. Will be converted to JSON</param>
+			
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveIce,
 				targetUserId: targetUserId.toString(),
@@ -113,10 +117,11 @@
 			this._send(data, xrtc.HandshakeController.events.sendIce);
 		},
 
-		/// <summary>Sends offer to remote user</summary>
-		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
-		/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
 		sendOffer: function (targetUserId, offer) {
+			/// <summary>Sends offer to remote user</summary>
+			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+			/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
+			
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveOffer,
 				targetUserId: targetUserId.toString(),
@@ -126,10 +131,11 @@
 			this._send(data, xrtc.HandshakeController.events.sendOffer);
 		},
 
-		/// <summary>Sends answer to remote user</summary>
-		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
-		/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
 		sendAnswer: function (targetUserId, answer) {
+			/// <summary>Sends answer to remote user</summary>
+			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+			/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
+			
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveAnswer,
 				targetUserId: targetUserId.toString(),
@@ -139,9 +145,10 @@
 			this._send(data, xrtc.HandshakeController.events.sendAnswer);
 		},
 
-		/// <summary>Sends disconnection message to remote user</summary>
-		/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 		sendBye: function (targetUserId) {
+			/// <summary>Sends disconnection message to remote user</summary>
+			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+			
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveBye,
 				targetUserId: targetUserId.toString()
@@ -152,14 +159,14 @@
 
 		_send: function (data, event) {
 			if (!this._socket) {
-				this._logger.error('HandshakeController.' + event, 'Trying to call method without established connection');
+				this._logger.error(event, 'Trying to call method without established connection');
 				throw {
 					error: 'WebSocket is not connected!'
 				};
 			}
 
 			var request = JSON.stringify(data);
-			this._logger.debug('HandshakeController.' + event, data, request);
+			this._logger.debug('' + event, data, request);
 			this.trigger(event, data);
 			this._socket.send(request);
 		}

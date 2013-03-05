@@ -3,73 +3,69 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Ajax = xrtc.Class('Ajax');
-
-	xrtc.Ajax.include({
-		init: function () {
-			this._logger = new xrtc.Logger();
-
+	xrtc.Ajax = {
+		ajax: function(url, httpMethod, params, callback) {
 			var xmlhttp;
 			try {
 				xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
-			} catch (e) {
+			} catch(e) {
 				try {
 					xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
-				} catch (e) {
+				} catch(e) {
 					try {
 						xmlhttp = new XMLHttpRequest();
-					} catch (e) {
-						xmlhttp = false;
-						this._logger.debug('XMLHttpRequest is not supported');
+					} catch(e) {
+						if (this._logger) {
+							this._logger.error('XMLHttpRequest is not supported');
+						}
+						return;
 					}
 				}
 			}
-
-			this._xmlhttp = xmlhttp;
-		},
-
-		request: function (url, httpMethod, params, callback) {
-			if (!this._xmlhttp) {
-				return;
+			
+			if (this._logger) {
+				this._logger.debug('ajax', url, params);
 			}
-			this._logger.debug('Ajax.request', url, params);
 
-			var xmlhttp = this._xmlhttp;
 			httpMethod = httpMethod.toUpperCase();
 
 			try {
 				var fin = false;
-				if (httpMethod === xrtc.Ajax.methods.GET) {
+				if (httpMethod === xrtc.Ajax.ajax.methods.GET) {
 					xmlhttp.open(httpMethod, url + '?' + params, true);
 					params = '';
 				} else {
 					xmlhttp.open(httpMethod, url, true);
-					xmlhttp.setRequestHeader('method', 'POST ' + url + ' HTTP/1.1');
+					xmlhttp.setRequestHeader('method', httpMethod + ' ' + url + ' HTTP/1.1');
 					xmlhttp.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
 				}
 
-				xmlhttp.onreadystatechange = function () {
+				xmlhttp.onreadystatechange = function() {
 					if (xmlhttp.readyState == 4 && !fin) {
 						fin = true;
-						if (typeof (callback) === 'function') {
+
+						if (this._logger) {
+							this._logger.debug('ajax', xmlhttp);
+						}
+
+						if (typeof(callback) === 'function') {
 							callback(xmlhttp.responseText);
 						}
 					}
 				};
 
 				xmlhttp.send(params);
-			} catch (ex) {
-				console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!ERORRRRRRRRRRRRRRRRRRRRRRRRRR!!!!!!!', ex);
-				this._logger.error('Ajax.request', ex);
+			} catch(ex) {
+				if (this._logger) {
+					this._logger.error('ajax', ex);
+				}
 				throw ex;
 			}
 		}
-	});
+	};
 
-	xrtc.Ajax.extend({
-		methods: {
-			GET: 'GET',
-			POST: 'POST'
-		}
-	});
+	xrtc.Ajax.ajax.methods = {
+		GET: 'GET',
+		POST: 'POST'
+	};
 })(window);

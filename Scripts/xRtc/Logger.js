@@ -2,23 +2,43 @@
 
 (function (exports) {
 	var xrtc = exports.xRtc;
-	xrtc.Logger = new xrtc.Class('Logger');
+	xrtc.Logger = xrtc.Class('Logger');
 
 	xrtc.Logger.include({
-		info: function () {
-			console.info('Info: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+		init: function(className) {
+			this.baseClassName = className;
 		},
 
-		debug: function () {
-			console.debug('Debug: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+		info: function (method) {
+			if (typeof method === "string") {
+				console.info('Info:\t\t', this.baseClassName + '.' + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+			} else {
+				console.info('Info:\t\t', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+			}
 		},
 
-		warning: function () {
-			console.warn('Warning: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+		debug: function (method) {
+			if (typeof method === "string") {
+				console.debug('Debug:\t\t', this.baseClassName + '.' + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+			} else {
+				console.debug('Debug:\t\t', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+			}
 		},
 
-		error: function () {
-			console.error('Error: ', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+		warning: function (method) {
+			if (typeof method === "string") {
+				console.warn('Warning:\t', this.baseClassName + '.' + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+			} else {
+				console.warn('Warning:\t', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+			}
+		},
+
+		error: function (method) {
+			if (typeof method === "string") {
+				console.error('Error:\t\t', this.baseClassName + '.' + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+			} else {
+				console.error('Error:\t\t', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+			}
 		}
 	});
 
