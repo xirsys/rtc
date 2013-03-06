@@ -327,6 +327,8 @@ $(document).ready(function () {
 		return formData;
 	};
 
+	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true });
+
 	chat.init();
 	//wsTest.init();
 
