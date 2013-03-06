@@ -5,51 +5,55 @@
 	xrtc.HandshakeController = xrtc.Class('HandshakeController');
 
 	xrtc.HandshakeController.include(xrtc.EventDispatcher);
+	xrtc.HandshakeController.include(xrtc.Ajax);
 	xrtc.HandshakeController.include({
 		init: function () {
 			this._logger = new xrtc.Logger(this.className);
 			this._socket = null;
 		},
-
+		
 		connect: function (token) {
 			/// <summary>Connects with server</summary>
 			/// <param name="token" type="string">Is used like unique name of user</param>
 			
 			var self = this,
-				events = xrtc.HandshakeController.events,
-				url = xrtc.HandshakeController.settings.URL + escape(token);
+				events = xrtc.HandshakeController.events;
 
-			self._socket = new WebSocket(url);
+			this._getWebSocketURL(function(url) {
+				var wsurl= url + token;
 
-			self._socket.onopen = function (evt) {
-				var data = { event: evt };
-				self._logger.debug('open', data);
-				self.trigger(events.connectionOpen, data);
-			};
+				self._socket = new WebSocket(wsurl);
 
-			self._socket.onmessage = function (msg) {
-				var data = { event: msg };
-				self._logger.debug('message', data);
-				self.trigger(events.message, msg);
+				self._socket.onopen = function (evt) {
+					var data = { event: evt };
+					self._logger.debug('open', data);
+					self.trigger(events.connectionOpen, data);
+				};
 
-				var message = self._parseMessage(msg);
-				self._logger.info('message', msg, message);
-				if (message) {
-					self.trigger(message.eventName, message.data);
-				}
-			};
+				self._socket.onmessage = function (msg) {
+					var data = { event: msg };
+					self._logger.debug('message', data);
+					self.trigger(events.message, msg);
 
-			self._socket.onclose = function (evt) {
-				var data = { event: evt };
-				self._logger.debug('close', data);
-				self.trigger(events.connectionClose, data);
-			};
+					var message = self._parseMessage(msg);
+					self._logger.info('message', msg, message);
+					if (message) {
+						self.trigger(message.eventName, message.data);
+					}
+				};
 
-			self._socket.onerror = function (evt) {
-				var data = { event: evt };
-				self._logger.error('error', data);
-				self.trigger(events.connectionError, data);
-			};
+				self._socket.onclose = function (evt) {
+					var data = { event: evt };
+					self._logger.debug('close', data);
+					self.trigger(events.connectionClose, data);
+				};
+
+				self._socket.onerror = function (evt) {
+					var data = { event: evt };
+					self._logger.error('error', data);
+					self.trigger(events.connectionError, data);
+				};
+			});
 		},
 
 		disconnect: function () {
@@ -58,7 +62,47 @@
 			this._socket.close();
 			this._socket = null;
 		},
+		
+		_getWebSocketURL: function (callback) {
+			var self = this;
+			
+			// todo: remove it
+			if(typeof callback === "function") {
+				callback.call(self, 'ws://turn.influxis.com:8002/ws/');
+				return;
+			}
+			// todo: remove it
 
+			this.ajax(
+				xrtc.HandshakeController.settings.URL,
+				'POST',
+				'',
+				function(response) {
+					try {
+						response = JSON.parse(response);
+						self._logger.debug('_getWebSocketURL', response);
+
+						if (!!response && !!response.E && response.E != '') {
+							var errorData = { method: 'getWebSocketURL', error: response.E };
+							self._logger.error('_getWebSocketURL', errorData);
+							self.trigger(xrtc.Connection.events.serverError, errorData);
+							return;
+						}
+
+						var url = JSON.parse(response.D);
+						self._logger.info('_getWebSocketURL', url);
+
+						if (typeof(callback) == 'function') {
+							callback.call(self, url);
+						}
+
+					} catch(e) {
+						self._getWebSocketURL(callback);
+					}
+				}
+			);
+		},
+		
 		_parseMessage: function (msg) {
 			var json, result;
 			try {
@@ -210,7 +254,7 @@
 		},
 
 		settings: {
-			URL: 'ws://turn.influxis.com:8002/ws/'
+			URL: 'http://turn.influxis.com/ws'
 		}
 	});
 })(window);
