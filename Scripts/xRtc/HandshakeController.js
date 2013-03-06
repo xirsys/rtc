@@ -49,9 +49,9 @@
 				};
 
 				self._socket.onerror = function (evt) {
-					var data = { event: evt };
-					self._logger.error('error', data);
-					self.trigger(events.connectionError, data);
+					var error = new xrtc.CommonError('onerror', 'WebSocket has got an error', evt);
+					self._logger.error('error', error);
+					self.trigger(events.connectionError, error);
 				};
 			});
 		},
@@ -83,9 +83,9 @@
 						self._logger.debug('_getWebSocketURL', response);
 
 						if (!!response && !!response.E && response.E != '') {
-							var errorData = { method: 'getWebSocketURL', error: response.E };
-							self._logger.error('_getWebSocketURL', errorData);
-							self.trigger(xrtc.Connection.events.serverError, errorData);
+							var error = new xrtc.CommonError('getWebSocketURL', 'Error occured while getting the URL of WebSockets', response.E);
+							self._logger.error('_getWebSocketURL', error);
+							self.trigger(xrtc.Connection.events.serverError, error);
 							return;
 						}
 
@@ -137,9 +137,8 @@
 				}
 			}
 			catch (e) {
-				//todo: make generic error
-				this._logger.error('_parseMessage', 'Message format error.', e, msg);
-				self.trigger(events.messageFormatError, msg);
+				var error = new xrtc.CommonError('_parseMessage', 'Message format error', e);
+				this._logger.error('_parseMessage', error, msg);
 			}
 
 			return result
@@ -203,10 +202,9 @@
 
 		_send: function (data, event) {
 			if (!this._socket) {
-				this._logger.error(event, 'Trying to call method without established connection');
-				throw {
-					error: 'WebSocket is not connected!'
-				};
+				var error = new xrtc.CommonError(event, 'Trying to call method without established connection', 'WebSocket is not connected!');
+				this._logger.error(event, error);
+				throw error;
 			}
 
 			var request = JSON.stringify(data);
