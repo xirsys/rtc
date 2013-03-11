@@ -36,9 +36,9 @@
 			};
 			
 			this._channel.onerror = function (evt) {
-				var data = { event: evt };
-				self._logger.debug('error', data);
-				self.trigger(events.error, data);
+				var error = new xrtc.CommonError('onerror', 'Error in DataChannel', evt);
+				self._logger.error('error', error);
+				self.trigger(events.error, error);
 			};
 			
 			this._channel.ondatachannel = function (evt) {

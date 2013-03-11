@@ -1,11 +1,16 @@
 ﻿'use strict';
 
 (function (exports) {
-	var xrtc = exports.xRtc;
+	var xrtc = exports.xRtc,
+		methods = {
+			GET: 'GET',
+			POST: 'POST'
+		};
 
 	xrtc.Ajax = {
 		ajax: function(url, httpMethod, params, callback) {
-			var xmlhttp;
+			var xmlhttp, error;
+			
 			try {
 				xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
 			} catch(e) {
@@ -16,7 +21,8 @@
 						xmlhttp = new XMLHttpRequest();
 					} catch(e) {
 						if (this._logger) {
-							this._logger.error('XMLHttpRequest is not supported');
+							error = new xrtc.CommonError('ajax', 'XMLHttpRequest is not supported');
+							this._logger.error('ajax', error);
 						}
 						return;
 					}
@@ -31,7 +37,7 @@
 
 			try {
 				var fin = false;
-				if (httpMethod === xrtc.Ajax.ajax.methods.GET) {
+				if (httpMethod === methods.GET) {
 					xmlhttp.open(httpMethod, url + '?' + params, true);
 					params = '';
 				} else {
@@ -55,17 +61,19 @@
 				};
 
 				xmlhttp.send(params);
-			} catch(ex) {
+			} catch (ex) {
+				error = new xrtc.CommonError('ajax', 'XMLHttpRequest exception', ex);
+				error.data = {
+					url: url,
+					method: httpMethod,
+					params: params
+				};
+				
 				if (this._logger) {
-					this._logger.error('ajax', ex);
+					this._logger.error('ajax', error);
 				}
-				throw ex;
+				throw error;
 			}
 		}
-	};
-
-	xrtc.Ajax.ajax.methods = {
-		GET: 'GET',
-		POST: 'POST'
 	};
 })(window);

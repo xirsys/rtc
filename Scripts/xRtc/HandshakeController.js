@@ -11,16 +11,16 @@
 			this._logger = new xrtc.Logger(this.className);
 			this._socket = null;
 		},
-		
+
 		connect: function (token) {
 			/// <summary>Connects with server</summary>
 			/// <param name="token" type="string">Is used like unique name of user</param>
-			
+
 			var self = this,
 				events = xrtc.HandshakeController.events;
 
-			this._getWebSocketURL(function(url) {
-				var wsurl= url + token;
+			this._getWebSocketURL(function (url) {
+				var wsurl = url + token;
 
 				self._socket = new WebSocket(wsurl);
 
@@ -58,26 +58,19 @@
 
 		disconnect: function () {
 			/// <summary>Disconnects from server</summary>
-			
+
 			this._socket.close();
 			this._socket = null;
 		},
-		
+
 		_getWebSocketURL: function (callback) {
 			var self = this;
-			
-			// todo: remove it
-			if(typeof callback === "function") {
-				callback.call(self, 'ws://turn.influxis.com:8002/ws/');
-				return;
-			}
-			// todo: remove it
 
 			this.ajax(
 				xrtc.HandshakeController.settings.URL,
 				'POST',
 				'',
-				function(response) {
+				function (response) {
 					try {
 						response = JSON.parse(response);
 						self._logger.debug('_getWebSocketURL', response);
@@ -89,20 +82,25 @@
 							return;
 						}
 
-						var url = JSON.parse(response.D);
+						var url = response.D.value;
+						// Will fix remote url, if it doesn't end with '/' character
+						if (url.lastIndexOf('/') !== (url.length - 1)) {
+							url = url + '/';
+						}
+
 						self._logger.info('_getWebSocketURL', url);
 
-						if (typeof(callback) == 'function') {
+						if (typeof (callback) == 'function') {
 							callback.call(self, url);
 						}
 
-					} catch(e) {
+					} catch (e) {
 						self._getWebSocketURL(callback);
 					}
 				}
 			);
 		},
-		
+
 		_parseMessage: function (msg) {
 			var json, result;
 			try {
@@ -150,7 +148,7 @@
 			/// <summary>Sends ICE servers to remote user</summary>
 			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 			/// <param name="iceCandidate" type="object">WebRTC internal object. Will be converted to JSON</param>
-			
+
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveIce,
 				targetUserId: targetUserId.toString(),
@@ -164,7 +162,7 @@
 			/// <summary>Sends offer to remote user</summary>
 			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 			/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
-			
+
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveOffer,
 				targetUserId: targetUserId.toString(),
@@ -178,7 +176,7 @@
 			/// <summary>Sends answer to remote user</summary>
 			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 			/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
-			
+
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveAnswer,
 				targetUserId: targetUserId.toString(),
@@ -191,7 +189,7 @@
 		sendBye: function (targetUserId) {
 			/// <summary>Sends disconnection message to remote user</summary>
 			/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
-			
+
 			var data = {
 				eventName: xrtc.HandshakeController.events.receiveBye,
 				targetUserId: targetUserId.toString()

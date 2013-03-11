@@ -75,10 +75,10 @@
 								self.trigger(xrtc.Connection.events.streamAdded, data);
 								/***********************************************/
 							},
-							function(error) {
-								var data = { error: error };
-								self._logger.error('sendAnswer', data);
-								self.trigger(xrtc.Connection.events.answerError, data);
+							function (err) {
+								var error = new xrtc.CommonError('sendAnswer', "Can't create WebRTC answer", err);
+								self._logger.error('sendAnswer', error);
+								self.trigger(xrtc.Connection.events.answerError, error);
 							},
 							xrtc.Connection.settings.answerOptions);
 					});
@@ -135,7 +135,7 @@
 		/// <param name="options" type="object">Optional param. Offer options</param>
 		startSession: function (participantId, options) {
 			if (!participantId) {
-				throw { error: 'participantId should be specified.' };
+				throw new xrtc.CommonError('startSession', 'participantId should be specified');
 			}
 
 			var self = this, opts = {};
@@ -151,10 +151,10 @@
 
 						self.trigger(xrtc.Connection.events.offerSent, self._remoteParticipant, offer);
 					},
-					function (error) {
-						var data = { error: error };
-						self._logger.error('sendOffer', data);
-						self.trigger(xrtc.Connection.events.offerError, data);
+					function (err) {
+						var error = new xrtc.CommonError('startSession', "Can't create WebRTC offer", err);
+						self._logger.error('sendOffer', error);
+						self.trigger(xrtc.Connection.events.offerError, error);
 					},
 					opts
 				);
@@ -191,13 +191,11 @@
 					self._logger.debug('addMedia', data);
 					self.trigger(xrtc.Connection.events.streamAdded, data);
 				},
-				function (error) {
-					var data = {
-						error: error
-					};
+				function (err) {
+					var error = new xrtc.CommonError('addMedia', "Can't get UserMedia", err);
 
-					self._logger.error('addMedia', data);
-					self.trigger(xrtc.Connection.events.streamError, data);
+					self._logger.error('addMedia', error);
+					self.trigger(xrtc.Connection.events.streamError, error);
 				});
 		},
 
@@ -209,7 +207,7 @@
 			try {
 				dataChannel = new xrtc.DataChannel(this._peerConnection.createDataChannel(name, { reliable: false }), this._userData.name);
 			} catch (ex) {
-				var error = { error: ex };
+				var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel", ex);
 				this.trigger(xrtc.Connection.events.dataChannelCreationError, error);
 			}
 
@@ -252,9 +250,9 @@
 						self._logger.debug('_getToken', response);
 						
 						if (!!response && !!response.E && response.E != '') {
-							var errorData = { method: 'getToken', error: response.E };
-							self._logger.error('_getToken', errorData);
-							self.trigger(xrtc.Connection.events.serverError, errorData);
+							var error = new xrtc.CommonError('getToken', response.E);
+							self._logger.error('_getToken', error);
+							self.trigger(xrtc.Connection.events.serverError, error);
 							return;
 						}
 
@@ -303,9 +301,9 @@
 							self._logger.debug('_getIceServers', response);
 
 							if (!!response && !!response.E && response.E != '') {
-								var errorData = { method: 'getIceServers', error: response.E };
-								self._logger.error('_getIceServers', errorData);
-								self.trigger(xrtc.Connection.events.serverError, errorData);
+								var error = new xrtc.CommonError('getIceServers', response.E);
+								self._logger.error('_getIceServers', error);
+								self.trigger(xrtc.Connection.events.serverError, error);
 								return;
 							}
 
@@ -333,7 +331,9 @@
 					try {
 						callback(self._peerConnection);
 					} catch (e) {
-						console.error(e);
+						// todo: check or not check?
+						// here is a server problem, sometimes it doesn't work from first time
+						// error can occur 1-4 times in a row
 					}
 				}
 			}
@@ -361,7 +361,6 @@
 					for (var i = 0, len = self._localStreams.length; i < len; i++) {
 						this._peerConnection.addStream(self._localStreams[i]);
 					}
-
 
 					self.trigger(xrtc.Connection.events.initialized);
 
