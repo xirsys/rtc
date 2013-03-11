@@ -20,7 +20,8 @@
 				events = xrtc.HandshakeController.events;
 
 			this._getWebSocketURL(function (url) {
-				var wsurl = url + token;
+				// todo: possible remove "/ws/"
+				var wsurl = url + '/ws/' + token;
 
 				self._socket = new WebSocket(wsurl);
 
@@ -83,10 +84,6 @@
 						}
 
 						var url = response.D.value;
-						// Will fix remote url, if it doesn't end with '/' character
-						if (url.lastIndexOf('/') !== (url.length - 1)) {
-							url = url + '/';
-						}
 
 						self._logger.info('_getWebSocketURL', url);
 
