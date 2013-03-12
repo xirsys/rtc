@@ -328,7 +328,7 @@ var setIceServers = function (params) {
 		}
 
 		if (params.turn) {
-			settings.iceServers.iceServers.push({ url: "turn:" + params.turn, credentials: params.credentials || '' });
+			settings.iceServers.iceServers.push({ url: "turn:" + params.turn, credential: params.credential || '' });
 		}
 	}
 };
