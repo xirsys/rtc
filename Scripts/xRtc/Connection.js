@@ -294,8 +294,9 @@
 				//callback.call(self, { iceServers: [{ url: "stun:stun.l.google.com:19302" }] });
 				//callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });
 				//callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }] });
-				//callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free"}] });
-				callback.call(self, null);
+				//callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free" }] });
+				callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free" }, { url: "stun:stun.l.google.com:19302" }] });
+				//callback.call(self, null);
 				return;
 
 				this.ajax(
