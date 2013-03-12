@@ -316,6 +316,23 @@ function getParams() {
 	return params;
 }
 
+var setIceServers = function (params) {
+	if (params.stun || params.turn) {
+		var settings = xRtc.Connection.settings;
+		settings.iceServers = {
+			iceServers: []
+		};
+
+		if (params.stun) {
+			settings.iceServers.iceServers.push({ url: "stun:" + params.stun });
+		}
+
+		if (params.turn) {
+			settings.iceServers.iceServers.push({ url: "turn:" + params.turn, credentials: params.credentials || '' });
+		}
+	}
+};
+
 $(document).ready(function () {
 	$.fn.serializeObject = function () {
 		var formArray = this.serializeArray(), formData = {};
@@ -332,7 +349,10 @@ $(document).ready(function () {
 	chat.init();
 	//wsTest.init();
 
-	var username = getParams().name;
+	var pageParams = getParams();
+	setIceServers(pageParams);
+
+	var username = pageParams.name;
 	if (username) {
 		$('#join-form').find(':text[name="name"]').val(username).end().trigger('submit');
 	}

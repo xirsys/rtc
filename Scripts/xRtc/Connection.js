@@ -259,7 +259,7 @@
 						var token = response.D.token;
 						self._logger.info('_getToken', token);
 
-						if (typeof (callback) == 'function') {
+						if (typeof (callback) === 'function') {
 							callback.call(self, token);
 						}
 					} catch (e) {
@@ -273,7 +273,7 @@
 			var self = this;
 
 			if (this._iceServers) {
-				if (typeof (callback) == 'function') {
+				if (typeof (callback) === 'function') {
 					callback.call(this, this._iceServers);
 				}
 			} else {
@@ -285,55 +285,49 @@
 
 		_getIceServersByToken: function (token, callback) {
 			if (this._iceServers) {
-				if (typeof (callback) == 'function') {
+				if (typeof (callback) === 'function') {
 					callback.call(this, this._iceServers);
 				}
 			} else {
 				var self = this;
 
-				//callback.call(self, { iceServers: [{ url: "stun:stun.l.google.com:19302" }] });
-				//callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });
-				//callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }] });
-				//callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free" }] });
-				//callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }, { url: "turn:free@turn.influxis.com", credential: "free" }] });
-				//callback.call(self, null);
-				//return;
+				var iceServers = xrtc.Connection.settings.iceServers;
+				if (iceServers && iceServers.iceServers && iceServers.iceServers.length > 0) {
+					self._logger.info('_getIceServers', iceServers);
 
-				this.ajax(
-					xrtc.Connection.settings.URL + 'getIceServers',
-					'POST',
-					'token=' + token,
-					function (response) {
-						try {
-							response = JSON.parse(response);
-							self._logger.debug('_getIceServers', response);
-
-							if (!!response && !!response.E && response.E != '') {
-								var error = new xrtc.CommonError('getIceServers', response.E);
-								self._logger.error('_getIceServers', error);
-								self.trigger(xrtc.Connection.events.serverError, error);
-								return;
-							}
-
-							var iceServers = JSON.parse(response.D);
-							//debugger;
-							// todo: remove it!
-							//iceServers.iceServers = [iceServers.iceServers[0]];
-							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
-							//iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('.com', '.com:3478');
-							// todo: remove it!
-
-							self._logger.info('_getIceServers', iceServers);
-
-							if (typeof (callback) == 'function') {
-								callback.call(self, iceServers);
-							}
-
-						} catch (e) {
-							self._getIceServersByToken(token, callback);
-						}
+					if (typeof(callback) === 'function') {
+						callback.call(self, iceServers);
 					}
-				);
+				} else {
+					this.ajax(
+						xrtc.Connection.settings.URL + 'getIceServers',
+						'POST',
+						'token=' + token,
+						function(response) {
+							try {
+								response = JSON.parse(response);
+								self._logger.debug('_getIceServers', response);
+
+								if (!!response && !!response.E && response.E != '') {
+									var error = new xrtc.CommonError('getIceServers', response.E);
+									self._logger.error('_getIceServers', error);
+									self.trigger(xrtc.Connection.events.serverError, error);
+									return;
+								}
+
+								iceServers = JSON.parse(response.D);
+								self._logger.info('_getIceServers', iceServers);
+
+								if (typeof(callback) === 'function') {
+									callback.call(self, iceServers);
+								}
+
+							} catch(e) {
+								self._getIceServersByToken(token, callback);
+							}
+						}
+					);
+				}
 			}
 		},
 

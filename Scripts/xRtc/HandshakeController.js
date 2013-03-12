@@ -87,7 +87,7 @@
 
 						self._logger.info('_getWebSocketURL', url);
 
-						if (typeof (callback) == 'function') {
+						if (typeof (callback) === 'function') {
 							callback.call(self, url);
 						}
 
