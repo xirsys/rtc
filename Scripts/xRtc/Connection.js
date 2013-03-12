@@ -291,8 +291,8 @@
 			} else {
 				var self = this;
 
-				callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });//{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] })
-				return;
+				//callback.call(self, { iceServers: [{ url: "stun:stun.l.google.com:19302" }] });//{ iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] })
+				//return;
 				
 				this.ajax(
 					xrtc.Connection.settings.URL + 'getIceServers',
@@ -311,6 +311,10 @@
 							}
 
 							var iceServers = JSON.parse(response.D);
+							// todo: remove it!
+							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
+							// todo: remove it!
+
 							self._logger.info('_getIceServers', iceServers);
 
 							if (typeof (callback) == 'function') {
