@@ -23,7 +23,7 @@
 			self._localStreams = [];
 
 			handshakeController
-				.on(xrtc.HandshakeController.events.receiveIce, function(response) {
+				.on(xrtc.HandshakeController.events.receiveIce, function (response) {
 					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 						return;
 					}
@@ -35,7 +35,7 @@
 
 					self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
 				})
-				.on(xrtc.HandshakeController.events.receiveOffer, function(response) {
+				.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
 					if (response.receiverId != self._userData.name) {
 						return;
 					}
@@ -47,7 +47,7 @@
 						return;
 					}
 
-					self._initPeerConnection(response.senderId, function(peerConnection) {
+					self._initPeerConnection(response.senderId, function (peerConnection) {
 						self._logger.debug('receiveOffer', response);
 						var sdp = JSON.parse(response.sdp);
 
@@ -55,7 +55,7 @@
 						peerConnection.setRemoteDescription(sessionDescription);
 
 						peerConnection.createAnswer(
-							function(answer) {
+							function (answer) {
 								peerConnection.setLocalDescription(answer);
 								self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
 
@@ -83,7 +83,7 @@
 							xrtc.Connection.settings.answerOptions);
 					});
 				})
-				.on(xrtc.HandshakeController.events.receiveAnswer, function(response) {
+				.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
 					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 						return;
 					}
@@ -109,7 +109,7 @@
 					self.trigger(xrtc.Connection.events.streamAdded, data);
 					/***********************************************/
 				})
-				.on(xrtc.HandshakeController.events.receiveBye, function(response) {
+				.on(xrtc.HandshakeController.events.receiveBye, function (response) {
 					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 						return;
 					}
@@ -248,7 +248,7 @@
 					try {
 						response = JSON.parse(response);
 						self._logger.debug('_getToken', response);
-						
+
 						if (!!response && !!response.E && response.E != '') {
 							var error = new xrtc.CommonError('getToken', response.E);
 							self._logger.error('_getToken', error);
@@ -292,10 +292,11 @@
 				var self = this;
 
 				//callback.call(self, { iceServers: [{ url: "stun:stun.l.google.com:19302" }] });
-				callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });
+				//callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });
+				callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }] });
 				//callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free"}] });
 				return;
-				
+
 				this.ajax(
 					xrtc.Connection.settings.URL + 'getIceServers',
 					'POST',
@@ -365,7 +366,7 @@
 					self._peerConnection.onstatechange = function (e) {
 						self.trigger(xrtc.Connection.events.stateChanged, self.getState());
 					};
-					
+
 					self._peerConnection.onopen = function (e) {
 						self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
 					};
