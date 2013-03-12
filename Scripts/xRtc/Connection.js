@@ -295,9 +295,9 @@
 				//callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });
 				//callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }] });
 				//callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free" }] });
-				callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }, { url: "turn:free@turn.influxis.com", credential: "free" }] });
+				//callback.call(self, { iceServers: [{ url: "stun:turn.influxis.com" }, { url: "turn:free@turn.influxis.com", credential: "free" }] });
 				//callback.call(self, null);
-				return;
+				//return;
 
 				this.ajax(
 					xrtc.Connection.settings.URL + 'getIceServers',
@@ -316,10 +316,10 @@
 							}
 
 							var iceServers = JSON.parse(response.D);
-							debugger;
+							//debugger;
 							// todo: remove it!
 							//iceServers.iceServers = [iceServers.iceServers[0]];
-							//iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
+							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
 							//iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('.com', '.com:3478');
 							// todo: remove it!
 
