@@ -314,6 +314,7 @@
 							// todo: remove it!
 							iceServers.iceServers = [iceServers.iceServers[0]];
 							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
+							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('.com', '.com:3478');
 							// todo: remove it!
 
 							self._logger.info('_getIceServers', iceServers);
