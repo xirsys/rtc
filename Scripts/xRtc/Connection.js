@@ -312,6 +312,7 @@
 
 							var iceServers = JSON.parse(response.D);
 							// todo: remove it!
+							iceServers.iceServers = [iceServers.iceServers[0]];
 							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
 							// todo: remove it!
 
