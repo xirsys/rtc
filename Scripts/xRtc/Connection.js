@@ -291,7 +291,9 @@
 			} else {
 				var self = this;
 
-				callback.call(self, { iceServers: [{ url: "stun:stun.l.google.com:19302" }] });//{ iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] })
+				//callback.call(self, { iceServers: [{ url: "stun:stun.l.google.com:19302" }] });
+				callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });
+				//callback.call(self, { iceServers: [{ url: "turn:free@turn.influxis.com", credential: "free"}] });
 				return;
 				
 				this.ajax(
@@ -311,10 +313,11 @@
 							}
 
 							var iceServers = JSON.parse(response.D);
+							debugger;
 							// todo: remove it!
-							iceServers.iceServers = [iceServers.iceServers[0]];
-							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
-							iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('.com', '.com:3478');
+							//iceServers.iceServers = [iceServers.iceServers[0]];
+							//iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('stun:stun', 'stun:turn');
+							//iceServers.iceServers[0].url = iceServers.iceServers[0].url.replace('.com', '.com:3478');
 							// todo: remove it!
 
 							self._logger.info('_getIceServers', iceServers);
