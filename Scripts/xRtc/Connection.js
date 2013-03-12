@@ -291,6 +291,9 @@
 			} else {
 				var self = this;
 
+				callback.call(self, { iceServers: [{ url: "turn:user123@86.57.152.233", credential: "1234567" }] });//{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] })
+				return;
+				
 				this.ajax(
 					xrtc.Connection.settings.URL + 'getIceServers',
 					'POST',
