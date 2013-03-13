@@ -42,14 +42,35 @@
 	};
 
 	exports.xRtc.Class.extend = function (destinationObj) {
+		/// <summary>Extends "destinationObj" by another objects</summary>
+		/// <param name="destinationObj">Object to expand</param>
 		var sourceObjects = Array.prototype.slice.call(arguments, 1);
 
 		for (var index = 0, len = sourceObjects.length; index < len; index++) {
 			var sourceObj = sourceObjects[index];
-			
+
 			for (var propName in sourceObj) {
 				destinationObj[propName] = sourceObj[propName];
 			}
 		}
+	};
+
+	exports.xRtc.Class.proxy = function (context) {
+		return function (func) {
+			var baseArgs = [];
+			if (arguments.length > 1) {
+				baseArgs = Array.prototype.slice.call(arguments, 1);
+			}
+			
+			return function () {
+				var args = Array.prototype.slice.call(arguments);
+				
+				for (var i = 0; i < baseArgs.length; i++) {
+					args.push(baseArgs[i]);
+				}
+				
+				func.apply(context, args);
+			};
+		};
 	};
 })(window);

@@ -10,6 +10,7 @@
 	xrtc.Ajax = {
 		ajax: function(url, httpMethod, params, callback) {
 			var xmlhttp, error;
+			var proxy = xrtc.Class.proxy(this);
 			
 			try {
 				xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
@@ -46,7 +47,7 @@
 					xmlhttp.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
 				}
 
-				xmlhttp.onreadystatechange = function() {
+				xmlhttp.onreadystatechange = proxy(function() {
 					if (xmlhttp.readyState == 4 && !fin) {
 						fin = true;
 
@@ -58,7 +59,7 @@
 							callback(xmlhttp.responseText);
 						}
 					}
-				};
+				});
 
 				xmlhttp.send(params);
 			} catch (ex) {
