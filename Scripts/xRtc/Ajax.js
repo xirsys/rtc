@@ -13,13 +13,13 @@
 			var proxy = xrtc.Class.proxy(this);
 			
 			try {
-				xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
+				xmlhttp = new XMLHttpRequest();
 			} catch(e) {
 				try {
-					xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
+					xmlhttp = new ActiveXObject('Msxml2.XMLHTTP');
 				} catch(e) {
 					try {
-						xmlhttp = new XMLHttpRequest();
+						xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
 					} catch(e) {
 						if (this._logger) {
 							error = new xrtc.CommonError('ajax', 'XMLHttpRequest is not supported');

@@ -1,11 +1,16 @@
 ﻿'use strict';
 
+
+//todo: add ability to check WebRTC support. think of it!
 (function (exports) {
-	var getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia,
-		URL = exports.URL || exports.webkitURL || exports.msURL || exports.oURL,
-		RTCPeerConnection = exports.PeerConnection || exports.webkitPeerConnection00 || exports.webkitRTCPeerConnection,
-		RTCIceCandidate = exports.RTCIceCandidate,
-		RTCSessionDescription = exports.RTCSessionDescription;
+	var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia,
+		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
+		RTCPeerConnection = exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
+		RTCIceCandidate = exports.mozRTCIceCandidate || exports.RTCIceCandidate,
+		RTCSessionDescription = exports.mozRTCSessionDescription || exports.RTCSessionDescription,
+		isFirefox = !!navigator.mozGetUserMedia;
+	
+	getUserMedia = getUserMedia.bind(navigator);
 
 	var xrtc = exports.xRtc;
 	xrtc.Connection = xrtc.Class('Connection');
@@ -95,19 +100,21 @@
 					self._peerConnection.setRemoteDescription(sessionDescription);
 					self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
 
+					//todo: possible return deffered object
+					setTimeout(function () {
+						/***********************************************/
+						// todo: in next version it should be wrapped
+						var stream = self._peerConnection.remoteStreams[0],
+							data = {
+								stream: stream,
+								url: URL.createObjectURL(stream),
+								isLocal: false,
+								participantId: self._remoteParticipant
+							};
 
-					/***********************************************/
-					// todo: in next version it should be wrapped
-					var stream = self._peerConnection.remoteStreams[0],
-						data = {
-							stream: stream,
-							url: URL.createObjectURL(stream),
-							isLocal: false,
-							participantId: self._remoteParticipant
-						};
-
-					self.trigger(xrtc.Connection.events.streamAdded, data);
-					/***********************************************/
+						self.trigger(xrtc.Connection.events.streamAdded, data);
+						/***********************************************/
+					}, 100);
 				})
 				.on(xrtc.HandshakeController.events.receiveBye, function (response) {
 					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
@@ -147,6 +154,13 @@
 					function (offer) {
 						peerConnection.setLocalDescription(offer);
 						self._logger.debug('sendOffer', self._remoteParticipant, offer);
+						
+						// todo:remove it in next versions
+						if (isFirefox) {
+							offer.sdp = offer.sdp + 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\r\n';
+						}
+						// todo:remove it in next versions
+
 						self._handshakeController.sendOffer(self._remoteParticipant, JSON.stringify(offer));
 
 						self.trigger(xrtc.Connection.events.offerSent, self._remoteParticipant, offer);
@@ -177,7 +191,7 @@
 
 			xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
 
-			getUserMedia.call(navigator, opts,
+			getUserMedia(opts,
 				function (stream) {
 					var data = {
 						stream: stream,
@@ -314,8 +328,13 @@
 									self.trigger(xrtc.Connection.events.serverError, error);
 									return;
 								}
-
+								
 								iceServers = JSON.parse(response.D);
+								
+								// todo: remove it in next version of Firefox
+								self._convertIceServerDNStoIP(iceServers.iceServers);
+								// todo: remove it in next version of Firefox
+								
 								self._logger.info('_getIceServers', iceServers);
 
 								if (typeof(callback) === 'function') {
@@ -330,6 +349,23 @@
 				}
 			}
 		},
+
+		// todo: remove it in next version of Firefox
+		_convertIceServerDNStoIP: function(iceServers) {
+			var addresses = {
+				'stun.influxis.com': '50.97.63.12',
+				'turn.influxis.com': '50.97.63.12'
+			};
+			
+			for (var i = 0; i < iceServers.length; i++) {
+				var server = iceServers[i];
+
+				for(var dns in addresses){
+					server.url = server.url.replace(dns, addresses[dns]);
+				}
+			}
+		},
+		// todo: remove it in next version of Firefox
 
 		_initPeerConnection: function (userId, callback) {
 			this._remoteParticipant = userId;
@@ -435,16 +471,24 @@
 			},
 
 			offerOptions: {
+				optional: [],
 				mandatory: {
 					OfferToReceiveAudio: true,
-					OfferToReceiveVideo: true
+					OfferToReceiveVideo: true,
+					
+					//firefox
+					MozDontOfferDataChannel: true
 				}
 			},
 
 			answerOptions: {
+				optional: [],
 				mandatory: {
 					OfferToReceiveAudio: true,
-					OfferToReceiveVideo: true
+					OfferToReceiveVideo: true,
+					
+					//firefox
+					MozDontOfferDataChannel: true
 				}
 			},
 
@@ -457,7 +501,7 @@
 			},
 
 			peerConnectionOptions: {
-				optional: [{ RtpDataChannels: true }]
+				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 			}
 		}
 	});

@@ -279,8 +279,23 @@
 
 			var participantItem = $('#video-tmpl').tmpl(data);
 			$('#video').append(participantItem);
+			
 
-			participantItem.find('video').attr('src', streamData.url).removeClass('hide');
+
+			//todo: for firefox 'src' does not work, in future remove it
+			//todo: move this logic into Connection class, e.g. create method 'attach'
+			//debugger;
+
+			//todo: set timeout (look at adapter.js)
+			setTimeout(function () {
+				var video = participantItem.find('video').removeClass('hide').get(0);
+				var isFirefox = !!navigator.mozGetUserMedia;
+				if (isFirefox) {
+					video.mozSrcObject = streamData.stream;
+				} else {
+					video.src = streamData.url;
+				}
+			}, 100);
 		},
 
 		removeParticipant: function (participantId) {
