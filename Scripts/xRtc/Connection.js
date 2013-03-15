@@ -1,18 +1,57 @@
 ﻿'use strict';
 
-
 //todo: add ability to check WebRTC support. think of it!
 (function (exports) {
+	var xrtc = exports.xRtc;
+	
 	var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia,
 		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 		RTCPeerConnection = exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
 		RTCIceCandidate = exports.mozRTCIceCandidate || exports.RTCIceCandidate,
 		RTCSessionDescription = exports.mozRTCSessionDescription || exports.RTCSessionDescription,
+		MediaStream = exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
 		isFirefox = !!navigator.mozGetUserMedia;
 	
 	getUserMedia = getUserMedia.bind(navigator);
+	
+	if (!MediaStream.prototype.getVideoTracks) {
+		if (isFirefox) {
+			xrtc.Class.extend(MediaStream.prototype, {
+				getVideoTracks: function () {
+					return [];
+				},
+				
+				getAudioTracks: function () {
+					return [];
+				}
+			});
+		} else {
+			xrtc.Class.extend(MediaStream.prototype, {
+				getVideoTracks: function () {
+					return this.videoTracks;
+				},
+				
+				getAudioTracks: function () {
+					return this.audioTracks;
+				}
+			});
+		}
+	}
+	
+	// New syntax of getXXXStreams method in M26.
+	if (!RTCPeerConnection.prototype.getLocalStreams) {
+		xrtc.Class.extend(RTCPeerConnection.prototype, {
+			getLocalStreams: function () {
+				return this.localStreams;
+			},
 
-	var xrtc = exports.xRtc;
+			getRemoteStreams: function () {
+				return this.remoteStreams;
+			}
+		});
+	}
+
+
 	xrtc.Connection = xrtc.Class('Connection');
 
 	xrtc.Connection.include(xrtc.EventDispatcher);
@@ -69,7 +108,7 @@
 
 								/***********************************************/
 								// todo: in next version it should be wrapped
-								var stream = self._peerConnection.remoteStreams[0],
+								var stream = self._peerConnection.getRemoteStreams()[0],
 									data = {
 										stream: stream,
 										url: URL.createObjectURL(stream),
@@ -104,7 +143,7 @@
 					setTimeout(function () {
 						/***********************************************/
 						// todo: in next version it should be wrapped
-						var stream = self._peerConnection.remoteStreams[0],
+						var stream = self._peerConnection.getRemoteStreams()[0],
 							data = {
 								stream: stream,
 								url: URL.createObjectURL(stream),
@@ -234,7 +273,7 @@
 			if (!this._peerConnection) {
 				return 'notinitialized';
 			}
-
+			console.log(this._peerConnection.readyState);
 			return this._peerConnection.readyState;
 		},
 
@@ -474,10 +513,7 @@
 				optional: [],
 				mandatory: {
 					OfferToReceiveAudio: true,
-					OfferToReceiveVideo: true,
-					
-					//firefox
-					MozDontOfferDataChannel: true
+					OfferToReceiveVideo: true
 				}
 			},
 
@@ -485,10 +521,7 @@
 				optional: [],
 				mandatory: {
 					OfferToReceiveAudio: true,
-					OfferToReceiveVideo: true,
-					
-					//firefox
-					MozDontOfferDataChannel: true
+					OfferToReceiveVideo: true
 				}
 			},
 
@@ -505,4 +538,12 @@
 			}
 		}
 	});
+	
+
+
+	if (isFirefox) {
+		// Chrome M26b and Chrome Canary this settings fires an erron on the creation of offer/answer 
+		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
+		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
+	}
 })(window);

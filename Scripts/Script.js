@@ -3,8 +3,9 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	/*exports.wsTest = {
-		init: function() {
+	exports.wsTest = {
+		init: function () {
+			$('#ws-test').removeClass('hide');
 			$('#ws-form').on('submit', function(e) {
 				e.preventDefault();
 				var $form = $(this);
@@ -38,8 +39,7 @@
 
 			$('#ws-form .ws-message textarea').val(testMessages[$(".ws-message-type select").val()]);
 		}
-	};*/
-
+	};
 
 	exports.chat = {
 		
@@ -244,14 +244,17 @@
 			
 			updateState: function(state) {
 				state = state || exports.chat._connection.getState();
-				
+				//todo: move to Connection and unify it
 				var states = {
 					'notinitialized': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
 					'new': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
 					'opening': 'connecting',
 					'active': 'connected',
 					'closing': 'disconnecting',
-					'closed': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready'
+					'closed': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
+					'stable': 'connected', // Chrome M26
+					'have-local-offer': 'ready', // Chrome M26
+					'have-remote-offer': 'connecting' // Chrome M26
 				};
 
 				var cssClass = states[state];
@@ -284,8 +287,6 @@
 
 			//todo: for firefox 'src' does not work, in future remove it
 			//todo: move this logic into Connection class, e.g. create method 'attach'
-			//debugger;
-
 			//todo: set timeout (look at adapter.js)
 			setTimeout(function () {
 				var video = participantItem.find('video').removeClass('hide').get(0);
