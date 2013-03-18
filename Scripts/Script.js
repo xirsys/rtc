@@ -242,34 +242,18 @@
 				return contacts;
 			},
 			
-			updateState: function(state) {
-				state = state || exports.chat._connection.getState();
-				//todo: move to Connection and unify it
-				var states = {
-					'notinitialized': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
-					
-					'new': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
-					
-					'opening': 'connecting',
-					
-					'active': 'connected',
-					'stable': 'connected', // Chrome M26
-					
-					'closing': 'disconnecting',
-					
-					'closed': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
-					
-					'have-local-offer': 'ready', // Chrome M26
-					'have-remote-offer': 'connecting' // Chrome M26
+			updateState: function (state) {
+				var freeStates = {
+					'ready': true,
+					'not-ready': true
 				};
+				
+				state = state || chat._connection.getState();
 
-				var cssClass = states[state];
-				$('#contacts').removeClass().addClass(cssClass);
+				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
-				if ((cssClass === 'ready') || (cssClass === 'not-ready')) {
-					$('#contacts .contact').removeClass('current');
-				} else {
-					$('#contacts .contact').filter('[data-name="' + exports.chat._connection._remoteParticipant + '"]').addClass('current');
+				if (!freeStates[state]) {
+					contacts.filter('[data-name="' + chat._connection._remoteParticipant + '"]').addClass('current');
 				}
 			}
 		},

@@ -243,11 +243,28 @@
 
 		/// <summary>Returns state of p2p connection</summary>
 		getState: function () {
-			if (!this._peerConnection) {
-				return 'notinitialized';
-			}
-			console.log(this._peerConnection.readyState);
-			return this._peerConnection.readyState;
+			// it can change from version to version
+			var isLocalStreamAdded = this._localStreams.length > 0,
+
+				states = {
+					'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
+					
+					// Chrome M25
+					'new': isLocalStreamAdded ? 'ready' : 'not-ready',
+					'opening': 'connecting',
+					'active': 'connected',
+					'closing': 'disconnecting',
+					'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
+
+					// Chrome M26+
+					'stable': 'connected',
+					'have-local-offer': 'ready',
+					'have-remote-offer': 'connecting'
+				},
+				
+				state = this._peerConnection ? this._peerConnection.readyState : 'notinitialized';
+
+			return states[state];
 		},
 
 		_close: function () {
