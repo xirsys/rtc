@@ -56,19 +56,19 @@
 	xrtc.Connection.include(xrtc.EventDispatcher);
 	xrtc.Connection.include(xrtc.Ajax);
 	xrtc.Connection.include({
-		init: function (userData, handshakeController) {
-			this._authManager = new xrtc.AuthManager();
-
-			var self = this;
-			self._logger = new xrtc.Logger(this.className);
-			self._peerConnection = null;
-			self._remoteParticipant = null;
-			self._handshakeController = handshakeController;
-			self._userData = userData;
-			self._localStreams = [];
+		init: function (userData, authManager) {
+			this._authManager = authManager;
+			this._handshakeController = new xrtc.HandshakeController();
+			this._logger = new xrtc.Logger(this.className);
 			this.proxy = xrtc.Class.proxy(this);
 
-			handshakeController
+			var self = this;
+			self._peerConnection = null;
+			self._remoteParticipant = null;
+			self._userData = userData;
+			self._localStreams = [];
+
+			self._handshakeController
 				.on(xrtc.HandshakeController.events.receiveIce, function (response) {
 					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
 						return;
@@ -139,16 +139,9 @@
 					self._close();
 				});
 		},
-
-		connect: function () {
-			/// <summary>Initiate connection with server via HandshakeController</summary>
-
-			var self = this;
-
-			this._getIceServers(function (token, iceServers) {
-				self._iceServers = iceServers;
-				self._handshakeController.connect(token);
-			});
+		
+		getHandshake: function() {
+			return this._handshakeController;
 		},
 
 		_getIceServers: function (callback) {

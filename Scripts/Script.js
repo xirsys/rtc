@@ -6,11 +6,11 @@
 	exports.wsTest = {
 		init: function () {
 			$('#ws-test').removeClass('hide');
-			$('#ws-form').on('submit', function(e) {
+			$('#ws-form').on('submit', function (e) {
 				e.preventDefault();
 				var $form = $(this);
 
-				exports.chat._handshakeController[$(".ws-message-type select").val()](
+				exports.chat._serverConnector[$(".ws-message-type select").val()](
 					$(".ws-targetUser input").val(),
 					$form.find('.ws-message textarea').val());
 			});
@@ -42,8 +42,9 @@
 	};
 
 	exports.chat = {
-		_handshakeController: null,
 		_connection: null,
+		_room: null,
+		_serverConnector: null,
 		systemName: 'SYSTEM',
 
 		/// <summary>The method for the initializing of chat</summary>
@@ -55,7 +56,7 @@
 				exports.chat.joinRoom(userData);
 			});
 
-			$('#chat-form').on('submit', function(e) {
+			$('#chat-form').on('submit', function (e) {
 				e.preventDefault();
 				var $form = $(this);
 
@@ -83,43 +84,20 @@
 			$('#step1, #step2').toggle();
 			exports.chat._userData = userData;
 
-			var handshake = exports.chat._handshakeController = new xRtc.HandshakeController();
-			handshake
-				.on(xrtc.HandshakeController.events.participantsUpdated, function (data) {
-					exports.chat.contactsList.refreshParticipants(exports.chat.contactsList.convertContacts(data));
-				})
-				.on(xrtc.HandshakeController.events.participantConnected, function (data) {
-					exports.chat.contactsList.addParticipant({ name: data.paticipantId, isMe: false });
-					exports.chat.addSystemMessage(data.paticipantId + '  entered the room.');
-				})
-				.on(xrtc.HandshakeController.events.participantDisconnected, function (data) {
-					exports.chat.contactsList.removeParticipant(data.paticipantId);
-					exports.chat.addSystemMessage(data.paticipantId + ' left the room.');
-				})
-				.on(xrtc.HandshakeController.events.connectionClose, function (data) {
-					exports.chat.contactsList.refreshParticipants([]);
-					exports.chat.addSystemMessage('You was disconnected by the server.');
-				})
-				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
-					exports.chat.removeParticipant(data.senderId);
-					exports.chat.addSystemMessage(data.senderId + ' closed p2p connection.');
-				});
+			var authManager = new xRtc.AuthManager();
 
-			var connection = exports.chat._connection = new xRtc.Connection(userData, handshake);
-			connection.connect();
-
-			connection
-				.on(xrtc.Connection.events.streamAdded, function(data) {
+			var connection = exports.chat._connection = new xRtc.Connection(userData, authManager)
+				.on(xrtc.Connection.events.streamAdded, function (data) {
 					exports.chat.addParticipant(data);
 					exports.chat.contactsList.updateState();
 				})
 				.on(xrtc.Connection.events.initialized, function () {
 					exports.chat._textChannel = connection.createDataChannel('textChat');
-					
+
 					if (exports.chat._textChannel) {
 						exports.chat.subscribe(exports.chat._textChannel, xrtc.DataChannel.events);
 
-						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function(messageData) {
+						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
 							var message = JSON.parse(messageData.message);
 							exports.chat.addMessage(message.userId, message.message);
 						});
@@ -127,7 +105,7 @@
 						exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
-				.on(xrtc.Connection.events.connectionEstablished, function(participantId) {
+				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
 					exports.chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
 				})
@@ -139,14 +117,46 @@
 					exports.chat.contactsList.updateState(state);
 				});
 
+			var serverConnector = exports.chat._serverConnector = new xRtc.ServerConnector()
+				.on(xrtc.ServerConnector.events.connectionClose, function (data) {
+					exports.chat.contactsList.refreshParticipants([]);
+					exports.chat.addSystemMessage('You was disconnected by the server.');
+				})
+				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
+					exports.chat.removeParticipant(data.senderId);
+					exports.chat.addSystemMessage(data.senderId + ' closed p2p connection.');
+				});
+
+			var room = exports.chat._room = new xRtc.Room(serverConnector, connection.getHandshake())
+				.on(xrtc.Room.events.participantsUpdated, function (data) {
+					exports.chat.contactsList.refreshParticipants();
+				})
+				.on(xrtc.Room.events.participantConnected, function (data) {
+					exports.chat.addSystemMessage(data.paticipantId + ' entered the room.');
+
+					exports.chat.contactsList.refreshParticipants();
+				})
+				.on(xrtc.Room.events.participantDisconnected, function (data) {
+					exports.chat.addSystemMessage(data.paticipantId + ' left the room.');
+
+					exports.chat.contactsList.refreshParticipants();
+				});
+
 			connection.addMedia();
 
+			exports.chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			exports.chat.subscribe(connection, xrtc.Connection.events);
-			exports.chat.subscribe(handshake, xrtc.HandshakeController.events);
+			exports.chat.subscribe(connection.getHandshake(), xrtc.HandshakeController.events);
+			exports.chat.subscribe(room, xrtc.Room.events);
+
+			authManager.getToken(exports.chat._userData, function (token) {
+				room.join(token);
+			});
 		},
 
 		leaveRoom: function () {
-
+			exports.chat._room.leave();
+			$('#step1, #step2').toggle();
 		},
 
 		sendMessage: function (message) {
@@ -187,7 +197,6 @@
 
 		contactsList: {
 			addParticipant: function (participant) {
-				//todo: sort participants
 				$('#contacts').append($('#contact-info-tmpl').tmpl(participant));
 			},
 
@@ -195,26 +204,13 @@
 				$('#contacts').find('.contact[data-name="' + participantId + '"]').remove();
 			},
 
-			refreshParticipants: function (contacts) {
-				var userData = exports.chat._userData,
-					contactsData = {
-						roomInfo: {
-							domain: userData.domain,
-							application: userData.application,
-							room: userData.room
-						}
-					};
-				
-				contacts.sort(function(a, b) {
-					if (a.name < b.name)
-						return -1;
-					if (a.name > b.name)
-						return 1;
-					return 0;
-				});
-
+			refreshParticipants: function () {
+				var contactsData = {
+					roomName: exports.chat._room.getName()
+				};
 				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
 
+				var contacts = this.convertContacts(exports.chat._room.getParticipants());
 				for (var index = 0, len = contacts.length; index < len; index++) {
 					this.addParticipant(contacts[index]);
 				}
@@ -222,12 +218,12 @@
 				this.updateState();
 			},
 
-			convertContacts: function (data) {
+			convertContacts: function (participants) {
 				var contacts = [],
 					currentName = exports.chat._userData.name;
 
-				for (var i = 0, len = data.connections.length; i < len; i++) {
-					var name = data.connections[i];
+				for (var i = 0, len = participants.length; i < len; i++) {
+					var name = participants[i];
 					contacts[i] = {
 						name: name,
 						isMe: name === currentName
@@ -236,13 +232,13 @@
 
 				return contacts;
 			},
-			
+
 			updateState: function (state) {
 				var freeStates = {
 					'ready': true,
 					'not-ready': true
 				};
-				
+
 				state = state || chat._connection.getState();
 
 				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');

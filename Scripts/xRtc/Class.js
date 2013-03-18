@@ -74,3 +74,28 @@
 		};
 	};
 })(window);
+
+(function (exports) {
+	exports.xRtc.Class2 = function(namespace, className, constructor) {
+		/// <summary>The base type of all classes</summary>
+
+		namespace[className] = constructor;
+
+		var klass = namespace[className];
+
+		klass.fn = klass.prototype;
+		klass.fn.className = className;
+
+		klass.extend = function (obj) {
+			/// <summary>Extends the instance of concrete object</summary>
+
+			var extended = obj.extended;
+
+			exports.xRtc.Class.extend(klass, obj);
+
+			if (extended) {
+				extended(klass);
+			}
+		};
+	};
+})(window);

@@ -9,11 +9,13 @@
 	<script src="Scripts/xRtc/Logger.js"></script>
 	<script src="Scripts/xRtc/EventDispatcher.js"></script>
 	<script src="Scripts/xRtc/Ajax.js"></script>
+	<script src="Scripts/xRtc/ServerConnector.js"></script>
 	<script src="Scripts/xRtc/AuthManager.js"></script>
 	<script src="Scripts/xRtc/Stream.js"></script>
 	<script src="Scripts/xRtc/DataChannel.js"></script>
 	<script src="Scripts/xRtc/HandshakeController.js"></script>
 	<script src="Scripts/xRtc/Connection.js"></script>
+	<script src="Scripts/xRtc/Room.js"></script>
 
 	<script src="Scripts/jquery-1.9.1.min.js"></script>
 	<script src="Scripts/jquery.tmpl.min.js"></script>
@@ -112,7 +114,7 @@
 
 	<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
 		<fieldset id="contacts-block">
-			<legend>${roomInfo.domain}, ${roomInfo.application}, ${roomInfo.room}</legend>
+			<legend>${roomName}</legend>
 			<div id="contacts"></div>
 		</fieldset>
 	</script>
