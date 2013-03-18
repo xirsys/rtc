@@ -307,7 +307,7 @@ function getParams() {
 
 var setIceServers = function (params) {
 	if (params.stun || params.turn) {
-		var settings = xRtc.Connection.settings;
+		var settings = xRtc.AuthManager.settings;
 		settings.iceServers = {
 			iceServers: []
 		};
