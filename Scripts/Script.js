@@ -42,10 +42,8 @@
 	};
 
 	exports.chat = {
-		
 		_handshakeController: null,
 		_connection: null,
-		isLocalStreamAdded: false,
 		systemName: 'SYSTEM',
 
 		/// <summary>The method for the initializing of chat</summary>
@@ -113,10 +111,7 @@
 			connection
 				.on(xrtc.Connection.events.streamAdded, function(data) {
 					exports.chat.addParticipant(data);
-					if (data.isLocal) {
-						exports.chat.isLocalStreamAdded = true;
-						exports.chat.contactsList.updateState();
-					}
+					exports.chat.contactsList.updateState();
 				})
 				.on(xrtc.Connection.events.initialized, function () {
 					exports.chat._textChannel = connection.createDataChannel('textChat');
