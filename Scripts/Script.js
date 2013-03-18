@@ -247,12 +247,18 @@
 				//todo: move to Connection and unify it
 				var states = {
 					'notinitialized': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
+					
 					'new': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
+					
 					'opening': 'connecting',
+					
 					'active': 'connected',
-					'closing': 'disconnecting',
-					'closed': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
 					'stable': 'connected', // Chrome M26
+					
+					'closing': 'disconnecting',
+					
+					'closed': exports.chat.isLocalStreamAdded ? 'ready' : 'not-ready',
+					
 					'have-local-offer': 'ready', // Chrome M26
 					'have-remote-offer': 'connecting' // Chrome M26
 				};
@@ -268,10 +274,10 @@
 			}
 		},
 
-		addParticipant: function (streamData) {
+		addParticipant: function (stream) {
 			var data = {
-				name: streamData.participantId,
-				isMe: streamData.isLocal
+				name: stream.getParticipantName(),
+				isMe: stream.isLocal()
 			};
 
 			$.each($('#video .person'), function (index, value) {
@@ -282,21 +288,9 @@
 
 			var participantItem = $('#video-tmpl').tmpl(data);
 			$('#video').append(participantItem);
-			
 
-
-			//todo: for firefox 'src' does not work, in future remove it
-			//todo: move this logic into Connection class, e.g. create method 'attach'
-			//todo: set timeout (look at adapter.js)
-			setTimeout(function () {
-				var video = participantItem.find('video').removeClass('hide').get(0);
-				var isFirefox = !!navigator.mozGetUserMedia;
-				if (isFirefox) {
-					video.mozSrcObject = streamData.stream;
-				} else {
-					video.src = streamData.url;
-				}
-			}, 100);
+			var video = participantItem.find('video').removeClass('hide').get(0);
+			stream.assignTo(video);
 		},
 
 		removeParticipant: function (participantId) {

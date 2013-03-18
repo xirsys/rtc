@@ -3,7 +3,7 @@
 //todo: add ability to check WebRTC support. think of it!
 (function (exports) {
 	var xrtc = exports.xRtc;
-	
+
 	var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia,
 		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 		RTCPeerConnection = exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
@@ -11,16 +11,16 @@
 		RTCSessionDescription = exports.mozRTCSessionDescription || exports.RTCSessionDescription,
 		MediaStream = exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
 		isFirefox = !!navigator.mozGetUserMedia;
-	
+
 	getUserMedia = getUserMedia.bind(navigator);
-	
+
 	if (!MediaStream.prototype.getVideoTracks) {
 		if (isFirefox) {
 			xrtc.Class.extend(MediaStream.prototype, {
 				getVideoTracks: function () {
 					return [];
 				},
-				
+
 				getAudioTracks: function () {
 					return [];
 				}
@@ -30,14 +30,14 @@
 				getVideoTracks: function () {
 					return this.videoTracks;
 				},
-				
+
 				getAudioTracks: function () {
 					return this.audioTracks;
 				}
 			});
 		}
 	}
-	
+
 	// New syntax of getXXXStreams method in M26.
 	if (!RTCPeerConnection.prototype.getLocalStreams) {
 		xrtc.Class.extend(RTCPeerConnection.prototype, {
@@ -65,6 +65,7 @@
 			self._handshakeController = handshakeController;
 			self._userData = userData;
 			self._localStreams = [];
+			this.proxy = xrtc.Class.proxy(this);
 
 			handshakeController
 				.on(xrtc.HandshakeController.events.receiveIce, function (response) {
@@ -106,18 +107,7 @@
 								self._logger.debug('sendAnswer', response, answer);
 								self.trigger(xrtc.Connection.events.answerSent, response, answer);
 
-								/***********************************************/
-								// todo: in next version it should be wrapped
-								var stream = self._peerConnection.getRemoteStreams()[0],
-									data = {
-										stream: stream,
-										url: URL.createObjectURL(stream),
-										isLocal: false,
-										participantId: self._remoteParticipant
-									};
-
-								self.trigger(xrtc.Connection.events.streamAdded, data);
-								/***********************************************/
+								self._addRemoteSteam();
 							},
 							function (err) {
 								var error = new xrtc.CommonError('sendAnswer', "Can't create WebRTC answer", err);
@@ -139,21 +129,7 @@
 					self._peerConnection.setRemoteDescription(sessionDescription);
 					self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
 
-					//todo: possible return deffered object
-					setTimeout(function () {
-						/***********************************************/
-						// todo: in next version it should be wrapped
-						var stream = self._peerConnection.getRemoteStreams()[0],
-							data = {
-								stream: stream,
-								url: URL.createObjectURL(stream),
-								isLocal: false,
-								participantId: self._remoteParticipant
-							};
-
-						self.trigger(xrtc.Connection.events.streamAdded, data);
-						/***********************************************/
-					}, 100);
+					self._addRemoteSteam();
 				})
 				.on(xrtc.HandshakeController.events.receiveBye, function (response) {
 					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
@@ -193,7 +169,7 @@
 					function (offer) {
 						peerConnection.setLocalDescription(offer);
 						self._logger.debug('sendOffer', self._remoteParticipant, offer);
-						
+
 						// todo:remove it in next versions
 						if (isFirefox) {
 							offer.sdp = offer.sdp + 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\r\n';
@@ -230,26 +206,23 @@
 
 			xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
 
-			getUserMedia(opts,
+			getUserMedia(
+				opts,
 				function (stream) {
-					var data = {
-						stream: stream,
-						url: URL.createObjectURL(stream),
-						isLocal: true,
-						participantId: self._userData.name
-					};
-
 					self._localStreams.push(stream);
 
-					self._logger.debug('addMedia', data);
-					self.trigger(xrtc.Connection.events.streamAdded, data);
+					var xrtcStream = new xrtc.Stream(stream, self._userData.name);
+
+					self._logger.debug('addMedia', xrtcStream);
+					self.trigger(xrtc.Connection.events.streamAdded, xrtcStream);
 				},
 				function (err) {
 					var error = new xrtc.CommonError('addMedia', "Can't get UserMedia", err);
 
 					self._logger.error('addMedia', error);
 					self.trigger(xrtc.Connection.events.streamError, error);
-				});
+				}
+			);
 		},
 
 		/// <summary>Creates new instance of DataChannel</summary>
@@ -348,7 +321,7 @@
 				if (iceServers && iceServers.iceServers && iceServers.iceServers.length > 0) {
 					self._logger.info('_getIceServers', iceServers);
 
-					if (typeof(callback) === 'function') {
+					if (typeof (callback) === 'function') {
 						callback.call(self, iceServers);
 					}
 				} else {
@@ -356,7 +329,7 @@
 						xrtc.Connection.settings.URL + 'getIceServers',
 						'POST',
 						'token=' + token,
-						function(response) {
+						function (response) {
 							try {
 								response = JSON.parse(response);
 								self._logger.debug('_getIceServers', response);
@@ -367,20 +340,20 @@
 									self.trigger(xrtc.Connection.events.serverError, error);
 									return;
 								}
-								
+
 								iceServers = JSON.parse(response.D);
-								
+
 								// todo: remove it in next version of Firefox
 								self._convertIceServerDNStoIP(iceServers.iceServers);
 								// todo: remove it in next version of Firefox
-								
+
 								self._logger.info('_getIceServers', iceServers);
 
-								if (typeof(callback) === 'function') {
+								if (typeof (callback) === 'function') {
 									callback.call(self, iceServers);
 								}
 
-							} catch(e) {
+							} catch (e) {
 								self._getIceServersByToken(token, callback);
 							}
 						}
@@ -390,16 +363,16 @@
 		},
 
 		// todo: remove it in next version of Firefox
-		_convertIceServerDNStoIP: function(iceServers) {
+		_convertIceServerDNStoIP: function (iceServers) {
 			var addresses = {
 				'stun.influxis.com': '50.97.63.12',
 				'turn.influxis.com': '50.97.63.12'
 			};
-			
+
 			for (var i = 0; i < iceServers.length; i++) {
 				var server = iceServers[i];
 
-				for(var dns in addresses){
+				for (var dns in addresses) {
 					server.url = server.url.replace(dns, addresses[dns]);
 				}
 			}
@@ -471,7 +444,18 @@
 			this._logger.info('_getTokenRequestParams', result);
 
 			return result;
-		}
+		},
+
+		_addRemoteSteam: function () {
+			var streams = this._peerConnection.getRemoteStreams();
+
+			if (streams.length > 0) {
+				this.trigger(xrtc.Connection.events.streamAdded, new xrtc.Stream(streams[0], this._remoteParticipant));
+			} else {
+				// will make pause if there is not any remote streams
+				setTimeout(this.proxy(this._addRemoteSteam), 100);
+			}
+		},
 	});
 
 	xrtc.Connection.extend({
@@ -538,7 +522,7 @@
 			}
 		}
 	});
-	
+
 
 
 	if (isFirefox) {
