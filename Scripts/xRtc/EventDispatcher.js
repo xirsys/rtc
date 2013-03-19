@@ -48,7 +48,7 @@
 			var events = this._events[eventName];
 			if (!events) {
 				this._logger.warning('trigger', 'Trying to call event which is not listening.');
-				return;
+				return this;
 			}
 
 			var args = Array.prototype.slice.call(arguments, 1);

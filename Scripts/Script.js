@@ -174,7 +174,7 @@
 
 			var $chat = $('#chat');
 
-			//todo: need to fix chat scrolling behaviour
+			//todo: need to fix chat scrolling behavior
 			$chat
 				.append($('#chat-message-tmpl').tmpl(messageData))
 				.scrollTop($chat.children().last().position().top + $chat.children().last().height());

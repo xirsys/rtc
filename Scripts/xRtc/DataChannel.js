@@ -2,63 +2,66 @@
 
 (function (exports) {
 	var xrtc = exports.xRtc;
-	xrtc.DataChannel = xrtc.Class('DataChannel');
+	
+	xrtc.Class2(xrtc, 'DataChannel', function (dataChannel, userId) {
+		var proxy = xrtc.Class.proxy(this),
+			logger = new xrtc.Logger(this.className),
+			events = xrtc.DataChannel.events;
 
-	xrtc.DataChannel.include(xrtc.EventDispatcher);
-	xrtc.DataChannel.include({
-		init: function (dataChannel, userId) {
-			this._logger = new xrtc.Logger(this.className);
-			this._channel = dataChannel;
-			this._userId = userId;
-			
-			var self = this,
-				events = xrtc.DataChannel.events;
-			
-			this._channel.onopen = function (evt) {
-				var data = { event: evt };
-				self._logger.debug('open', data);
-				self.trigger(events.open, data);
-			};
-			
-			this._channel.onmessage = function (evt) {
+		dataChannel.onopen = proxy(channelOnOpen);
+		dataChannel.onmessage = proxy(channelOnMessage);
+		dataChannel.onclose = proxy(channelOnClose);
+		dataChannel.onerror = proxy(channelOnError);
+		dataChannel.ondatachannel = proxy(channelOnDatachannel);
+
+		xrtc.Class.extend(this, xrtc.EventDispatcher, {
+			_logger: logger,
+
+			send: function (message) {
+				/// <summary>Sends a message to remote user</summary>
+				/// <param name="mesage" type="object">Message to send</param>
+				logger.info('send', arguments);
+
 				var data = {
-					event: evt,
-					message: evt.data
+					userId: userId,
+					message: message
 				};
-				self._logger.debug('message', data);
-				self.trigger(events.message, data);
-			};
-			
-			this._channel.onclose = function (evt) {
-				var data = { event: evt };
-				self._logger.debug('close', data);
-				self.trigger(events.close, data);
-			};
-			
-			this._channel.onerror = function (evt) {
-				var error = new xrtc.CommonError('onerror', 'Error in DataChannel', evt);
-				self._logger.error('error', error);
-				self.trigger(events.error, error);
-			};
-			
-			this._channel.ondatachannel = function (evt) {
-				var data = { event: evt };
-				self._logger.debug('datachannel', data);
-				self.trigger(events.dataChannel, data);
-			};
-		},
 
-		send: function (message) {
-			/// <summary>Sends a message to remote user</summary>
-			/// <param name="mesage" type="object">Message to send</param>
-			this._logger.info('send', arguments);
+				dataChannel.send(JSON.stringify(data));
+			}
+		});
 
+		function channelOnOpen(evt) {
+			var data = { event: evt };
+			logger.debug('open', data);
+			this.trigger(events.open, data);
+		};
+
+		function channelOnMessage(evt) {
 			var data = {
-				userId: this._userId,
-				message: message
+				event: evt,
+				message: evt.data
 			};
+			logger.debug('message', data);
+			this.trigger(events.message, data);
+		}
 
-			this._channel.send(JSON.stringify(data));
+		function channelOnClose(evt) {
+			var data = { event: evt };
+			logger.debug('close', data);
+			this.trigger(events.close, data);
+		}
+
+		function channelOnError(evt) {
+			var error = new xrtc.CommonError('onerror', 'Error in DataChannel', evt);
+			logger.error('error', error);
+			this.trigger(events.error, error);
+		}
+
+		function channelOnDatachannel(evt) {
+			var data = { event: evt };
+			logger.debug('datachannel', data);
+			this.trigger(events.dataChannel, data);
 		}
 	});
 

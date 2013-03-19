@@ -50,11 +50,9 @@
 		});
 	}
 
-
 	xrtc.Connection = xrtc.Class('Connection');
 
 	xrtc.Connection.include(xrtc.EventDispatcher);
-	xrtc.Connection.include(xrtc.Ajax);
 	xrtc.Connection.include({
 		init: function (userData, authManager) {
 			this._authManager = authManager;
@@ -87,7 +85,7 @@
 					}
 
 					if (self.getState() === 'connected') {
-						//todo: or logic of using one Connection will be removed
+						//todo: possible the logic of using one Connection will be removed in next version
 						self._handshakeController.sendBye(response.senderId);
 						return;
 					}
@@ -410,7 +408,7 @@
 
 
 	if (isFirefox) {
-		// Chrome M26b and Chrome Canary this settings fires an erron on the creation of offer/answer 
+		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer 
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
 	}

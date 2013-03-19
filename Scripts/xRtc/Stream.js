@@ -1,52 +1,54 @@
 ﻿'use strict';
 
 (function (exports) {
-	var URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL;
+	var xrtc = exports.xRtc,
+		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
+		isFirefox = !!navigator.mozGetUserMedia;
 
-	var xrtc = exports.xRtc;
-	xrtc.Stream = xrtc.Class('Stream');
+	// todo: extract participantId from here
+	xrtc.Class2(xrtc, 'Stream', function Stream(stream, participantId) {
+		var isLocal = stream.constructor.name === 'LocalMediaStream';
+		
+		xrtc.Class.extend(this, {
+			getStream: function () {
+				return stream;
+			},
 
-	xrtc.Stream.include({
-		init: function (stream, participantId) {
-			this._stream = stream,
-			this._participantId = participantId;
-		},
+			getURL: function () {
+				return URL.createObjectURL(stream);
+			},
 
-		getURL: function () {
-			return URL.createObjectURL(this._stream);
-		},
+			getParticipantName: function () {
+				return participantId;
+			},
 
-		getParticipantName: function () {
-			return this._participantId;
-		},
+			isLocal: function () {
+				return isLocal;
+			},
 
-		isLocal: function () {
-			return this._stream.constructor.name === 'LocalMediaStream';
-		},
-
-		assignTo: function (video) {
-			if (this.isLocal()) {
-				assignTo.call(this, video);
-			} else {
-				// stream could not be started if it has not been downloaded yet
-				// todo: add for support of Firefox
-				// this._stream.getRemoteStreams()[0].currentTime > 0
-				if (this._stream.getVideoTracks().length > 0) {
+			assignTo: function (video) {
+				if (this.isLocal()) {
 					assignTo.call(this, video);
 				} else {
-					setTimeout(this.proxy(this.assignTo, video), 100);
+					// stream could not be started if it has not been downloaded yet
+					// todo: add for support of Firefox
+					// stream.getRemoteStreams()[0].currentTime > 0
+					if (stream.getVideoTracks().length > 0) {
+						assignTo.call(this, video);
+					} else {
+						setTimeout(this.proxy(this.assignTo, video), 100);
+					}
 				}
+			}
+		});
+
+		function assignTo(video) {
+			// currently for firefox 'src' does not work, in future it can be removed
+			if (isFirefox) {
+				video.mozSrcObject = stream;
+			} else {
+				video.src = this.getURL();
 			}
 		}
 	});
-
-	function assignTo(video) {
-		// currently for firefox 'src' does not work, in future it can be removed
-		var isFirefox = !!navigator.mozGetUserMedia;
-		if (isFirefox) {
-			video.mozSrcObject = this._stream;
-		} else {
-			video.src = this.getURL();
-		}
-	}
 })(window);

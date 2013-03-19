@@ -54,7 +54,7 @@
 				if (!!response && !!response.E && response.E != '') {
 					var error = new xrtc.CommonError('getWebSocketURL', 'Error occured while getting the URL of WebSockets', response.E);
 					logger.error('getWebSocketURL', error);
-					this.trigger(xrtc.Connection.events.serverError, error);
+					this.trigger(xrtc.ServerConnector.events.serverError, error);
 				} else {
 					var url = response.D.value;
 					logger.info('getWebSocketURL', url);
@@ -156,7 +156,9 @@
 			connectionClose: 'connectionclose',
 			connectionError: 'connectionerror',
 			message: 'message',
-			messageFormatError: 'messageformaterror'
+			messageFormatError: 'messageformaterror',
+			
+			serverError: 'servererror'
 		},
 
 		settings: {
