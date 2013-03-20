@@ -8,6 +8,7 @@
 ///<reference path="~/Scripts/xRtc/Connection.js" />
 ///<reference path="~/Scripts/xRtc/DataChannel.js" />
 ///<reference path="~/Scripts/xRtc/EventDispatcher.js" />
+///<reference path="~/Scripts/xRtc/HandshakeController.js" />
 ///<reference path="~/Scripts/xRtc/Logger.js" />
 ///<reference path="~/Scripts/xRtc/Room.js" />
 ///<reference path="~/Scripts/xRtc/ServerConnector.js" />
@@ -40,10 +41,13 @@ describe("ServerConnector", function () {
 		eventSpy = sinon.spy(eventObject, 'eventHandler');
 	});
 
-	afterEach(function() {
+	afterEach(function () {
+		serverConnector = null;
 		server.restore();
 		webSocket.restore();
 		webSocketStub = null;
+		eventObject = null;
+		eventSpy = null;
 	});
 
 
@@ -60,7 +64,7 @@ describe("ServerConnector", function () {
 			serverConnector.connect('token');
 			server.respond();
 
-			expect(eventSpy.notCalled);
+			expect(eventSpy.notCalled).toBeTruthy();
 		});
 
 		it("if response contains errors then WebSocket object won't be created", function () {
@@ -78,7 +82,7 @@ describe("ServerConnector", function () {
 			server.respondWith([200, {}, '{"P":"/ws","S":200,"E":["some error happened"],"D":null}']);
 			server.respond();
 
-			expect(eventSpy.called);
+			expect(eventSpy.called).toBeTruthy();
 		});
 	});
 
@@ -90,7 +94,7 @@ describe("ServerConnector", function () {
 
 			serverConnector.disconnect();
 
-			expect(spy.called);
+			expect(spy.called).toBeTruthy();
 		});
 
 		it("if connection with WS server isn't established then nothing will happen", function () {
@@ -108,7 +112,7 @@ describe("ServerConnector", function () {
 
 			serverConnector.send(message);
 
-			expect(spy.withArgs(JSON.stringify(message)).calledOnce);
+			expect(spy.withArgs(JSON.stringify(message)).calledOnce).toBeTruthy();
 		});
 
 		it("if connection with WS server isn't established then exception will be thrown", function () {
@@ -134,7 +138,7 @@ describe("ServerConnector", function () {
 
 			webSocketStub.onopen({});
 
-			expect(eventSpy.calledOnce);
+			expect(eventSpy.withArgs({ event: {} }).calledOnce).toBeTruthy();
 		});
 
 		it("'onclose' and ServerConnector fires 'connectionClose' event", function () {
@@ -142,7 +146,7 @@ describe("ServerConnector", function () {
 
 			webSocketStub.onclose({});
 
-			expect(eventSpy.calledOnce);
+			expect(eventSpy.withArgs({ event: {} }).calledOnce).toBeTruthy();
 		});
 
 		it("'onerror' and ServerConnector fires 'connectionError' event", function () {
@@ -150,17 +154,40 @@ describe("ServerConnector", function () {
 
 			webSocketStub.onerror({});
 
-			expect(eventSpy.calledOnce);
+			expect(eventSpy.calledOnce).toBeTruthy();
+		});
+
+		it("'onmessage' and ServerConnector fires 'message' event", function () {
+			serverConnector.on(xRtc.ServerConnector.events.message, eventObject.eventHandler);
+
+			webSocketStub.onmessage({data: ''});
+
+			expect(eventSpy.withArgs({ event: { data: '' } }).calledOnce).toBeTruthy();
 		});
 
 		describe("'onmessage' and ServerConnector fires appropriate event", function () {
-			var peers_message = '{"Type":"peers","UserId":"username","TargetUserId":"","Room":"test_room","Message":"[\"username1\", \"username2\"]"}';
+			var expectedArg;
+
+			beforeEach(function () {
+				expectedArg = {
+					room: 'test_room',
+					senderId: 'username'
+				};
+			});
+			
+			afterEach(function () {
+				expectedArg = null;
+			});
+
+			var peers_message = '{"Type":"peers","UserId":"username","TargetUserId":"","Room":"test_room","Message":"[\\"username1\\", \\"username2\\"]"}';
 			it("server generates 'peers' event, ServerConnector parses message and fires 'peers' event", function () {
 				serverConnector.on(xRtc.Room.serverEvents.participantsUpdated, eventObject.eventHandler);
 
 				webSocketStub.onmessage({ data: peers_message });
-				
-				expect(eventSpy.calledOnce);
+
+				expectedArg.connections = ['username1', 'username2'];
+
+				expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 			});
 
 			var peer_connected = '{"Type":"peer_connected","UserId":"username","TargetUserId":"","Room":"test_room","Message":"username1"}';
@@ -168,8 +195,10 @@ describe("ServerConnector", function () {
 				serverConnector.on(xRtc.Room.serverEvents.participantConnected, eventObject.eventHandler);
 
 				webSocketStub.onmessage({ data: peer_connected });
+				
+				expectedArg.paticipantId = 'username1';
 
-				expect(eventSpy.calledOnce);
+				expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 			});
 
 			var peer_removed = '{"Type":"peer_removed","UserId":"username","TargetUserId":"","Room":"test_room","Message":"username1"}';
@@ -178,16 +207,32 @@ describe("ServerConnector", function () {
 
 				webSocketStub.onmessage({ data: peer_removed });
 
-				expect(eventSpy.calledOnce);
+				expectedArg.paticipantId = 'username1';
+
+				expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 			});
 
-			var server_message = '{"Type":"message","UserId":"username","TargetUserId":"ivan","Room":"test_room","Message":"{\"data\":{\"iceCandidate\":\"{\\\"sdpMLineIndex\\\":1,\\\"sdpMid\\\":\\\"video\\\",\\\"candidate\\\":\\\""}\"},\"eventName\":\"receiveice\",\"targetUserId\":\"username2\"}"}';
+			var server_message = '{"Type":"message","UserId":"username","TargetUserId":"username2","Room":"test_room","Message":"{\\"data\\":{},\\"eventName\\":\\"receivebye\\",\\"targetUserId\\":\\"username2\\"}"}';
 			it("server generates 'message' event, ServerConnector parses message and fires event which is contained in message", function () {
-				serverConnector.on(xRtc.HandshakeController.events.receiveIce, eventObject.eventHandler);
+				serverConnector.on(xRtc.HandshakeController.events.receiveBye, eventObject.eventHandler);
 
 				webSocketStub.onmessage({ data: server_message });
+				expectedArg = {
+					senderId: 'username',
+					receiverId: 'username2'
+				};
 
-				expect(eventSpy.calledOnce);
+				expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
+			});
+
+
+			var server_bad_message = '{"Type":"username"}';
+			it("server generates 'message' event with bad message, ServerConnector parses message and fires 'messageFormatError' event", function () {
+				serverConnector.on(xRtc.ServerConnector.events.messageFormatError, eventObject.eventHandler);
+
+				webSocketStub.onmessage({ data: server_bad_message });
+
+				expect(eventSpy.calledOnce).toBeTruthy();
 			});
 		});
 	});

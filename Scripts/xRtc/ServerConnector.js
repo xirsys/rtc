@@ -30,7 +30,7 @@
 
 			send: function (data) {
 				/// <summary>Sends message to server</summary>
-				
+
 				if (!socket) {
 					var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
 					logger.error('send', error);
@@ -47,8 +47,8 @@
 		function getWebSocketUrl(callback) {
 			this.ajax(xrtc.ServerConnector.settings.URL, 'POST', '', proxy(getWebSocketURLSuccess, callback));
 		}
-		
-		function getWebSocketURLSuccess (response, callback) {
+
+		function getWebSocketURLSuccess(response, callback) {
 			try {
 				response = JSON.parse(response);
 				logger.debug('getWebSocketURL', response);
@@ -100,9 +100,9 @@
 		function socketOnMessage(msg) {
 			var data = { event: msg };
 			logger.debug('message', data);
-			this.trigger(xrtc.ServerConnector.events.message, msg);
+			this.trigger(xrtc.ServerConnector.events.message, data);
 
-			var message = parseMessage(msg);
+			var message = parseMessage.call(this, msg);
 			logger.info('message', msg, message);
 			if (message) {
 				this.trigger(message.eventName, message.data);
@@ -116,36 +116,38 @@
 
 				switch (json.Type) {
 					case 'peers':
-					result = {
-						eventName: json.Type,
-						data: {
-							room: json.Room,
-							connections: JSON.parse(json.Message),
-							senderId: json.UserId
-						}
-					};
-					break;
-				case 'peer_connected':
-				case 'peer_removed':
-					result = {
-						eventName: json.Type,
-						data: {
-							room: json.Room,
-							paticipantId: json.Message,
-							senderId: json.UserId
-						}
-					};
-					break;
-				default:
-					logger.debug('parseMessage', msg.data);
-					result = JSON.parse(json.Message);
-					result.data.senderId = json.UserId;
-					result.data.receiverId = json.TargetUserId;
-					break;
+						result = {
+							eventName: json.Type,
+							data: {
+								senderId: json.UserId,
+								room: json.Room,
+								connections: JSON.parse(json.Message),
+							}
+						};
+						break;
+					case 'peer_connected':
+					case 'peer_removed':
+						result = {
+							eventName: json.Type,
+							data: {
+								senderId: json.UserId,
+								room: json.Room,
+								paticipantId: json.Message,
+							}
+						};
+						break;
+					default:
+						logger.debug('parseMessage', msg.data);
+						result = JSON.parse(json.Message);
+						result.data.senderId = json.UserId;
+						result.data.receiverId = json.TargetUserId;
+						break;
 				}
-			} catch(e) {
+			} catch (e) {
 				var error = new xrtc.CommonError('parseMessage', 'Message format error', e);
 				logger.error('parseMessage', error, msg);
+
+				this.trigger(xrtc.ServerConnector.events.messageFormatError, e);
 			}
 
 			return result;
@@ -159,7 +161,7 @@
 			connectionError: 'connectionerror',
 			message: 'message',
 			messageFormatError: 'messageformaterror',
-			
+
 			serverError: 'servererror'
 		},
 
