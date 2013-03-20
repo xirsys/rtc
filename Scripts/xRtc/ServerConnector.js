@@ -38,7 +38,9 @@
 					throw error;
 				}
 
-				socket.send(JSON.stringify(data));
+				var request = JSON.stringify(data);
+				logger.debug('send', data, request);
+				socket.send(request);
 			}
 		});
 
