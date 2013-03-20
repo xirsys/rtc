@@ -57,9 +57,7 @@
 
 				var data = {
 					eventName: xrtc.HandshakeController.events.receiveBye,
-					targetUserId: targetUserId.toString(),
-					//todo: remove it, now server sends iceCandidate in data
-					data: {}
+					targetUserId: targetUserId.toString()
 				};
 
 				this.trigger(xrtc.HandshakeController.events.sendBye, data);

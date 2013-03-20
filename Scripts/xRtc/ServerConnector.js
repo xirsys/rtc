@@ -139,6 +139,9 @@
 					default:
 						logger.debug('parseMessage', msg.data);
 						result = JSON.parse(json.Message);
+						if (!result.data) {
+							result.data = {};
+						}
 						result.data.senderId = json.UserId;
 						result.data.receiverId = json.TargetUserId;
 						break;

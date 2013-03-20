@@ -81,8 +81,7 @@ describe("HandshakeController", function () {
 			handshakeController.sendBye('username', {});
 
 			expectedArg.eventName = xRtc.HandshakeController.events.receiveBye;
-			//todo: remo it when server will work fine
-			//delete expectedArg.data;
+			delete expectedArg.data;
 
 			expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 		});
