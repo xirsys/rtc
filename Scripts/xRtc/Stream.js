@@ -7,7 +7,8 @@
 
 	// todo: extract participantId from here
 	xrtc.Class2(xrtc, 'Stream', function Stream(stream, participantId) {
-		var isLocal = stream.constructor.name === 'LocalMediaStream';
+		var proxy = xrtc.Class.proxy(this),
+			isLocal = stream.constructor.name === 'LocalMediaStream';
 		
 		xrtc.Class.extend(this, {
 			getStream: function () {
@@ -36,7 +37,7 @@
 					if (stream.getVideoTracks().length > 0) {
 						assignTo.call(this, video);
 					} else {
-						setTimeout(this.proxy(this.assignTo, video), 100);
+						setTimeout(proxy(this.assignTo, video), 100);
 					}
 				}
 			}

@@ -50,128 +50,50 @@
 		});
 	}
 
-	xrtc.Connection = xrtc.Class('Connection');
+	xrtc.Class2(xrtc, 'Connection', function Connection(ud, am) {
+		var proxy = xrtc.Class.proxy(this),
+			logger = new xrtc.Logger(this.className),
+			userData = ud,
+			authManager = am,
+			remoteParticipant = null,
+			localStreams = [],
+			peerConnection = null,
+			handshakeController = null;
 
-	xrtc.Connection.include(xrtc.EventDispatcher);
-	xrtc.Connection.include({
-		init: function (userData, authManager) {
-			this._authManager = authManager;
-			this._handshakeController = new xrtc.HandshakeController();
-			this._logger = new xrtc.Logger(this.className);
-			this.proxy = xrtc.Class.proxy(this);
+		initHandshakeController.call(this);
 
-			var self = this;
-			self._peerConnection = null;
-			self._remoteParticipant = null;
-			self._userData = userData;
-			self._localStreams = [];
+		xrtc.Class.extend(this, xrtc.EventDispatcher, {
+			_logger: logger,
 
-			self._handshakeController
-				.on(xrtc.HandshakeController.events.receiveIce, function (response) {
-					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
-						return;
-					}
+			getHandshake: function () {
+				/// <summary>Returns HandshakeController</summary>
 
-					self._logger.debug('receiveIce', response);
+				return handshakeController;
+			},
 
-					var iceCandidate = new RTCIceCandidate(JSON.parse((response.iceCandidate)));
-					self._peerConnection.addIceCandidate(iceCandidate);
+			getRemoteParticipantName: function () {
+				/// <summary>Returns current remote participant name</summary>
 
-					self.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
-				})
-				.on(xrtc.HandshakeController.events.receiveOffer, function (response) {
-					if (response.receiverId != self._userData.name) {
-						return;
-					}
+				return remoteParticipant;
+			},
 
-					if (self.getState() === 'connected') {
-						//todo: possible the logic of using one Connection will be removed in next version
-						self._handshakeController.sendBye(response.senderId);
-						return;
-					}
+			startSession: function (participantId, options) {
+				/// <summary>Starts the process of p2p connection establishment</summary>
+				/// <param name="participantId" type="string">Name of remote participant</param>
+				/// <param name="options" type="object">Optional param. Offer options</param>
 
-					self._initPeerConnection(response.senderId, function (peerConnection) {
-						self._logger.debug('receiveOffer', response);
-						var sdp = JSON.parse(response.sdp);
+				if (!participantId) {
+					throw new xrtc.CommonError('startSession', 'participantId should be specified');
+				}
 
-						var sessionDescription = new RTCSessionDescription(sdp);
-						peerConnection.setRemoteDescription(sessionDescription);
+				var opts = {};
+				xrtc.Class.extend(opts, xrtc.Connection.settings.offerOptions, options || {});
 
-						peerConnection.createAnswer(
-							function (answer) {
-								peerConnection.setLocalDescription(answer);
-								self._handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
+				initPeerConnection.call(this, participantId, function () {
+					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), opts);
 
-								self._logger.debug('sendAnswer', response, answer);
-								self.trigger(xrtc.Connection.events.answerSent, response, answer);
-
-								self._addRemoteSteam();
-							},
-							function (err) {
-								var error = new xrtc.CommonError('sendAnswer', "Can't create WebRTC answer", err);
-								self._logger.error('sendAnswer', error);
-								self.trigger(xrtc.Connection.events.answerError, error);
-							},
-							xrtc.Connection.settings.answerOptions);
-					});
-				})
-				.on(xrtc.HandshakeController.events.receiveAnswer, function (response) {
-					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
-						return;
-					}
-
-					self._logger.debug('receiveAnswer', response);
-					var sdp = JSON.parse(response.sdp);
-
-					var sessionDescription = new RTCSessionDescription(sdp);
-					self._peerConnection.setRemoteDescription(sessionDescription);
-					self.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
-
-					self._addRemoteSteam();
-				})
-				.on(xrtc.HandshakeController.events.receiveBye, function (response) {
-					if (self._remoteParticipant != response.senderId || !self._peerConnection) {
-						return;
-					}
-
-					self._close();
-				});
-		},
-		
-		getHandshake: function() {
-			return this._handshakeController;
-		},
-
-		_getIceServers: function (callback) {
-			var self = this;
-
-			this._authManager.getToken(this._userData, function (token) {
-				self._authManager.getIceServers(token, function (iceServers) {
-					if (typeof callback === "function") {
-						callback(token, iceServers);
-					}
-				});
-			});
-		},
-
-		startSession: function (participantId, options) {
-			/// <summary>Starts the process of p2p connection establishment</summary>
-			/// <param name="participantId" type="string">Name of remote participant</param>
-			/// <param name="options" type="object">Optional param. Offer options</param>
-
-			if (!participantId) {
-				throw new xrtc.CommonError('startSession', 'participantId should be specified');
-			}
-
-			var self = this, opts = {};
-
-			xrtc.Class.extend(opts, xrtc.Connection.settings.offerOptions, options || {});
-
-			this._initPeerConnection(participantId, function (peerConnection) {
-				peerConnection.createOffer(
-					function (offer) {
+					function onCreateOfferSuccess(offer) {
 						peerConnection.setLocalDescription(offer);
-						self._logger.debug('sendOffer', self._remoteParticipant, offer);
 
 						// todo:remove it in next versions
 						if (isFirefox) {
@@ -179,122 +101,123 @@
 						}
 						// todo:remove it in next versions
 
-						self._handshakeController.sendOffer(self._remoteParticipant, JSON.stringify(offer));
+						logger.debug('sendOffer', remoteParticipant, offer);
+						handshakeController.sendOffer(remoteParticipant, JSON.stringify(offer));
 
-						self.trigger(xrtc.Connection.events.offerSent, self._remoteParticipant, offer);
-					},
-					function (err) {
+						this.trigger(xrtc.Connection.events.offerSent, remoteParticipant, offer);
+					}
+
+					function onCreateOfferError(err) {
 						var error = new xrtc.CommonError('startSession', "Can't create WebRTC offer", err);
-						self._logger.error('sendOffer', error);
-						self.trigger(xrtc.Connection.events.offerError, error);
-					},
-					opts
-				);
-			});
-		},
 
-		endSession: function () {
-			/// <summary>Ends p2p connection</summary>
+						logger.error('sendOffer', error);
+						this.trigger(xrtc.Connection.events.offerError, error);
+					}
+				});
+			},
 
-			if (this._handshakeController && this._remoteParticipant) {
-				this._handshakeController.sendBye(this._remoteParticipant);
-			}
+			endSession: function () {
+				/// <summary>Ends p2p connection</summary>
 
-			this._close();
-		},
+				if (handshakeController && remoteParticipant) {
+					handshakeController.sendBye(remoteParticipant);
+				}
 
-		addMedia: function (options) {
-			/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
-			/// <param name="options" type="object">Optional param. Local media options</param>
+				close.call(this);
+			},
 
-			var self = this, opts = {};
+			addMedia: function (options) {
+				/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
+				/// <param name="options" type="object">Optional param. Local media options</param>
 
-			xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
+				var opts = {};
+				xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
 
-			getUserMedia(
-				opts,
-				function (stream) {
-					self._localStreams.push(stream);
+				getUserMedia(opts, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
 
-					var xrtcStream = new xrtc.Stream(stream, self._userData.name);
+				function onGetUserMediaSuccess(stream) {
+					localStreams.push(stream);
 
-					self._logger.debug('addMedia', xrtcStream);
-					self.trigger(xrtc.Connection.events.streamAdded, xrtcStream);
-				},
-				function (err) {
+					var xrtcStream = new xrtc.Stream(stream, userData.name);
+
+					logger.debug('addMedia', xrtcStream);
+					this.trigger(xrtc.Connection.events.streamAdded, xrtcStream);
+				}
+
+				function onGetUserMediaError(err) {
 					var error = new xrtc.CommonError('addMedia', "Can't get UserMedia", err);
 
-					self._logger.error('addMedia', error);
-					self.trigger(xrtc.Connection.events.streamError, error);
+					logger.error('addMedia', error);
+					this.trigger(xrtc.Connection.events.streamError, error);
 				}
-			);
-		},
+			},
 
-		createDataChannel: function (name) {
-			/// <summary>Creates new instance of DataChannel</summary>
-			/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
+			createDataChannel: function (name) {
+				/// <summary>Creates new instance of DataChannel</summary>
+				/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
 
-			var dataChannel = null;
+				var dataChannel = null;
 
-			try {
-				dataChannel = new xrtc.DataChannel(this._peerConnection.createDataChannel(name, { reliable: false }), this._userData.name);
-			} catch (ex) {
-				var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel", ex);
-				this.trigger(xrtc.Connection.events.dataChannelCreationError, error);
+				try {
+					dataChannel = new xrtc.DataChannel(peerConnection.createDataChannel(name, { reliable: false }), userData.name);
+				} catch (ex) {
+					var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel", ex);
+					this.trigger(xrtc.Connection.events.dataChannelCreationError, error);
+				}
+
+				return dataChannel;
+			},
+
+			getState: function () {
+				/// <summary>Returns state of p2p connection</summary>
+
+				// it can change from version to version
+				var isLocalStreamAdded = localStreams.length > 0,
+					states = {
+						'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
+
+						// Chrome M25
+						'new': isLocalStreamAdded ? 'ready' : 'not-ready',
+						'opening': 'connecting',
+						'active': 'connected',
+						'closing': 'disconnecting',
+						'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
+
+						// Chrome M26+
+						'stable': 'connected',
+						'have-local-offer': 'ready',
+						'have-remote-offer': 'connecting'
+					},
+
+					state = peerConnection ? peerConnection.readyState : 'notinitialized';
+
+				return states[state];
 			}
+		});
 
-			return dataChannel;
-		},
+		function initHandshakeController() {
+			handshakeController = new xrtc.HandshakeController();
 
+			handshakeController
+				.on(xrtc.HandshakeController.events.receiveIce, proxy(onReceiveIce))
+				.on(xrtc.HandshakeController.events.receiveOffer, proxy(onReceiveOffer))
+				.on(xrtc.HandshakeController.events.receiveAnswer, proxy(onReceiveAnswer))
+				.on(xrtc.HandshakeController.events.receiveBye, proxy(onReceiveBye));
+		}
 
-		getState: function () {
-			/// <summary>Returns state of p2p connection</summary>
+		function initPeerConnection(userId, callback) {
+			remoteParticipant = userId;
 
-			// it can change from version to version
-			var isLocalStreamAdded = this._localStreams.length > 0,
-
-				states = {
-					'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
-
-					// Chrome M25
-					'new': isLocalStreamAdded ? 'ready' : 'not-ready',
-					'opening': 'connecting',
-					'active': 'connected',
-					'closing': 'disconnecting',
-					'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
-
-					// Chrome M26+
-					'stable': 'connected',
-					'have-local-offer': 'ready',
-					'have-remote-offer': 'connecting'
-				},
-
-				state = this._peerConnection ? this._peerConnection.readyState : 'notinitialized';
-
-			return states[state];
-		},
-
-		_close: function () {
-			if (this._peerConnection) {
-				this._peerConnection.onicecandidate = null;
-				this._peerConnection.close();
-				this._peerConnection = null;
-
-				var closedParticipant = this._remoteParticipant;
-				this._remoteParticipant = null;
-
-				this.trigger(xrtc.Connection.events.connectionClosed, closedParticipant);
+			if (!peerConnection) {
+				getIceServers.call(this, proxy(onIceServersCandidate));
+			} else {
+				callCallback();
 			}
-		},
-
-		_initPeerConnection: function (userId, callback) {
-			this._remoteParticipant = userId;
-			var self = this;
 
 			function callCallback() {
 				if (typeof callback === "function") {
 					try {
-						callback(self._peerConnection);
+						callback();
 					} catch (e) {
 						// todo: check or not check?
 						// here is a server problem, sometimes it doesn't work from first time
@@ -303,49 +226,164 @@
 				}
 			}
 
-			if (!this._peerConnection) {
-				this._getIceServers(function (token, iceServers) {
-					self._peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
-					self._logger.info('_initPeerConnection', 'PeerConnection created.');
+			function onIceServersCandidate(token, iceServers) {
+				peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
+				logger.info('initPeerConnection', 'PeerConnection created.');
 
-					self._peerConnection.onicecandidate = function (evt) {
-						if (!!evt.candidate) {
-							self._handshakeController.sendIce(self._remoteParticipant, JSON.stringify(evt.candidate));
-							self.trigger(xrtc.Connection.events.iceSent, { event: evt });
-						}
-					};
+				peerConnection.onicecandidate = proxy(onIceCandidate);
+				peerConnection.onstatechange = proxy(onStateChange);
+				peerConnection.onopen = proxy(onOpen);
 
-					self._peerConnection.onstatechange = function (e) {
-						self.trigger(xrtc.Connection.events.stateChanged, self.getState());
-					};
-
-					self._peerConnection.onopen = function (e) {
-						self.trigger(xrtc.Connection.events.connectionEstablished, self._remoteParticipant);
-					};
-
-					for (var i = 0, len = self._localStreams.length; i < len; i++) {
-						self._peerConnection.addStream(self._localStreams[i]);
+				function onIceCandidate(evt) {
+					if (!!evt.candidate) {
+						handshakeController.sendIce(remoteParticipant, JSON.stringify(evt.candidate));
+						this.trigger(xrtc.Connection.events.iceSent, { event: evt });
 					}
+				}
 
-					self.trigger(xrtc.Connection.events.initialized);
+				function onStateChange(evt) {
+					this.trigger(xrtc.Connection.events.stateChanged, this.getState());
+				}
 
-					callCallback();
-				});
-			} else {
+				function onOpen(evt) {
+					this.trigger(xrtc.Connection.events.connectionEstablished, this.remoteParticipant);
+				}
+
+				for (var i = 0, len = localStreams.length; i < len; i++) {
+					peerConnection.addStream(localStreams[i]);
+				}
+
+				this.trigger(xrtc.Connection.events.initialized);
+
 				callCallback();
 			}
-		},
+		}
 
-		_addRemoteSteam: function () {
-			var streams = this._peerConnection.getRemoteStreams();
+		function addRemoteSteam() {
+			var streams = peerConnection.getRemoteStreams();
 
 			if (streams.length > 0) {
-				this.trigger(xrtc.Connection.events.streamAdded, new xrtc.Stream(streams[0], this._remoteParticipant));
+				this.trigger(xrtc.Connection.events.streamAdded, new xrtc.Stream(streams[0], remoteParticipant));
 			} else {
 				// will make pause if there is not any remote streams
-				setTimeout(this.proxy(this._addRemoteSteam), 100);
+				setTimeout(proxy(addRemoteSteam), 100);
 			}
-		},
+		}
+
+		function close() {
+			if (peerConnection) {
+				peerConnection.onicecandidate = null;
+				peerConnection.close();
+				peerConnection = null;
+
+				var closedParticipant = remoteParticipant;
+				remoteParticipant = null;
+
+				this.trigger(xrtc.Connection.events.connectionClosed, closedParticipant);
+			}
+		}
+
+		function getIceServers(callback) {
+			authManager.getToken(userData, function (token) {
+				authManager.getIceServers(token, function (iceServers) {
+					if (typeof callback === "function") {
+						callback(token, iceServers);
+					}
+				});
+			});
+		}
+
+		function onReceiveIce(response) {
+			if (response.senderId != remoteParticipant || !peerConnection) {
+				return;
+			}
+
+			logger.debug('receiveIce', response);
+
+			var iceCandidate = new RTCIceCandidate(JSON.parse(response.iceCandidate));
+			peerConnection.addIceCandidate(iceCandidate);
+
+			this.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
+		}
+
+		function onReceiveOffer(response) {
+			if (response.receiverId != userData.name) {
+				return;
+			}
+
+			var data = {
+				participantName: response.senderId,
+				accept: proxy(onAcceptCall),
+				decline: proxy(onDeclineCall)
+			};
+
+			this.trigger(xrtc.Connection.events.incomingCall, data);
+
+			function onAcceptCall() {
+				this.endSession();
+
+				initPeerConnection.call(this, response.senderId, function () {
+					logger.debug('receiveOffer', response);
+					var sdp = JSON.parse(response.sdp);
+
+					var sessionDescription = new RTCSessionDescription(sdp);
+					peerConnection.setRemoteDescription(sessionDescription);
+
+					peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
+
+					function onCreateAnswerSuccess(answer) {
+						peerConnection.setLocalDescription(answer);
+
+						logger.debug('sendAnswer', response, answer);
+						handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
+
+						this.trigger(xrtc.Connection.events.answerSent, response, answer);
+
+						addRemoteSteam.call(this);
+					}
+
+					function onCreateAnswerError(err) {
+						var error = new xrtc.CommonError('sendAnswer', "Can't create WebRTC answer", err);
+
+						logger.error('sendAnswer', error);
+						this.trigger(xrtc.Connection.events.answerError, error);
+					}
+				});
+			}
+
+			function onDeclineCall() {
+				handshakeController.sendBye(response.senderId);
+			}
+
+			/*//todo: possible the logic of using one Connection will be removed in next version
+			if (this.getState() === 'connected') {
+				handshakeController.sendBye(response.senderId);
+				return;
+			}*/
+		}
+
+		function onReceiveAnswer(response) {
+			if (response.senderId != remoteParticipant || !peerConnection) {
+				return;
+			}
+
+			logger.debug('receiveAnswer', response);
+			var sdp = JSON.parse(response.sdp);
+
+			var sessionDescription = new RTCSessionDescription(sdp);
+			peerConnection.setRemoteDescription(sessionDescription);
+			this.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
+
+			addRemoteSteam.call(this);
+		}
+
+		function onReceiveBye(response) {
+			if (response.senderId != remoteParticipant || !peerConnection) {
+				return;
+			}
+
+			close.call(this);
+		}
 	});
 
 	xrtc.Connection.extend({
@@ -371,7 +409,8 @@
 			connectionClosed: 'connectionclosed',
 
 			initialized: 'initialized',
-			stateChanged: 'statechanged'
+			stateChanged: 'statechanged',
+			incomingCall: 'incomingcall'
 		},
 
 		settings: {

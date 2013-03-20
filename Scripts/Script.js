@@ -105,11 +105,19 @@
 						exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
+				.on(xrtc.Connection.events.incomingCall, function(evt) {
+					if (confirm(evt.participantName + ' is waiting for your answer. Would you like to answer?')) {
+						evt.accept();
+					} else {
+						evt.decline();
+					}
+				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
 					exports.chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
 				})
 				.on(xrtc.Connection.events.connectionClosed, function (participantId) {
+					exports.chat.contactsList.refreshParticipants();
 					exports.chat.removeParticipant(participantId);
 					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				})
@@ -192,7 +200,6 @@
 		disconnect: function (contact) {
 			console.log('Disconnection from participant...', contact);
 			this._connection.endSession();
-			this.removeParticipant(contact);
 		},
 
 		contactsList: {
@@ -244,7 +251,7 @@
 				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
 				if (!freeStates[state]) {
-					contacts.filter('[data-name="' + chat._connection._remoteParticipant + '"]').addClass('current');
+					contacts.filter('[data-name="' + chat._connection.getRemoteParticipantName() + '"]').addClass('current');
 				}
 			}
 		},
