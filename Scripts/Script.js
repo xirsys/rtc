@@ -122,18 +122,23 @@
 					exports.chat.removeParticipant(participantId);
 					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				})
+				.on(xrtc.Connection.events.offerDeclined, function (participantId) {
+					exports.chat.contactsList.refreshParticipants();
+					exports.chat.addSystemMessage(participantId + ' has declined your call');
+				})
 				.on(xrtc.Connection.events.stateChanged, function (state) {
 					exports.chat.contactsList.updateState(state);
 				});
 
 			var serverConnector = exports.chat._serverConnector = new xRtc.ServerConnector()
-				.on(xrtc.ServerConnector.events.connectionClose, function (data) {
-					exports.chat.contactsList.refreshParticipants([]);
+				.on(xrtc.ServerConnector.events.connectionClose, function(data) {
 					exports.chat.addSystemMessage('You was disconnected by the server.');
-				})
-				.on(xrtc.HandshakeController.events.receiveBye, function (data) {
-					exports.chat.removeParticipant(data.senderId);
-					exports.chat.addSystemMessage(data.senderId + ' closed p2p connection.');
+
+					//todo: possible this is redundant
+					authManager.getToken(exports.chat._userData, function (token) {
+						exports.chat.addSystemMessage('Trying reconnect with the server.');
+						room.join(token);
+					});
 				});
 
 			var room = exports.chat._room = new xRtc.Room(serverConnector, connection.getHandshake())
@@ -172,6 +177,13 @@
 			if (exports.chat.settings.autoAcceptCall) {
 				incomingCall.accept();
 			} else {
+				/*
+				//todo: possible to decline call if any connection already is established
+				if (exports.chat._connection.getState() === 'connected') {
+					incomingCall.decline();
+					return;
+				}*/
+
 				//todo: make it more pretty
 				if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
 					incomingCall.accept();

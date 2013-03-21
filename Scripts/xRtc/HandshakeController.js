@@ -14,13 +14,13 @@
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="iceCandidate" type="object">WebRTC internal object. Will be converted to JSON</param>
 
-				var data = {
+				var request = {
 					eventName: xrtc.HandshakeController.events.receiveIce,
 					targetUserId: targetUserId.toString(),
 					data: { iceCandidate: iceCandidate }
 				};
 
-				this.trigger(xrtc.HandshakeController.events.sendIce, data);
+				this.trigger(xrtc.HandshakeController.events.sendIce, request);
 			},
 
 			sendOffer: function (targetUserId, offer) {
@@ -28,13 +28,13 @@
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
 
-				var data = {
+				var request = {
 					eventName: xrtc.HandshakeController.events.receiveOffer,
 					targetUserId: targetUserId.toString(),
 					data: { sdp: offer }
 				};
 
-				this.trigger(xrtc.HandshakeController.events.sendOffer, data);
+				this.trigger(xrtc.HandshakeController.events.sendOffer, request);
 			},
 
 			sendAnswer: function (targetUserId, answer) {
@@ -42,25 +42,30 @@
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
 
-				var data = {
+				var request = {
 					eventName: xrtc.HandshakeController.events.receiveAnswer,
 					targetUserId: targetUserId.toString(),
 					data: { sdp: answer }
 				};
 
-				this.trigger(xrtc.HandshakeController.events.sendAnswer, data);
+				this.trigger(xrtc.HandshakeController.events.sendAnswer, request);
 			},
 
-			sendBye: function (targetUserId) {
+			sendBye: function (targetUserId, options) {
 				/// <summary>Sends disconnection message to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
+				/// <param name="options" type="object">Additional request parameters</param>
 
-				var data = {
+				var request = {
 					eventName: xrtc.HandshakeController.events.receiveBye,
 					targetUserId: targetUserId.toString()
 				};
 
-				this.trigger(xrtc.HandshakeController.events.sendBye, data);
+				if (options) {
+					request.data = options;
+				}
+
+				this.trigger(xrtc.HandshakeController.events.sendBye, request);
 			}
 		});
 	});

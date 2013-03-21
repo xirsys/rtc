@@ -13,6 +13,7 @@
 			_logger: logger,
 
 			join: function (token) {
+				//todo: catch serverConnector open/close events and generate own
 				serverConnector.connect(token);
 
 				serverConnector

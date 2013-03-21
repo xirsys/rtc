@@ -1,9 +1,9 @@
 ﻿'use strict';
 
-//todo: add ability to check WebRTC support. think of it!
 (function (exports) {
 	var xrtc = exports.xRtc;
 
+	//todo: add ability to check WebRTC support. think of it!
 	var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia,
 		RTCPeerConnection = exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
 		RTCIceCandidate = exports.mozRTCIceCandidate || exports.RTCIceCandidate,
@@ -65,18 +65,6 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			getHandshake: function () {
-				/// <summary>Returns HandshakeController</summary>
-
-				return handshakeController;
-			},
-
-			getRemoteParticipantName: function () {
-				/// <summary>Returns current remote participant name</summary>
-
-				return remoteParticipant;
-			},
-
 			startSession: function (participantId, options) {
 				/// <summary>Starts the process of p2p connection establishment</summary>
 				/// <param name="participantId" type="string">Name of remote participant</param>
@@ -122,8 +110,8 @@
 				if (handshakeController && remoteParticipant) {
 					handshakeController.sendBye(remoteParticipant);
 				}
-
-				close.call(this);
+				
+				closePeerConnection.call(this);
 			},
 
 			addMedia: function (options) {
@@ -168,8 +156,20 @@
 				return dataChannel;
 			},
 
+			getHandshake: function () {
+				/// <summary>Returns HandshakeController</summary>
+
+				return handshakeController;
+			},
+
+			getRemoteParticipantName: function () {
+				/// <summary>Returns current remote participant name</summary>
+
+				return remoteParticipant;
+			},
+
 			getState: function () {
-				/// <summary>Returns state of p2p connection</summary>
+				/// <summary>Returns the state of p2p connection</summary>
 
 				// it can change from version to version
 				var isLocalStreamAdded = localStreams.length > 0,
@@ -270,19 +270,6 @@
 			}
 		}
 
-		function close() {
-			if (peerConnection) {
-				peerConnection.onicecandidate = null;
-				peerConnection.close();
-				peerConnection = null;
-
-				var closedParticipant = remoteParticipant;
-				remoteParticipant = null;
-
-				this.trigger(xrtc.Connection.events.connectionClosed, closedParticipant);
-			}
-		}
-
 		function getIceServers(callback) {
 			authManager.getToken(userData, function (token) {
 				authManager.getIceServers(token, function (iceServers) {
@@ -352,14 +339,8 @@
 			}
 
 			function onDeclineCall() {
-				handshakeController.sendBye(response.senderId);
+				handshakeController.sendBye(response.senderId, { type: 'decline' });
 			}
-
-			/*//todo: possible the logic of using one Connection will be removed in next version
-			if (this.getState() === 'connected') {
-				handshakeController.sendBye(response.senderId);
-				return;
-			}*/
 		}
 
 		function onReceiveAnswer(response) {
@@ -382,7 +363,29 @@
 				return;
 			}
 
-			close.call(this);
+			closePeerConnection.call(this, response.type || 'close');
+		}
+
+		function closePeerConnection(type) {
+			if (peerConnection) {
+				peerConnection.onicecandidate = null;
+				peerConnection.close();
+				peerConnection = null;
+				
+				var closedParticipant = remoteParticipant;
+				remoteParticipant = null;
+
+				debugger;
+				switch (type) {
+					case 'decline':
+						this.trigger(xrtc.Connection.events.offerDeclined, closedParticipant);
+						break;
+					case 'close':
+					default:
+						this.trigger(xrtc.Connection.events.connectionClosed, closedParticipant);
+						break;
+				}
+			}
 		}
 	});
 
@@ -410,7 +413,9 @@
 
 			initialized: 'initialized',
 			stateChanged: 'statechanged',
-			incomingCall: 'incomingcall'
+			
+			incomingCall: 'incomingcall',
+			offerDeclined: 'offerdeclined'
 		},
 
 		settings: {

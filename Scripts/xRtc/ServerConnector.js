@@ -31,7 +31,7 @@
 			send: function (data) {
 				/// <summary>Sends message to server</summary>
 
-				if (!socket) {
+				if (!socket || socket.readyState === 3) {
 					var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
 					logger.error('send', error);
 
