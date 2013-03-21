@@ -58,7 +58,9 @@
 			remoteParticipant = null,
 			localStreams = [],
 			peerConnection = null,
-			handshakeController = null;
+			handshakeController = null,
+			isConnectionEstablished = false,
+			iceCandidates = [];
 
 		initHandshakeController.call(this);
 
@@ -209,7 +211,7 @@
 			remoteParticipant = userId;
 
 			if (!peerConnection) {
-				getIceServers.call(this, proxy(onIceServersCandidate));
+				getIceServers.call(this, proxy(onIceServersGot));
 			} else {
 				callCallback();
 			}
@@ -226,7 +228,7 @@
 				}
 			}
 
-			function onIceServersCandidate(token, iceServers) {
+			function onIceServersGot(token, iceServers) {
 				peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
@@ -280,17 +282,34 @@
 			});
 		}
 
+		function setIceCandidate(evt) {
+			iceCandidates.push(evt);
+
+			if (isConnectionEstablished) {
+				setIceCandidates.call(this);
+			}
+		}
+
+		function setIceCandidates() {
+			for (var i = 0; i < iceCandidates.length; i++) {
+				var response = iceCandidates[i];
+
+				var iceCandidate = new RTCIceCandidate(JSON.parse(response.iceCandidate));
+				peerConnection.addIceCandidate(iceCandidate);
+
+				this.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
+			}
+
+			iceCandidates = [];
+		}
+
 		function onReceiveIce(response) {
 			if (response.senderId != remoteParticipant || !peerConnection) {
 				return;
 			}
 
 			logger.debug('receiveIce', response);
-
-			var iceCandidate = new RTCIceCandidate(JSON.parse(response.iceCandidate));
-			peerConnection.addIceCandidate(iceCandidate);
-
-			this.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
+			setIceCandidate.call(this, response);
 		}
 
 		function onReceiveOffer(response) {
@@ -327,6 +346,9 @@
 						this.trigger(xrtc.Connection.events.answerSent, response, answer);
 
 						addRemoteSteam.call(this);
+
+						isConnectionEstablished = true;
+						setIceCandidates.call(this);
 					}
 
 					function onCreateAnswerError(err) {
@@ -356,6 +378,9 @@
 			this.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
 
 			addRemoteSteam.call(this);
+
+			isConnectionEstablished = true;
+			setIceCandidates.call(this);
 		}
 
 		function onReceiveBye(response) {
@@ -371,11 +396,12 @@
 				peerConnection.onicecandidate = null;
 				peerConnection.close();
 				peerConnection = null;
+				isConnectionEstablished = false;
+				iceCandidates = [];
 				
 				var closedParticipant = remoteParticipant;
 				remoteParticipant = null;
 
-				debugger;
 				switch (type) {
 					case 'decline':
 						this.trigger(xrtc.Connection.events.offerDeclined, closedParticipant);
@@ -448,8 +474,6 @@
 			}
 		}
 	});
-
-
 
 	if (isFirefox) {
 		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer 
