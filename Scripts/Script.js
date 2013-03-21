@@ -42,13 +42,18 @@
 	};
 
 	exports.chat = {
+		settings: {
+			autoAcceptCall: (getParams().autoaccept || 'false').toLowerCase() === 'true'
+		},
+		
 		_connection: null,
 		_room: null,
 		_serverConnector: null,
 		systemName: 'SYSTEM',
 
-		/// <summary>The method for the initializing of chat</summary>
 		init: function () {
+			/// <summary>The method for the initializing of chat</summary>
+			
 			$('#join-form').on('submit', function (e) {
 				e.preventDefault();
 
@@ -105,12 +110,8 @@
 						exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
-				.on(xrtc.Connection.events.incomingCall, function(evt) {
-					if (confirm(evt.participantName + ' is waiting for your answer. Would you like to answer?')) {
-						evt.accept();
-					} else {
-						evt.decline();
-					}
+				.on(xrtc.Connection.events.incomingCall, function (call) {
+					exports.chat.acceptCall(call);
 				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
@@ -165,6 +166,19 @@
 		leaveRoom: function () {
 			exports.chat._room.leave();
 			$('#step1, #step2').toggle();
+		},
+		
+		acceptCall: function(incomingCall) {
+			if (exports.chat.settings.autoAcceptCall) {
+				incomingCall.accept();
+			} else {
+				//todo: make it more pretty
+				if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
+					incomingCall.accept();
+				} else {
+					incomingCall.decline();
+				}
+			}
 		},
 
 		sendMessage: function (message) {
