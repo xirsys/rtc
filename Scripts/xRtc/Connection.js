@@ -305,7 +305,7 @@
 		}
 
 		function onReceiveIce(response) {
-			if (response.senderId != remoteParticipant || !peerConnection) {
+			if (response.senderId != remoteParticipant) {
 				return;
 			}
 
