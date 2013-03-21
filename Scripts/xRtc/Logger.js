@@ -41,6 +41,16 @@
 			}
 		},
 
+		test: function (method) {
+			if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === "object" &&  xrtc.Logger.level.test)) {
+				if (typeof method === "string") {
+					console.debug('Test:\t\t', this.baseClassName + '.' + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+				} else {
+					console.debug('Test:\t\t', convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+				}
+			}
+		},
+
 		warning: function (method) {
 			if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === "object" &&  xrtc.Logger.level.warning)) {
 				if (typeof method === "string") {
@@ -65,15 +75,15 @@
 	function convertArgumentsToArray() {
 		var args = [], arg,
 			index = 0,
-		    len = arguments.length;
+			len = arguments.length;
 
 		for (; index < len; index++) {
 			arg = arguments[index];
 			
 			if ((typeof arg === 'object') && (arg instanceof Object) && (typeof arg.length !== 'undefined')) {
 				var subArgs = convertArgumentsToArray.apply(null, Array.prototype.slice.call(arg)),
-				    subIndex = 0,
-				    subLen = subArgs.length;
+					subIndex = 0,
+					subLen = subArgs.length;
 
 				for (; subIndex < subLen; subIndex++) {
 					args.push(subArgs[subIndex]);

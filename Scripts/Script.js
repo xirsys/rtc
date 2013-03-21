@@ -49,6 +49,7 @@
 		_connection: null,
 		_room: null,
 		_serverConnector: null,
+		logging: true,
 		systemName: 'SYSTEM',
 
 		init: function () {
@@ -306,11 +307,14 @@
 		},
 
 		subscribe: function (eventDispatcher, events) {
+			var self = this;
 			if (typeof eventDispatcher.on === "function") {
 				for (var eventPropertyName in events) {
 					(function (eventName) {
 						eventDispatcher.on(eventName, function () {
-							console.log('CHAT', eventDispatcher.className, eventName, Array.prototype.slice.call(arguments));
+							if (self.logging) {
+								console.log('CHAT', eventDispatcher.className, eventName, Array.prototype.slice.call(arguments));
+							}
 						});
 					})(events[eventPropertyName]);
 				}
@@ -362,9 +366,10 @@ $(document).ready(function () {
 		return formData;
 	};
 
-	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true });
+	xRtc.Logger.enable({ info: false, debug: false, warning: false, error: false, test: true });
 
 	chat.init();
+	chat.logging = false;
 	//wsTest.init();
 
 	var pageParams = getParams();

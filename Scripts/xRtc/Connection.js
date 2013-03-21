@@ -294,6 +294,7 @@
 			for (var i = 0; i < iceCandidates.length; i++) {
 				var response = iceCandidates[i];
 
+				logger.test(response.iceCandidate);
 				var iceCandidate = new RTCIceCandidate(JSON.parse(response.iceCandidate));
 				peerConnection.addIceCandidate(iceCandidate);
 
