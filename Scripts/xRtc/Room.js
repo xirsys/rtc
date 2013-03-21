@@ -3,7 +3,7 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class2(xrtc, 'Room', function Room(serverConnector, handshkeController) {
+	xrtc.Class(xrtc, 'Room', function Room(serverConnector, handshkeController) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			name = null,

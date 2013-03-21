@@ -6,9 +6,12 @@
 		isFirefox = !!navigator.mozGetUserMedia;
 
 	// todo: extract participantId from here
-	xrtc.Class2(xrtc, 'Stream', function Stream(stream, participantId) {
+	xrtc.Class(xrtc, 'Stream', function Stream(stream, participantId) {
 		var proxy = xrtc.Class.proxy(this),
 			isLocal = stream.constructor.name === 'LocalMediaStream';
+
+		xrtc.Class.property(this, 'videoEnabled', getVideoEnabled, setVideoEnabled);
+		xrtc.Class.property(this, 'audioEnabled', getAudioEnabled, setAudioEnabled);
 		
 		xrtc.Class.extend(this, {
 			getStream: function () {
@@ -50,6 +53,22 @@
 			} else {
 				video.src = this.getURL();
 			}
+		}
+
+		function getVideoEnabled() {
+			return stream.getVideoTracks()[0].enabled;
+		}
+
+		function setVideoEnabled(val) {
+			stream.getVideoTracks()[0].enabled = val;
+		}
+
+		function getAudioEnabled() {
+			return stream.getAudioTracks()[0].enabled;
+		}
+
+		function setAudioEnabled(val) {
+			stream.getAudioTracks()[0].enabled = val;
 		}
 	});
 })(window);

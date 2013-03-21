@@ -71,6 +71,15 @@ table.form .button-block {
 	display: block;
 }
 
+.person .buttons {
+	padding: 5px 0;
+}
+
+.person .buttons .mute-video,
+.person .buttons .mute-audio {
+	width: 120px;
+}
+
 .person.my .name {
 	color: #F00;
 }

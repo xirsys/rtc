@@ -3,7 +3,7 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class2(xrtc, 'HandshakeController', function HandshakeController() {
+	xrtc.Class(xrtc, 'HandshakeController', function HandshakeController() {
 		var logger = new xrtc.Logger(this.className);
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {

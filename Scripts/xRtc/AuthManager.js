@@ -3,14 +3,14 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class2(xrtc, 'AuthManager', function AuthManager() {
+	xrtc.Class(xrtc, 'AuthManager', function AuthManager() {
 		var proxy = xrtc.Class.proxy(this),
-		logger = new xrtc.Logger(this.className),
-		iceServersCache = {};
+			logger = new xrtc.Logger(this.className),
+			iceServersCache = {};
 
 		xrtc.Class.extend(this, xrtc.Ajax, xrtc.EventDispatcher, {
 			_logger: logger,
-			
+
 			getToken: function (userData, callback) {
 				var url = xrtc.AuthManager.settings.URL + 'getToken',
 					data = 'data=' + JSON.stringify(getTokenRequestParams.call(this, userData));
@@ -128,7 +128,7 @@
 		}
 		// todo: remove it in next version of Firefox
 	});
-	
+
 	xrtc.AuthManager.extend({
 		events: {
 			serverError: 'servererror'

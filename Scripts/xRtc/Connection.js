@@ -50,7 +50,7 @@
 		});
 	}
 
-	xrtc.Class2(xrtc, 'Connection', function Connection(ud, am) {
+	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			userData = ud,

@@ -3,7 +3,7 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class2(xrtc, 'ServerConnector', function ServerConnector() {
+	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector() {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			socket = null;
@@ -13,6 +13,7 @@
 
 			connect: function (token) {
 				/// <summary>Connects to WebSocket server</summary>
+				
 				getWebSocketUrl.call(this, proxy(connect, token));
 			},
 
@@ -31,7 +32,7 @@
 			send: function (data) {
 				/// <summary>Sends message to server</summary>
 
-				if (!socket || socket.readyState === 3) {
+				if (!socket) {
 					var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
 					logger.error('send', error);
 
@@ -89,6 +90,8 @@
 			var data = { event: evt };
 			logger.debug('close', data);
 			this.trigger(xrtc.ServerConnector.events.connectionClose, data);
+
+			socket = null;
 		}
 
 		function socketOnError(evt) {

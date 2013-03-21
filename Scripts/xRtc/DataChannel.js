@@ -3,7 +3,7 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 	
-	xrtc.Class2(xrtc, 'DataChannel', function (dataChannel, userId) {
+	xrtc.Class(xrtc, 'DataChannel', function (dataChannel, userId) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			events = xrtc.DataChannel.events;
@@ -20,6 +20,7 @@
 			send: function (message) {
 				/// <summary>Sends a message to remote user</summary>
 				/// <param name="mesage" type="object">Message to send</param>
+				
 				logger.info('send', arguments);
 
 				var data = {

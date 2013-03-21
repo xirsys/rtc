@@ -1,16 +1,55 @@
 ﻿'use strict';
 
-(function (exports) {
-	var xrtc = exports.xRtc;
+function getParams() {
+	var params = {};
+	var paramsArr = location.href.split('?');
 
-	exports.wsTest = {
+	if (paramsArr.length > 1) {
+		paramsArr = paramsArr[1].split('&');
+		for (var i = 0; i < paramsArr.length; i++) {
+			var paramData = paramsArr[i].split('=');
+			params[paramData[0]] = paramData[1];
+		}
+	}
+
+	return params;
+}
+
+(function ($) {
+	$.fn.toggleMediaStream = function (buttonClass, selector, property) {
+		this.on('click', selector, function (e) {
+			var btn = $(this);
+			btn.parent().children(buttonClass).toggleClass('hide');
+
+			var stream = btn.closest('.person').data('stream');
+
+			stream[property] = !btn.hasClass('disable');
+		});
+
+		return this;
+	};
+
+	$.fn.serializeObject = function () {
+		var formArray = this.serializeArray(), formData = {};
+
+		for (var i = 0, len = formArray.length; i < len; i++) {
+			formData[formArray[i].name] = formArray[i].value;
+		}
+
+		return formData;
+	};
+})(jQuery);
+
+var wsTest = {};
+(function (wsTest, xrtc) {
+	xrtc.Class.extend(wsTest, {
 		init: function () {
 			$('#ws-test').removeClass('hide');
 			$('#ws-form').on('submit', function (e) {
 				e.preventDefault();
 				var $form = $(this);
 
-				exports.chat._serverConnector[$(".ws-message-type select").val()](
+				chat._serverConnector[$(".ws-message-type select").val()](
 					$(".ws-targetUser input").val(),
 					$form.find('.ws-message textarea').val());
 			});
@@ -39,27 +78,32 @@
 
 			$('#ws-form .ws-message textarea').val(testMessages[$(".ws-message-type select").val()]);
 		}
-	};
+	});
+})(wsTest, xRtc);
 
-	exports.chat = {
-		settings: {
+
+var chat = {};
+(function (chat, xrtc) {
+	var connection = null,
+		room = null,
+		serverConnector = null,
+		textChannel = null,
+		userData = null,
+		systemName = 'SYSTEM',
+		logger = false,
+		settings = {
 			autoAcceptCall: (getParams().autoaccept || 'false').toLowerCase() === 'true'
-		},
-		
-		_connection: null,
-		_room: null,
-		_serverConnector: null,
-		logging: false,
-		systemName: 'SYSTEM',
+		};
 
+	xrtc.Class.extend(chat, {
 		init: function () {
 			/// <summary>The method for the initializing of chat</summary>
-			
+
 			$('#join-form').on('submit', function (e) {
 				e.preventDefault();
 
-				var userData = $(this).serializeObject();
-				exports.chat.joinRoom(userData);
+				var ud = $(this).serializeObject();
+				chat.joinRoom(ud);
 			});
 
 			$('#chat-form').on('submit', function (e) {
@@ -67,7 +111,7 @@
 				var $form = $(this);
 
 				var message = $form.serializeObject();
-				exports.chat.sendMessage(message);
+				chat.sendMessage(message);
 				$form.find(':text').val('');
 			});
 
@@ -76,111 +120,113 @@
 					e.preventDefault();
 
 					var contact = $(this).parents('.contact').addClass('current').data();
-					exports.chat.connect(contact.name);
+					chat.connect(contact.name);
 				})
 				.on('click', '#contacts .buttons .disconnect', function (e) {
 					e.preventDefault();
 
 					var contact = $(this).data();
-					exports.chat.disconnect(contact.name);
-				});
+					chat.disconnect(contact.name);
+				})
+				.toggleMediaStream('.mute-video', '#video-cell .person .mute-video', 'videoEnabled')
+				.toggleMediaStream('.mute-audio', '#video-cell .person .mute-audio', 'audioEnabled');
 		},
 
-		joinRoom: function (userData) {
+		joinRoom: function (ud) {
 			$('#step1, #step2').toggle();
-			exports.chat._userData = userData;
+			userData = ud;
 
 			var authManager = new xRtc.AuthManager();
 
-			var connection = exports.chat._connection = new xRtc.Connection(userData, authManager)
+			connection = new xRtc.Connection(userData, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
-					exports.chat.addParticipant(data);
-					exports.chat.contactsList.updateState();
+					chat.addParticipant(data);
+					chat.contactsList.updateState();
 				})
 				.on(xrtc.Connection.events.initialized, function () {
-					exports.chat._textChannel = connection.createDataChannel('textChat');
+					textChannel = connection.createDataChannel('textChat');
 
-					if (exports.chat._textChannel) {
-						exports.chat.subscribe(exports.chat._textChannel, xrtc.DataChannel.events);
+					if (textChannel) {
+						chat.subscribe(textChannel, xrtc.DataChannel.events);
 
-						exports.chat._textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
+						textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
 							var message = JSON.parse(messageData.message);
-							exports.chat.addMessage(message.userId, message.message);
+							chat.addMessage(message.userId, message.message);
 						});
 					} else {
-						exports.chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
+						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
 				.on(xrtc.Connection.events.incomingCall, function (call) {
-					exports.chat.acceptCall(call);
+					chat.acceptCall(call);
 				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
-					exports.chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
+					chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
 				})
 				.on(xrtc.Connection.events.connectionClosed, function (participantId) {
-					exports.chat.contactsList.refreshParticipants();
-					exports.chat.removeParticipant(participantId);
-					exports.chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
+					chat.contactsList.refreshParticipants();
+					chat.removeParticipant(participantId);
+					chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				})
 				.on(xrtc.Connection.events.offerDeclined, function (participantId) {
-					exports.chat.contactsList.refreshParticipants();
-					exports.chat.addSystemMessage(participantId + ' has declined your call');
+					chat.contactsList.refreshParticipants();
+					chat.addSystemMessage(participantId + ' has declined your call');
 				})
 				.on(xrtc.Connection.events.stateChanged, function (state) {
-					exports.chat.contactsList.updateState(state);
+					chat.contactsList.updateState(state);
 				});
 
-			var serverConnector = exports.chat._serverConnector = new xRtc.ServerConnector()
-				.on(xrtc.ServerConnector.events.connectionClose, function(data) {
-					exports.chat.addSystemMessage('You was disconnected by the server.');
+			serverConnector = new xRtc.ServerConnector()
+				.on(xrtc.ServerConnector.events.connectionClose, function (data) {
+					chat.addSystemMessage('You was disconnected by the server.');
 
 					//todo: possible this is redundant
-					authManager.getToken(exports.chat._userData, function (token) {
-						exports.chat.addSystemMessage('Trying reconnect with the server.');
+					authManager.getToken(userData, function (token) {
+						chat.addSystemMessage('Trying reconnect with the server.');
 						room.join(token);
 					});
 				});
 
-			var room = exports.chat._room = new xRtc.Room(serverConnector, connection.getHandshake())
+			room = new xRtc.Room(serverConnector, connection.getHandshake())
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
-					exports.chat.contactsList.refreshParticipants();
+					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantConnected, function (data) {
-					exports.chat.addSystemMessage(data.paticipantId + ' entered the room.');
+					chat.addSystemMessage(data.paticipantId + ' entered the room.');
 
-					exports.chat.contactsList.refreshParticipants();
+					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantDisconnected, function (data) {
-					exports.chat.addSystemMessage(data.paticipantId + ' left the room.');
+					chat.addSystemMessage(data.paticipantId + ' left the room.');
 
-					exports.chat.contactsList.refreshParticipants();
+					chat.contactsList.refreshParticipants();
 				});
 
 			connection.addMedia();
 
-			exports.chat.subscribe(serverConnector, xrtc.ServerConnector.events);
-			exports.chat.subscribe(connection, xrtc.Connection.events);
-			exports.chat.subscribe(connection.getHandshake(), xrtc.HandshakeController.events);
-			exports.chat.subscribe(room, xrtc.Room.events);
+			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
+			chat.subscribe(connection, xrtc.Connection.events);
+			chat.subscribe(connection.getHandshake(), xrtc.HandshakeController.events);
+			chat.subscribe(room, xrtc.Room.events);
 
-			authManager.getToken(exports.chat._userData, function (token) {
+			authManager.getToken(userData, function (token) {
 				room.join(token);
 			});
 		},
 
 		leaveRoom: function () {
-			exports.chat._room.leave();
+			room.leave();
 			$('#step1, #step2').toggle();
 		},
-		
-		acceptCall: function(incomingCall) {
-			if (exports.chat.settings.autoAcceptCall) {
+
+		acceptCall: function (incomingCall) {
+			if (settings.autoAcceptCall) {
 				incomingCall.accept();
 			} else {
 				/*
 				//todo: possible to decline call if any connection already is established
-				if (exports.chat._connection.getState() === 'connected') {
+				if (connection.getState() === 'connected') {
 					incomingCall.decline();
 					return;
 				}*/
@@ -196,11 +242,11 @@
 
 		sendMessage: function (message) {
 			console.log('Sending message...', message);
-			if (exports.chat._textChannel) {
-				exports.chat._textChannel.send(message.message);
-				exports.chat.addMessage(exports.chat._userData.name, message.message, true);
+			if (textChannel) {
+				textChannel.send(message.message);
+				chat.addMessage(userData.name, message.message, true);
 			} else {
-				exports.chat.addSystemMessage('DataChannel is not created. Please, see log.');
+				chat.addSystemMessage('DataChannel is not created. Please, see log.');
 			}
 		},
 
@@ -216,17 +262,19 @@
 		},
 
 		addSystemMessage: function (message) {
-			this.addMessage(exports.chat.systemName, message);
+			chat.addMessage(systemName, message);
 		},
 
 		connect: function (contact) {
 			console.log('Connecting to participant...', contact);
-			this._connection.startSession(contact);
+			
+			connection.startSession(contact);
 		},
 
 		disconnect: function (contact) {
 			console.log('Disconnection from participant...', contact);
-			this._connection.endSession();
+			
+			connection.endSession();
 		},
 
 		contactsList: {
@@ -240,11 +288,11 @@
 
 			refreshParticipants: function () {
 				var contactsData = {
-					roomName: exports.chat._room.getName()
+					roomName: room.getName()
 				};
 				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
 
-				var contacts = this.convertContacts(exports.chat._room.getParticipants());
+				var contacts = this.convertContacts(room.getParticipants());
 				for (var index = 0, len = contacts.length; index < len; index++) {
 					this.addParticipant(contacts[index]);
 				}
@@ -254,7 +302,7 @@
 
 			convertContacts: function (participants) {
 				var contacts = [],
-					currentName = exports.chat._userData.name;
+					currentName = userData.name;
 
 				for (var i = 0, len = participants.length; i < len; i++) {
 					var name = participants[i];
@@ -273,12 +321,12 @@
 					'not-ready': true
 				};
 
-				state = state || chat._connection.getState();
+				state = state || connection.getState();
 
 				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
 				if (!freeStates[state]) {
-					contacts.filter('[data-name="' + chat._connection.getRemoteParticipantName() + '"]').addClass('current');
+					contacts.filter('[data-name="' + connection.getRemoteParticipantName() + '"]').addClass('current');
 				}
 			}
 		},
@@ -300,19 +348,24 @@
 
 			var video = participantItem.find('video').removeClass('hide').get(0);
 			stream.assignTo(video);
+
+			participantItem.data('stream', stream);
 		},
 
 		removeParticipant: function (participantId) {
 			$('#video .person[data-name="' + participantId + '"]').remove();
 		},
+		
+		setLogger: function(value) {
+			logger = value;
+		},
 
 		subscribe: function (eventDispatcher, events) {
-			var self = this;
 			if (typeof eventDispatcher.on === "function") {
 				for (var eventPropertyName in events) {
 					(function (eventName) {
 						eventDispatcher.on(eventName, function () {
-							if (self.logging) {
+							if (logger) {
 								console.log('CHAT', eventDispatcher.className, eventName, Array.prototype.slice.call(arguments));
 							}
 						});
@@ -320,23 +373,9 @@
 				}
 			}
 		}
-	};
-})(window);
-
-function getParams() {
-	var params = {};
-	var paramsArr = location.href.split('?');
-
-	if (paramsArr.length > 1) {
-		paramsArr = paramsArr[1].split('&');
-		for (var i = 0; i < paramsArr.length; i++) {
-			var paramData = paramsArr[i].split('=');
-			params[paramData[0]] = paramData[1];
-		}
-	}
-
-	return params;
-}
+	});
+	
+})(chat, xRtc);
 
 var setIceServers = function (params) {
 	if (params.stun || params.turn) {
@@ -356,20 +395,10 @@ var setIceServers = function (params) {
 };
 
 $(document).ready(function () {
-	$.fn.serializeObject = function () {
-		var formArray = this.serializeArray(), formData = {};
-
-		for (var i = 0, len = formArray.length; i < len; i++) {
-			formData[formArray[i].name] = formArray[i].value;
-		}
-
-		return formData;
-	};
-
-	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true, test: true });
+	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true , test: true});
 
 	chat.init();
-	chat.logging = true;
+	chat.setLogger(true);
 	//wsTest.init();
 
 	var pageParams = getParams();
