@@ -49,7 +49,7 @@
 		_connection: null,
 		_room: null,
 		_serverConnector: null,
-		logging: true,
+		logging: false,
 		systemName: 'SYSTEM',
 
 		init: function () {
@@ -366,10 +366,10 @@ $(document).ready(function () {
 		return formData;
 	};
 
-	xRtc.Logger.enable({ info: false, debug: false, warning: false, error: false, test: true });
+	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true, test: true });
 
 	chat.init();
-	chat.logging = false;
+	chat.logging = true;
 	//wsTest.init();
 
 	var pageParams = getParams();
