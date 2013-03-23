@@ -8,34 +8,9 @@
 		RTCPeerConnection = exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
 		RTCIceCandidate = exports.mozRTCIceCandidate || exports.RTCIceCandidate,
 		RTCSessionDescription = exports.mozRTCSessionDescription || exports.RTCSessionDescription,
-		MediaStream = exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
 		isFirefox = !!navigator.mozGetUserMedia;
 
 	getUserMedia = getUserMedia.bind(navigator);
-
-	if (!MediaStream.prototype.getVideoTracks) {
-		if (isFirefox) {
-			xrtc.Class.extend(MediaStream.prototype, {
-				getVideoTracks: function () {
-					return [];
-				},
-
-				getAudioTracks: function () {
-					return [];
-				}
-			});
-		} else {
-			xrtc.Class.extend(MediaStream.prototype, {
-				getVideoTracks: function () {
-					return this.videoTracks;
-				},
-
-				getAudioTracks: function () {
-					return this.audioTracks;
-				}
-			});
-		}
-	}
 
 	// New syntax of getXXXStreams method in M26.
 	if (!RTCPeerConnection.prototype.getLocalStreams) {

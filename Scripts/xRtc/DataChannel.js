@@ -20,7 +20,7 @@
 			send: function (message) {
 				/// <summary>Sends a message to remote user</summary>
 				/// <param name="mesage" type="object">Message to send</param>
-				
+
 				logger.info('send', arguments);
 
 				var data = {

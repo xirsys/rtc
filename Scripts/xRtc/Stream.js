@@ -3,7 +3,32 @@
 (function (exports) {
 	var xrtc = exports.xRtc,
 		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
+		MediaStream = exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
 		isFirefox = !!navigator.mozGetUserMedia;
+
+	if (!MediaStream.prototype.getVideoTracks) {
+		if (isFirefox) {
+			xrtc.Class.extend(MediaStream.prototype, {
+				getVideoTracks: function () {
+					return [];
+				},
+
+				getAudioTracks: function () {
+					return [];
+				}
+			});
+		} else {
+			xrtc.Class.extend(MediaStream.prototype, {
+				getVideoTracks: function () {
+					return this.videoTracks;
+				},
+
+				getAudioTracks: function () {
+					return this.audioTracks;
+				}
+			});
+		}
+	}
 
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),

@@ -23,7 +23,7 @@
 		off: function (eventName) {
 			/// <summary>Unsubscribes from event</summary>
 			/// <param name="eventName" type="string">The name of event</param>
-			
+
 			if (this._logger) {
 				this._logger.info('off', arguments);
 			}

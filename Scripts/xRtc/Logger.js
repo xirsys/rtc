@@ -65,7 +65,6 @@
 			for (; index < len; index++) {
 				arg = arguments[index];
 
-
 				if ((typeof arg === 'object') && (arg instanceof Object) && (typeof arg.length !== 'undefined')) {
 					var subArgs = convertArgumentsToArray.apply(null, Array.prototype.slice.call(arg)),
 						subIndex = 0,
