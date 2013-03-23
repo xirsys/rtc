@@ -393,7 +393,7 @@ $(document).ready(function () {
 	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true , test: true});
 
 	chat.init();
-	chat.setLogger(true);
+	//chat.setLogger(true);
 	//wsTest.init();
 
 	var pageParams = getParams();

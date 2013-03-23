@@ -6,6 +6,7 @@
 		MediaStream = exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
 		isFirefox = !!navigator.mozGetUserMedia;
 
+	//Cross-browser support: New syntax of getXXXTracks method in Chrome M26.
 	if (!MediaStream.prototype.getVideoTracks) {
 		if (isFirefox) {
 			xrtc.Class.extend(MediaStream.prototype, {
@@ -56,6 +57,7 @@
 					if (stream.getVideoTracks().length > 0) {
 						assignTo.call(this, video);
 					} else {
+						//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.
 						setTimeout(proxy(this.assignTo, video), 100);
 					}
 				}

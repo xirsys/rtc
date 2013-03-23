@@ -12,7 +12,7 @@
 
 	getUserMedia = getUserMedia.bind(navigator);
 
-	// New syntax of getXXXStreams method in M26.
+	//Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
 	if (!RTCPeerConnection.prototype.getLocalStreams) {
 		xrtc.Class.extend(RTCPeerConnection.prototype, {
 			getLocalStreams: function () {
@@ -34,7 +34,14 @@
 			localStreams = [],
 			peerConnection = null,
 			handshakeController = null,
-			isConnectionEstablished = false,
+			//'answer' is received flag. Used to determine whether the coonection was accepted and need to send ice candidates to remote application.
+			answerReceived = false,
+			//It is tempoprary storage of ice candidates.
+			//Ice candidates should be send to remote participant after receiving answer strictly.
+			//If the application will send ice candidates after 'offer' sending then it can be skiped by remote appication
+			//because there is no guarantee of connection establishing and while the application/user will be thinking
+			//about accept/decline incoming connection these ice candidates reach it and will be skipped,
+			//because the remote peerConnection not created still.
 			iceCandidates = [];
 
 		initHandshakeController.call(this);
@@ -60,6 +67,7 @@
 					function onCreateOfferSuccess(offer) {
 						peerConnection.setLocalDescription(offer);
 
+						//Cross-browser support: FF v.21 fix
 						// todo:remove it in next versions
 						if (isFirefox) {
 							offer.sdp = offer.sdp + 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\r\n';
@@ -87,7 +95,7 @@
 				if (handshakeController && remoteParticipant) {
 					handshakeController.sendBye(remoteParticipant);
 				}
-				
+
 				closePeerConnection.call(this);
 			},
 
@@ -194,6 +202,7 @@
 				callCallback();
 			}
 
+			//todo: need to think about this approach and refactor it
 			function callCallback() {
 				if (typeof callback === "function") {
 					try {
@@ -216,8 +225,7 @@
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
-						handshakeController.sendIce(remoteParticipant, JSON.stringify(evt.candidate));
-						this.trigger(xrtc.Connection.events.iceSent, { event: evt });
+						handleIceCandidate(evt.candidate);
 					}
 				}
 
@@ -239,9 +247,30 @@
 			}
 		}
 
+		function handleIceCandidate(ice) {
+			iceCandidates.push(ice);
+
+			if (answerReceived) {
+				sendIceCandidates();
+			}
+		}
+
+		function sendIceCandidates() {
+			for (var i = 0; i < iceCandidates.length; i++) {
+				var ice = iceCandidates[i];
+
+				var strIce = JSON.stringify(ice);
+				handshakeController.sendIce(remoteParticipant, strIce);
+				this.trigger(xrtc.Connection.events.iceSent, strIce);
+			}
+
+			iceCandidates = [];
+		}
+
 		function addRemoteSteam() {
 			var streams = peerConnection.getRemoteStreams();
 
+			//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.
 			if (streams.length > 0) {
 				var data = {
 					stream: new xrtc.Stream(streams[0]),
@@ -265,43 +294,32 @@
 			});
 		}
 
-		function setIceCandidate(evt) {
-			iceCandidates.push(evt);
+		function onReceiveIce(iceData) {
+			//todo: Need to check iceData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
 
-			if (isConnectionEstablished) {
-				setIceCandidates.call(this);
-			}
-		}
-
-		function setIceCandidates() {
-			for (var i = 0; i < iceCandidates.length; i++) {
-				var response = iceCandidates[i];
-
-				var iceCandidate = new RTCIceCandidate(JSON.parse(response.iceCandidate));
-				peerConnection.addIceCandidate(iceCandidate);
-
-				this.trigger(xrtc.Connection.events.iceAdded, response, iceCandidate);
-			}
-
-			iceCandidates = [];
-		}
-
-		function onReceiveIce(response) {
-			if (response.senderId != remoteParticipant) {
+			// Skip ice candidates, if it does not come from the application that 'offer' was received (not from your current companion)
+			// or no 'offer' had been received or sent yet (peerConnection was not created)
+			if (iceData.senderId != remoteParticipant || !peerConnection) {
 				return;
 			}
 
-			logger.debug('receiveIce', response);
-			setIceCandidate.call(this, response);
+			logger.debug('receiveIce', iceData);
+			var iceCandidate = new RTCIceCandidate(JSON.parse(iceData.iceCandidate));
+			peerConnection.addIceCandidate(iceCandidate);
+			this.trigger(xrtc.Connection.events.iceAdded, iceData, iceCandidate);
 		}
 
-		function onReceiveOffer(response) {
-			if (response.receiverId != userData.name) {
+		function onReceiveOffer(offerData) {
+			//todo: Need to check offerData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
+
+			// Skip 'offer' if it is not for me. It is temporary fix, because handshake shouldn't pass the 'offer' to wrong target.
+			// Sometimes it happened that the server had sent the 'offer' to all/wrong participants. So we decided not touch this check.
+			if (offerData.receiverId != userData.name) {
 				return;
 			}
 
 			var data = {
-				participantName: response.senderId,
+				participantName: offerData.senderId,
 				accept: proxy(onAcceptCall),
 				decline: proxy(onDeclineCall)
 			};
@@ -309,11 +327,12 @@
 			this.trigger(xrtc.Connection.events.incomingCall, data);
 
 			function onAcceptCall() {
+				//End the current active call, if any
 				this.endSession();
 
-				initPeerConnection.call(this, response.senderId, function () {
-					logger.debug('receiveOffer', response);
-					var sdp = JSON.parse(response.sdp);
+				initPeerConnection.call(this, offerData.senderId, function () {
+					logger.debug('receiveOffer', offerData);
+					var sdp = JSON.parse(offerData.sdp);
 
 					var sessionDescription = new RTCSessionDescription(sdp);
 					peerConnection.setRemoteDescription(sessionDescription);
@@ -323,15 +342,12 @@
 					function onCreateAnswerSuccess(answer) {
 						peerConnection.setLocalDescription(answer);
 
-						logger.debug('sendAnswer', response, answer);
-						handshakeController.sendAnswer(response.senderId, JSON.stringify(answer));
+						logger.debug('sendAnswer', offerData, answer);
+						handshakeController.sendAnswer(offerData.senderId, JSON.stringify(answer));
 
-						this.trigger(xrtc.Connection.events.answerSent, response, answer);
+						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
 						addRemoteSteam.call(this);
-
-						isConnectionEstablished = true;
-						setIceCandidates.call(this);
 					}
 
 					function onCreateAnswerError(err) {
@@ -344,26 +360,31 @@
 			}
 
 			function onDeclineCall() {
-				handshakeController.sendBye(response.senderId, { type: 'decline' });
+				handshakeController.sendBye(offerData.senderId, { type: 'decline' });
 			}
 		}
 
-		function onReceiveAnswer(response) {
-			if (response.senderId != remoteParticipant || !peerConnection) {
+		function onReceiveAnswer(answerData) {
+			//todo: Need to check answerData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
+
+			// Skip 'answer', if it does not come from the application to which the 'offer' was sent to (to current companion)
+			// or no 'offer' had been received or sent yet (peerConnection was not created)
+			if (answerData.senderId != remoteParticipant || !peerConnection) {
 				return;
 			}
 
-			logger.debug('receiveAnswer', response);
-			var sdp = JSON.parse(response.sdp);
+			// Send already generated ice candidates
+			answerReceived = true;
+			sendIceCandidates.call(this);
+
+			logger.debug('receiveAnswer', answerData);
+			var sdp = JSON.parse(answerData.sdp);
 
 			var sessionDescription = new RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);
-			this.trigger(xrtc.Connection.events.answerReceived, response, sessionDescription);
+			this.trigger(xrtc.Connection.events.answerReceived, answerData, sessionDescription);
 
 			addRemoteSteam.call(this);
-
-			isConnectionEstablished = true;
-			setIceCandidates.call(this);
 		}
 
 		function onReceiveBye(response) {
@@ -379,9 +400,8 @@
 				peerConnection.onicecandidate = null;
 				peerConnection.close();
 				peerConnection = null;
-				isConnectionEstablished = false;
 				iceCandidates = [];
-				
+
 				var closedParticipant = remoteParticipant;
 				remoteParticipant = null;
 
@@ -415,14 +435,12 @@
 
 			dataChannelCreationError: 'datachannelcreationerror',
 
-			serverError: 'servererror',
-
 			connectionEstablished: 'connectionestablished',
 			connectionClosed: 'connectionclosed',
 
 			initialized: 'initialized',
 			stateChanged: 'statechanged',
-			
+
 			incomingCall: 'incomingcall',
 			offerDeclined: 'offerdeclined'
 		},
@@ -458,8 +476,9 @@
 		}
 	});
 
+	//Cross-browser support
 	if (isFirefox) {
-		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer 
+		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for FF
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
 	}
