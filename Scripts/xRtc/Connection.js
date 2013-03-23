@@ -34,14 +34,17 @@
 			localStreams = [],
 			peerConnection = null,
 			handshakeController = null,
-			//'answer' is received flag. Used to determine whether the coonection was accepted and need to send ice candidates to remote application.
-			answerReceived = false,
-			//It is tempoprary storage of ice candidates.
-			//Ice candidates should be send to remote participant after receiving answer strictly.
-			//If the application will send ice candidates after 'offer' sending then it can be skiped by remote appication
-			//because there is no guarantee of connection establishing and while the application/user will be thinking
-			//about accept/decline incoming connection these ice candidates reach it and will be skipped,
-			//because the remote peerConnection not created still.
+
+			// 'answer' is received or 'offer' received and accepted flag.
+			// Used to determine whether the coonection was accepted and need to send ice candidates to remote application.
+			connectionEstablished = false,
+
+			// It is tempoprary storage of ice candidates.
+			// Ice candidates should be send to remote participant after receiving answer strictly.
+			// If the application will send ice candidates after 'offer' sending then it can be skiped by remote appication
+			// because there is no guarantee of connection establishing and while the application/user will be thinking
+			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
+			// because the remote peerConnection not created still.
 			iceCandidates = [];
 
 		initHandshakeController.call(this);
@@ -234,7 +237,7 @@
 				}
 
 				function onOpen(evt) {
-					this.trigger(xrtc.Connection.events.connectionEstablished, this.remoteParticipant);
+					this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 				}
 
 				for (var i = 0, len = localStreams.length; i < len; i++) {
@@ -250,7 +253,7 @@
 		function handleIceCandidate(ice) {
 			iceCandidates.push(ice);
 
-			if (answerReceived) {
+			if (connectionEstablished) {
 				sendIceCandidates();
 			}
 		}
@@ -265,6 +268,12 @@
 			}
 
 			iceCandidates = [];
+		}
+		
+		function allowIceSending() {
+			connectionEstablished = true;
+			// Send already generated ice candidates
+			sendIceCandidates.call(this);
 		}
 
 		function addRemoteSteam() {
@@ -334,8 +343,8 @@
 					logger.debug('receiveOffer', offerData);
 					var sdp = JSON.parse(offerData.sdp);
 
-					var sessionDescription = new RTCSessionDescription(sdp);
-					peerConnection.setRemoteDescription(sessionDescription);
+					var remoteSessionDescription = new RTCSessionDescription(sdp);
+					peerConnection.setRemoteDescription(remoteSessionDescription);
 
 					peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
@@ -346,6 +355,8 @@
 						handshakeController.sendAnswer(offerData.senderId, JSON.stringify(answer));
 
 						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
+
+						allowIceSending();
 
 						addRemoteSteam.call(this);
 					}
@@ -373,9 +384,7 @@
 				return;
 			}
 
-			// Send already generated ice candidates
-			answerReceived = true;
-			sendIceCandidates.call(this);
+			allowIceSending();
 
 			logger.debug('receiveAnswer', answerData);
 			var sdp = JSON.parse(answerData.sdp);
