@@ -11,12 +11,8 @@
 
 		xrtc.Class.property(this, 'videoEnabled', getVideoEnabled, setVideoEnabled);
 		xrtc.Class.property(this, 'audioEnabled', getAudioEnabled, setAudioEnabled);
-		
-		xrtc.Class.extend(this, {
-			getStream: function () {
-				return stream;
-			},
 
+		xrtc.Class.extend(this, {
 			getURL: function () {
 				return URL.createObjectURL(stream);
 			},
@@ -51,19 +47,27 @@
 		}
 
 		function getVideoEnabled() {
-			return stream.getVideoTracks()[0].enabled;
+			var videoTracks = stream.getVideoTracks();
+			return videoTracks.length > 0 && videoTracks[0].enabled;
 		}
 
 		function setVideoEnabled(val) {
-			stream.getVideoTracks()[0].enabled = val;
+			var videoTracks = stream.getVideoTracks();
+			for (var i = 0, len = videoTracks.length; i < len; i++) {
+				videoTracks[i].enabled = val;
+			}
 		}
 
 		function getAudioEnabled() {
-			return stream.getAudioTracks()[0].enabled;
+			var audioTracks = stream.getAudioTracks();
+			return audioTracks.length > 0 && audioTracks[0].enabled;
 		}
 
 		function setAudioEnabled(val) {
-			stream.getAudioTracks()[0].enabled = val;
+			var audioTracks = stream.getAudioTracks();
+			for (var i = 0, len = audioTracks.length; i < len; i++) {
+				audioTracks[i].enabled = val;
+			}
 		}
 	});
 })(window);
