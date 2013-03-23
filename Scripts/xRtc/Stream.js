@@ -5,8 +5,7 @@
 		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 		isFirefox = !!navigator.mozGetUserMedia;
 
-	// todo: extract participantId from here
-	xrtc.Class(xrtc, 'Stream', function Stream(stream, participantId) {
+	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),
 			isLocal = stream.constructor.name === 'LocalMediaStream';
 
@@ -20,10 +19,6 @@
 
 			getURL: function () {
 				return URL.createObjectURL(stream);
-			},
-
-			getParticipantName: function () {
-				return participantId;
 			},
 
 			isLocal: function () {

@@ -331,25 +331,20 @@ var chat = {};
 			}
 		},
 
-		addParticipant: function (stream) {
-			var data = {
-				name: stream.getParticipantName(),
-				isMe: stream.isLocal()
-			};
-
+		addParticipant: function (data) {
 			$.each($('#video .person'), function (index, value) {
 				if (!$(value).hasClass('my')) {
 					value.remove();
 				}
 			});
 
-			var participantItem = $('#video-tmpl').tmpl(data);
+			var participantItem = $('#video-tmpl').tmpl({ name: data.participantId, isMe: data.stream.isLocal()});
 			$('#video').append(participantItem);
 
 			var video = participantItem.find('video').removeClass('hide').get(0);
-			stream.assignTo(video);
+			data.stream.assignTo(video);
 
-			participantItem.data('stream', stream);
+			participantItem.data('stream', data.stream);
 		},
 
 		removeParticipant: function (participantId) {

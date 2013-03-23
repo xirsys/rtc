@@ -128,10 +128,13 @@
 				function onGetUserMediaSuccess(stream) {
 					localStreams.push(stream);
 
-					var xrtcStream = new xrtc.Stream(stream, userData.name);
+					var data = {
+						stream: new xrtc.Stream(stream),
+						participantId: userData.name
+					};
 
-					logger.debug('addMedia', xrtcStream);
-					this.trigger(xrtc.Connection.events.streamAdded, xrtcStream);
+					logger.debug('addMedia', data.stream);
+					this.trigger(xrtc.Connection.events.streamAdded, data);
 				}
 
 				function onGetUserMediaError(err) {
@@ -265,7 +268,12 @@
 			var streams = peerConnection.getRemoteStreams();
 
 			if (streams.length > 0) {
-				this.trigger(xrtc.Connection.events.streamAdded, new xrtc.Stream(streams[0], remoteParticipant));
+				var data = {
+					stream: new xrtc.Stream(streams[0]),
+					participantId: remoteParticipant
+				};
+
+				this.trigger(xrtc.Connection.events.streamAdded, data);
 			} else {
 				// will make pause if there is not any remote streams
 				setTimeout(proxy(addRemoteSteam), 100);
