@@ -228,7 +228,7 @@
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
-						handleIceCandidate(evt.candidate);
+						handleIceCandidate.call(this, evt.candidate);
 					}
 				}
 
@@ -254,7 +254,7 @@
 			iceCandidates.push(ice);
 
 			if (connectionEstablished) {
-				sendIceCandidates();
+				sendIceCandidates.call(this);
 			}
 		}
 
@@ -356,7 +356,7 @@
 
 						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
-						allowIceSending();
+						allowIceSending.call(this);
 
 						addRemoteSteam.call(this);
 					}
@@ -384,7 +384,7 @@
 				return;
 			}
 
-			allowIceSending();
+			allowIceSending.call(this);
 
 			logger.debug('receiveAnswer', answerData);
 			var sdp = JSON.parse(answerData.sdp);
