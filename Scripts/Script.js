@@ -188,7 +188,7 @@ var chat = {};
 					});
 				});
 
-			room = new xRtc.Room(serverConnector, connection.getHandshake())
+			room = new xRtc.Room(serverConnector)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
 					chat.contactsList.refreshParticipants();
 				})
@@ -202,6 +202,8 @@ var chat = {};
 
 					chat.contactsList.refreshParticipants();
 				});
+
+			room.addHandshake(connection.getHandshake());
 
 			connection.addMedia();
 
@@ -337,8 +339,15 @@ var chat = {};
 					value.remove();
 				}
 			});
-
-			var participantItem = $('#video-tmpl').tmpl({ name: data.participantId, isMe: data.stream.isLocal()});
+			
+			var videoData = {
+				name: data.participantId,
+				isMe: data.stream.isLocal(),
+				isVideoAvailable: data.stream.videoAvailable,
+				isAudioAvailable: data.stream.audioAvailable
+			};
+			
+			var participantItem = $('#video-tmpl').tmpl(videoData);
 			$('#video').append(participantItem);
 
 			var video = participantItem.find('video').removeClass('hide').get(0);
@@ -393,7 +402,7 @@ $(document).ready(function () {
 	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true , test: true});
 
 	chat.init();
-	//chat.setLogger(true);
+	chat.setLogger(true);
 	//wsTest.init();
 
 	var pageParams = getParams();

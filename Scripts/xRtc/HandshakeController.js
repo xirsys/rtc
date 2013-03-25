@@ -16,7 +16,7 @@
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveIce,
-					targetUserId: targetUserId.toString(),
+					receiverId: targetUserId,
 					data: { iceCandidate: iceCandidate }
 				};
 
@@ -30,7 +30,7 @@
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveOffer,
-					targetUserId: targetUserId.toString(),
+					receiverId: targetUserId,
 					data: { sdp: offer }
 				};
 
@@ -44,7 +44,7 @@
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveAnswer,
-					targetUserId: targetUserId.toString(),
+					receiverId: targetUserId,
 					data: { sdp: answer }
 				};
 
@@ -58,7 +58,7 @@
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveBye,
-					targetUserId: targetUserId.toString()
+					receiverId: targetUserId
 				};
 
 				if (options) {

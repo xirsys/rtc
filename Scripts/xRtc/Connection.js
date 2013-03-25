@@ -36,7 +36,7 @@
 			handshakeController = null,
 
 			// 'answer' is received or 'offer' received and accepted flag.
-			// Used to determine whether the coonection was accepted and need to send ice candidates to remote application.
+			// Is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
 			connectionEstablished = false,
 
 			// It is tempoprary storage of ice candidates.
@@ -44,7 +44,7 @@
 			// If the application will send ice candidates after 'offer' sending then it can be skiped by remote appication
 			// because there is no guarantee of connection establishing and while the application/user will be thinking
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
-			// because the remote peerConnection not created still.
+			// because the remote peerConnection still not created.
 			iceCandidates = [];
 
 		initHandshakeController.call(this);
@@ -279,7 +279,7 @@
 		function addRemoteSteam() {
 			var streams = peerConnection.getRemoteStreams();
 
-			//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.
+			//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
 			if (streams.length > 0) {
 				var data = {
 					stream: new xrtc.Stream(streams[0]),

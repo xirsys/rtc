@@ -181,7 +181,7 @@ describe("ServerConnector", function () {
 
 			var peers_message = '{"Type":"peers","UserId":"username","TargetUserId":"","Room":"test_room","Message":"[\\"username1\\", \\"username2\\"]"}';
 			it("server generates 'peers' event, ServerConnector parses message and fires 'peers' event", function () {
-				serverConnector.on(xRtc.Room.serverEvents.participantsUpdated, eventObject.eventHandler);
+				serverConnector.on(xRtc.ServerConnector.serverEvents.participantsUpdated, eventObject.eventHandler);
 
 				webSocketStub.onmessage({ data: peers_message });
 
@@ -192,7 +192,7 @@ describe("ServerConnector", function () {
 
 			var peer_connected = '{"Type":"peer_connected","UserId":"username","TargetUserId":"","Room":"test_room","Message":"username1"}';
 			it("server generates 'peer_connected' event, ServerConnector parses message and fires 'peer_connected' event", function () {
-				serverConnector.on(xRtc.Room.serverEvents.participantConnected, eventObject.eventHandler);
+				serverConnector.on(xRtc.ServerConnector.serverEvents.participantConnected, eventObject.eventHandler);
 
 				webSocketStub.onmessage({ data: peer_connected });
 				
@@ -203,7 +203,7 @@ describe("ServerConnector", function () {
 
 			var peer_removed = '{"Type":"peer_removed","UserId":"username","TargetUserId":"","Room":"test_room","Message":"username1"}';
 			it("server generates 'peer_removed' event, ServerConnector parses message and fires 'peer_removed' event", function () {
-				serverConnector.on(xRtc.Room.serverEvents.participantDisconnected, eventObject.eventHandler);
+				serverConnector.on(xRtc.ServerConnector.serverEvents.participantDisconnected, eventObject.eventHandler);
 
 				webSocketStub.onmessage({ data: peer_removed });
 

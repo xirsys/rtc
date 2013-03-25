@@ -130,7 +130,7 @@
 				<span class="label label-important disconnecting">Disconnecting...</span>
 			</div>
 			{{/if}}
-				<div class="clear"></div>
+			<div class="clear"></div>
 		</div>
 	</script>
 
@@ -145,14 +145,18 @@
 		<div class="person {{if isMe}}my{{/if}}" data-name="${name}">
 			<div class="name">${name}</div>
 			<div class="video">
-				<video autoplay class="hide"></video>
+				<video class="hide"></video>
 			</div>
 			<div class="buttons">
-				<button class="mute-video disable btn btn-danger">Disable video</button>
-				<button class="mute-video enable  btn btn-success hide">Enable video</button>
-
-				<button class="mute-audio disable btn btn-danger">Disable audio</button>
-				<button class="mute-audio enable  btn btn-success hide">Enable audio</button>
+				{{if isVideoAvailable}}
+					<button class="mute-video disable btn btn-danger">Disable video</button>
+					<button class="mute-video enable  btn btn-success hide">Enable video</button>
+				{{/if}}
+				
+				{{if isAudioAvailable}}
+					<button class="mute-audio disable btn btn-danger">Disable audio</button>
+					<button class="mute-audio enable  btn btn-success hide">Enable audio</button>
+				{{/if}}
 			</div>
 		</div>
 	</script>

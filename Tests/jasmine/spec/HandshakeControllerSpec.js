@@ -29,7 +29,7 @@ describe("HandshakeController", function () {
 		eventSpy = sinon.spy(eventObject, 'eventHandler');
 		
 		expectedArg = {
-			targetUserId: 'username',
+			receiverId: 'username',
 			data: {}
 		};
 	});
@@ -78,7 +78,7 @@ describe("HandshakeController", function () {
 		it("'sendBye' event if sendBye method is called", function () {
 			handshakeController.on(xRtc.HandshakeController.events.sendBye, eventObject.eventHandler);
 
-			handshakeController.sendBye('username', {});
+			handshakeController.sendBye('username');
 
 			expectedArg.eventName = xRtc.HandshakeController.events.receiveBye;
 			delete expectedArg.data;

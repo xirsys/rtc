@@ -3,63 +3,91 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, 'Room', function Room(serverConnector, handshkeController) {
+	xrtc.Class(xrtc, 'Room', function Room(serverConnector) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			name = null,
-			participants = [];
+			participants = [],
+			handshakeController = null,
+			isHandshakeSubscribed = false,
+			isServerConnectorSubscribed = false;
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
 			join: function (token) {
-				//todo: catch serverConnector open/close events and generate own
-				serverConnector.connect(token);
+				subscribeOnServerConnectorEvents.call(this);
+				subscribeOnHandshakeControllerEvents.call(this);
 
-				serverConnector
-					.on(xrtc.Room.serverEvents.participantsUpdated, proxy(onParticipantsUpdated))
-					.on(xrtc.Room.serverEvents.participantConnected, proxy(onParticipantConnected))
-					.on(xrtc.Room.serverEvents.participantDisconnected, proxy(onParticipantDisconnected));
+				serverConnector.connect(token);
 			},
 
 			leave: function () {
 				name = null;
 				participants = [];
-				
-				serverConnector
-					.off(xrtc.Room.serverEvents.participantsUpdated)
-					.off(xrtc.Room.serverEvents.participantConnected)
-					.off(xrtc.Room.serverEvents.participantDisconnected);
+
+				unsubscribeFromServerConnectorEvents.call(this);
+				unsubscribeFromHandshakeControllerEvents.call(this);
+			},
+
+			addHandshake: function (hc) {
+				handshakeController = hc;
+
+				subscribeOnHandshakeControllerEvents.call(this);
 			},
 
 			getName: function () {
 				return name;
 			},
-			
+
 			getParticipants: function () {
-				//return copy of array
+				//return the copy of array
 				return participants.map(function (participant) {
 					return participant;
 				});
 			}
 		});
 
+		function subscribeOnServerConnectorEvents() {
+			//todo: catch serverConnector open/close events and generate own
+			if (!isServerConnectorSubscribed) {
+				serverConnector
+					.on(xrtc.ServerConnector.serverEvents.participantsUpdated, proxy(onParticipantsUpdated))
+					.on(xrtc.ServerConnector.serverEvents.participantConnected, proxy(onParticipantConnected))
+					.on(xrtc.ServerConnector.serverEvents.participantDisconnected, proxy(onParticipantDisconnected));
+
+				isServerConnectorSubscribed = true;
+			}
+		}
+
+		function unsubscribeFromServerConnectorEvents() {
+			if (isServerConnectorSubscribed) {
+				serverConnector
+					.off(xrtc.ServerConnector.serverEvents.participantsUpdated)
+					.off(xrtc.ServerConnector.serverEvents.participantConnected)
+					.off(xrtc.ServerConnector.serverEvents.participantDisconnected);
+
+				isServerConnectorSubscribed = false;
+			}
+		}
+
+
 		function onParticipantsUpdated(data) {
 			name = data.room;
 			participants = data.connections;
 			orderParticipants();
-			
+
 			this.trigger(xrtc.Room.events.participantsUpdated, { paticipants: this.getParticipants() });
 		}
-		
+
 		function onParticipantConnected(data) {
 			name = data.room;
 			participants.push(data.paticipantId);
 			orderParticipants();
-			
+
 			this.trigger(xrtc.Room.events.participantConnected, { paticipantId: data.paticipantId });
 		}
-		
+
 		function onParticipantDisconnected(data) {
 			name = data.room;
 			participants.pop(data.paticipantId);
@@ -71,42 +99,59 @@
 		function orderParticipants() {
 			participants.sort();
 		}
-		
 
-		// handshakeController handling
-		var hcEvents = xrtc.HandshakeController.events;
-		handshkeController
-			.on(hcEvents.sendIce, proxy(onHandshakeSendMessage))
-			.on(hcEvents.sendOffer, proxy(onHandshakeSendMessage))
-			.on(hcEvents.sendAnswer, proxy(onHandshakeSendMessage))
-			.on(hcEvents.sendBye, proxy(onHandshakeSendMessage));
-		
-		serverConnector
-			.on(hcEvents.receiveIce, proxy(onHandshakeReceiveMessage, hcEvents.receiveIce))
-			.on(hcEvents.receiveOffer, proxy(onHandshakeReceiveMessage, hcEvents.receiveOffer))
-			.on(hcEvents.receiveAnswer, proxy(onHandshakeReceiveMessage, hcEvents.receiveAnswer))
-			.on(hcEvents.receiveBye, proxy(onHandshakeReceiveMessage, hcEvents.receiveBye));
+		function subscribeOnHandshakeControllerEvents() {
+			if (handshakeController && !isHandshakeSubscribed) {
+				var hcEvents = xrtc.HandshakeController.events;
+				handshakeController
+					.on(hcEvents.sendIce, proxy(onHandshakeSendMessage))
+					.on(hcEvents.sendOffer, proxy(onHandshakeSendMessage))
+					.on(hcEvents.sendAnswer, proxy(onHandshakeSendMessage))
+					.on(hcEvents.sendBye, proxy(onHandshakeSendMessage));
+
+				serverConnector
+					.on(hcEvents.receiveIce, proxy(onHandshakeReceiveMessage, hcEvents.receiveIce))
+					.on(hcEvents.receiveOffer, proxy(onHandshakeReceiveMessage, hcEvents.receiveOffer))
+					.on(hcEvents.receiveAnswer, proxy(onHandshakeReceiveMessage, hcEvents.receiveAnswer))
+					.on(hcEvents.receiveBye, proxy(onHandshakeReceiveMessage, hcEvents.receiveBye));
+
+				isHandshakeSubscribed = true;
+			}
+		}
+
+		function unsubscribeFromHandshakeControllerEvents() {
+			if (handshakeController && isHandshakeSubscribed) {
+				var hcEvents = xrtc.HandshakeController.events;
+				handshakeController
+					.off(hcEvents.sendIce)
+					.off(hcEvents.sendOffer)
+					.off(hcEvents.sendAnswer)
+					.off(hcEvents.sendBye);
+
+				serverConnector
+					.off(hcEvents.receiveIce)
+					.off(hcEvents.receiveOffer)
+					.off(hcEvents.receiveAnswer)
+					.off(hcEvents.receiveBye);
+
+				isHandshakeSubscribed = false;
+			}
+		}
 
 		function onHandshakeSendMessage(data) {
 			serverConnector.send(data);
 		}
-		
+
 		function onHandshakeReceiveMessage(data, event) {
-			handshkeController.trigger(event, data);
+			handshakeController.trigger(event, data);
 		}
 	});
-	
+
 	xrtc.Room.extend({
 		events: {
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',
-		},
-		
-		serverEvents: {
-			participantsUpdated: 'peers',
-			participantConnected: 'peer_connected',
-			participantDisconnected: 'peer_removed',
 		}
 	});
 })(window);

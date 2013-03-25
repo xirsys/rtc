@@ -13,7 +13,7 @@
 
 			connect: function (token) {
 				/// <summary>Connects to WebSocket server</summary>
-				
+
 				getWebSocketUrl.call(this, proxy(connect, token));
 			},
 
@@ -29,7 +29,7 @@
 				}
 			},
 
-			send: function (data) {
+			send: function (request) {
 				/// <summary>Sends message to server</summary>
 
 				if (!socket) {
@@ -39,9 +39,11 @@
 					throw error;
 				}
 
-				var request = JSON.stringify(data);
-				logger.debug('send', data, request);
-				socket.send(request);
+				var requestObject = formatRequest.call(this, request);
+				var requestJSON = JSON.stringify(requestObject);
+
+				logger.debug('send', requestObject, requestJSON);
+				socket.send(requestJSON);
 			}
 		});
 
@@ -158,6 +160,23 @@
 
 			return result;
 		}
+
+		function formatRequest(request) {
+			var result = {
+				eventName: request.eventName
+			};
+
+			if (typeof request.data !== "undefined") {
+				result.data = request.data;
+			}
+
+			if (typeof request.receiverId !== "undefined") {
+				// we call 'toString' because 'targetUserId' can be a number, and server cannot resolve it
+				result.targetUserId = request.receiverId.toString();
+			}
+
+			return result;
+		}
 	});
 
 	xrtc.ServerConnector.extend({
@@ -169,6 +188,12 @@
 			messageFormatError: 'messageformaterror',
 
 			serverError: 'servererror'
+		},
+
+		serverEvents: {
+			participantsUpdated: 'peers',
+			participantConnected: 'peer_connected',
+			participantDisconnected: 'peer_removed',
 		},
 
 		settings: {

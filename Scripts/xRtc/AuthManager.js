@@ -68,14 +68,13 @@
 					var error = new xrtc.CommonError('getToken', response.E);
 					logger.error('getToken', error);
 					this.trigger(xrtc.AuthManager.events.serverError, error);
-					return;
-				}
+				} else {
+					var token = response.D.token;
+					logger.info('getToken', token);
 
-				var token = response.D.token;
-				logger.info('getToken', token);
-
-				if (typeof (callback) === 'function') {
-					callback(token);
+					if (typeof (callback) === 'function') {
+						callback(token);
+					}
 				}
 			} catch (ex) {
 				logger.error('getIceServers', ex);
@@ -92,19 +91,18 @@
 					var error = new xrtc.CommonError('getIceServers', response.E);
 					logger.error('getIceServers', error);
 					this.trigger(xrtc.AuthManager.events.serverError, error);
-					return;
+				} else {
+					var iceServers = JSON.parse(response.D);
+
+					// todo: remove it in next version of Firefox
+					convertIceServerDNStoIP(iceServers.iceServers);
+					// todo: remove it in next version of Firefox
+
+					//save servers in cache with token key
+					iceServersCache[token] = iceServers;
 				}
-
-				var iceServers = JSON.parse(response.D);
-
-				// todo: remove it in next version of Firefox
-				convertIceServerDNStoIP(iceServers.iceServers);
-				// todo: remove it in next version of Firefox
-
-				//save servers in cache with token key
-				iceServersCache[token] = iceServers;
 			} catch (ex) {
-				this._logger.error('getIceServers', ex);
+				logger.error('getIceServers', ex);
 			}
 
 			//call this method again to get it from cache or if error occures
@@ -140,8 +138,8 @@
 			tokenParams: {
 				type: 'token_request',
 				authentication: 'public',
-				authorization: null,
-			},
+				authorization: null
+			}
 		}
 	});
 })(window);
