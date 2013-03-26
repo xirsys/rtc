@@ -77,7 +77,8 @@
 					}
 				}
 			} catch (ex) {
-				logger.error('getIceServers', ex);
+				logger.error('getToken', ex);
+				//call this method again if error occures
 				this.getToken(userData, callback);
 			}
 		}

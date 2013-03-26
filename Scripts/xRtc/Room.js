@@ -49,9 +49,10 @@
 		});
 
 		function subscribeOnServerConnectorEvents() {
-			//todo: catch serverConnector open/close events and generate own
 			if (!isServerConnectorSubscribed) {
 				serverConnector
+					.on(xrtc.ServerConnector.events.connectionOpen, proxy(onConnectionOpen))
+					.on(xrtc.ServerConnector.events.connectionClose, proxy(onConnectionClose))
 					.on(xrtc.ServerConnector.serverEvents.participantsUpdated, proxy(onParticipantsUpdated))
 					.on(xrtc.ServerConnector.serverEvents.participantConnected, proxy(onParticipantConnected))
 					.on(xrtc.ServerConnector.serverEvents.participantDisconnected, proxy(onParticipantDisconnected));
@@ -70,7 +71,6 @@
 				isServerConnectorSubscribed = false;
 			}
 		}
-
 
 		function onParticipantsUpdated(data) {
 			name = data.room;
@@ -98,6 +98,14 @@
 
 		function orderParticipants() {
 			participants.sort();
+		}
+
+		function onConnectionOpen(event) {
+			this.trigger(xrtc.Room.events.join);
+		}
+
+		function onConnectionClose(event) {
+			this.trigger(xrtc.Room.events.leave);
 		}
 
 		function subscribeOnHandshakeControllerEvents() {
@@ -149,9 +157,12 @@
 
 	xrtc.Room.extend({
 		events: {
+			join: 'join',
+			leave: 'leave',
+			
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
-			participantDisconnected: 'participantdisconnected',
+			participantDisconnected: 'participantdisconnected'
 		}
 	});
 })(window);

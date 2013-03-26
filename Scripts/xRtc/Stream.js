@@ -55,9 +55,7 @@
 					assignTo.call(this, videoDOMElement);
 				} else {
 					// stream could not be started if it has not been downloaded yet
-					// todo: add for support of Firefox
-					// stream.getRemoteStreams()[0].currentTime > 0
-					if (this.videoAvailable || this.audioAvailable) {
+					if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
 						assignTo.call(this, videoDOMElement);
 					} else {
 						//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately

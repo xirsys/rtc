@@ -84,7 +84,7 @@
 					}
 
 					function onCreateOfferError(err) {
-						var error = new xrtc.CommonError('startSession', "Can't create WebRTC offer", err);
+						var error = new xrtc.CommonError('startSession', "Cannot create WebRTC offer", err);
 
 						logger.error('sendOffer', error);
 						this.trigger(xrtc.Connection.events.offerError, error);
@@ -124,7 +124,7 @@
 				}
 
 				function onGetUserMediaError(err) {
-					var error = new xrtc.CommonError('addMedia', "Can't get UserMedia", err);
+					var error = new xrtc.CommonError('addMedia', "Cannot get UserMedia", err);
 
 					logger.error('addMedia', error);
 					this.trigger(xrtc.Connection.events.streamError, error);
@@ -140,7 +140,7 @@
 				try {
 					dataChannel = new xrtc.DataChannel(peerConnection.createDataChannel(name, { reliable: false }), userData.name);
 				} catch (ex) {
-					var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel", ex);
+					var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
 					this.trigger(xrtc.Connection.events.dataChannelCreationError, error);
 				}
 
@@ -189,11 +189,12 @@
 		function initHandshakeController() {
 			handshakeController = new xrtc.HandshakeController();
 
+			var hcEvents = xrtc.HandshakeController.events;
 			handshakeController
-				.on(xrtc.HandshakeController.events.receiveIce, proxy(onReceiveIce))
-				.on(xrtc.HandshakeController.events.receiveOffer, proxy(onReceiveOffer))
-				.on(xrtc.HandshakeController.events.receiveAnswer, proxy(onReceiveAnswer))
-				.on(xrtc.HandshakeController.events.receiveBye, proxy(onReceiveBye));
+				.on(hcEvents.receiveIce, proxy(onReceiveIce))
+				.on(hcEvents.receiveOffer, proxy(onReceiveOffer))
+				.on(hcEvents.receiveAnswer, proxy(onReceiveAnswer))
+				.on(hcEvents.receiveBye, proxy(onReceiveBye));
 		}
 
 		function initPeerConnection(userId, callback) {
@@ -205,7 +206,7 @@
 				callCallback();
 			}
 
-			//todo: need to think about this approach and refactor it
+			//todo: need to think of this approach and refactor it
 			function callCallback() {
 				if (typeof callback === "function") {
 					try {
@@ -222,10 +223,14 @@
 				peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
+				peerConnection.onopen = proxy(onOpen);
 				peerConnection.onicecandidate = proxy(onIceCandidate);
 				peerConnection.onstatechange = proxy(onStateChange);
-				peerConnection.onopen = proxy(onOpen);
 
+				function onOpen(evt) {
+					this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
+				}
+				
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
 						handleIceCandidate.call(this, evt.candidate);
@@ -234,10 +239,6 @@
 
 				function onStateChange(evt) {
 					this.trigger(xrtc.Connection.events.stateChanged, this.getState());
-				}
-
-				function onOpen(evt) {
-					this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 				}
 
 				for (var i = 0, len = localStreams.length; i < len; i++) {
@@ -315,6 +316,7 @@
 			logger.debug('receiveIce', iceData);
 			var iceCandidate = new RTCIceCandidate(JSON.parse(iceData.iceCandidate));
 			peerConnection.addIceCandidate(iceCandidate);
+			
 			this.trigger(xrtc.Connection.events.iceAdded, iceData, iceCandidate);
 		}
 
@@ -357,12 +359,11 @@
 						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
 						allowIceSending.call(this);
-
 						addRemoteSteam.call(this);
 					}
 
 					function onCreateAnswerError(err) {
-						var error = new xrtc.CommonError('sendAnswer', "Can't create WebRTC answer", err);
+						var error = new xrtc.CommonError('sendAnswer', "Cannot create WebRTC answer", err);
 
 						logger.error('sendAnswer', error);
 						this.trigger(xrtc.Connection.events.answerError, error);
