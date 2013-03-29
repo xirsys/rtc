@@ -49,7 +49,7 @@ var wsTest = {};
 				e.preventDefault();
 				var $form = $(this);
 
-				chat._serverConnector[$(".ws-message-type select").val()](
+				chat.getServerConnector[$(".ws-message-type select").val()](
 					$(".ws-targetUser input").val(),
 					$form.find('.ws-message textarea').val());
 			});
@@ -125,7 +125,7 @@ var chat = {};
 				.on('click', '#contacts .buttons .disconnect', function (e) {
 					e.preventDefault();
 
-					var contact = $(this).data();
+					var contact = $(this).parents('.contact').data();
 					chat.disconnect(contact.name);
 				})
 				.toggleMediaStream('.mute-video', '#video-cell .person .mute-video', 'videoEnabled')
@@ -269,8 +269,9 @@ var chat = {};
 
 		connect: function (contact) {
 			console.log('Connecting to participant...', contact);
-			
-			connection.startSession(contact);
+
+			var options = $('#connecton-form').serializeObject();
+			connection.startSession(contact, options);
 		},
 
 		disconnect: function (contact) {
@@ -362,6 +363,10 @@ var chat = {};
 		
 		setLogger: function(value) {
 			logger = value;
+		},
+		
+		getServerConnector: function() {
+			return serverConnector;
 		},
 
 		subscribe: function (eventDispatcher, events) {

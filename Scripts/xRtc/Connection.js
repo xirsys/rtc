@@ -34,6 +34,7 @@
 			localStreams = [],
 			peerConnection = null,
 			handshakeController = null,
+			iceFilter = null,
 
 			// 'answer' is received or 'offer' received and accepted flag.
 			// Is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
@@ -55,17 +56,21 @@
 			startSession: function (participantId, options) {
 				/// <summary>Starts the process of p2p connection establishment</summary>
 				/// <param name="participantId" type="string">Name of remote participant</param>
-				/// <param name="options" type="object">Optional param. Offer options</param>
+				/// <param name="options" type="object">Optional param. Offer options and connection type</param>
 
 				if (!participantId) {
 					throw new xrtc.CommonError('startSession', 'participantId should be specified');
 				}
 
-				var opts = {};
-				xrtc.Class.extend(opts, xrtc.Connection.settings.offerOptions, options || {});
+				iceFilter = new xrtc.IceCandidateFilter((options && options.connectionType) ? options.connectionType : null);
+
+				var opts = (options && options.offer) ? options.offer : {},
+					offerOptions = {};
+
+				xrtc.Class.extend(offerOptions, xrtc.Connection.settings.offerOptions, opts);
 
 				initPeerConnection.call(this, participantId, function () {
-					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), opts);
+					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
 						peerConnection.setLocalDescription(offer);
@@ -77,10 +82,14 @@
 						}
 						// todo:remove it in next versions
 
-						logger.debug('sendOffer', remoteParticipant, offer);
-						handshakeController.sendOffer(remoteParticipant, JSON.stringify(offer));
+						var request = {
+							offer: JSON.stringify(offer),
+							connectionType: iceFilter.getType()
+						};
 
-						this.trigger(xrtc.Connection.events.offerSent, remoteParticipant, offer);
+						logger.debug('sendOffer', remoteParticipant, offer);
+						handshakeController.sendOffer(remoteParticipant, request);
+						this.trigger(xrtc.Connection.events.offerSent, remoteParticipant, request);
 					}
 
 					function onCreateOfferError(err) {
@@ -230,7 +239,7 @@
 				function onOpen(evt) {
 					this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 				}
-				
+
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
 						handleIceCandidate.call(this, evt.candidate);
@@ -259,22 +268,25 @@
 			}
 		}
 
+		function allowIceSending() {
+			connectionEstablished = true;
+
+			// Send already generated ice candidates
+			sendIceCandidates.call(this);
+		}
+
 		function sendIceCandidates() {
 			for (var i = 0; i < iceCandidates.length; i++) {
 				var ice = iceCandidates[i];
 
-				var strIce = JSON.stringify(ice);
-				handshakeController.sendIce(remoteParticipant, strIce);
-				this.trigger(xrtc.Connection.events.iceSent, strIce);
+				if (iceFilter.isAllowed(ice)) {
+					var strIce = JSON.stringify(ice);
+					handshakeController.sendIce(remoteParticipant, strIce);
+					this.trigger(xrtc.Connection.events.iceSent, strIce);
+				}
 			}
 
 			iceCandidates = [];
-		}
-		
-		function allowIceSending() {
-			connectionEstablished = true;
-			// Send already generated ice candidates
-			sendIceCandidates.call(this);
 		}
 
 		function addRemoteSteam() {
@@ -316,7 +328,7 @@
 			logger.debug('receiveIce', iceData);
 			var iceCandidate = new RTCIceCandidate(JSON.parse(iceData.iceCandidate));
 			peerConnection.addIceCandidate(iceCandidate);
-			
+
 			this.trigger(xrtc.Connection.events.iceAdded, iceData, iceCandidate);
 		}
 
@@ -343,7 +355,8 @@
 
 				initPeerConnection.call(this, offerData.senderId, function () {
 					logger.debug('receiveOffer', offerData);
-					var sdp = JSON.parse(offerData.sdp);
+					iceFilter = new xrtc.IceCandidateFilter(offerData.connectionType);
+					var sdp = JSON.parse(offerData.offer);
 
 					var remoteSessionDescription = new RTCSessionDescription(sdp);
 					peerConnection.setRemoteDescription(remoteSessionDescription);
@@ -353,8 +366,12 @@
 					function onCreateAnswerSuccess(answer) {
 						peerConnection.setLocalDescription(answer);
 
+						var request = {
+							answer: JSON.stringify(answer)
+						};
+
 						logger.debug('sendAnswer', offerData, answer);
-						handshakeController.sendAnswer(offerData.senderId, JSON.stringify(answer));
+						handshakeController.sendAnswer(offerData.senderId, request);
 
 						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
@@ -388,7 +405,7 @@
 			allowIceSending.call(this);
 
 			logger.debug('receiveAnswer', answerData);
-			var sdp = JSON.parse(answerData.sdp);
+			var sdp = JSON.parse(answerData.answer);
 
 			var sessionDescription = new RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);

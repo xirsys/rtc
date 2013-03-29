@@ -23,7 +23,7 @@
 				this.trigger(xrtc.HandshakeController.events.sendIce, request);
 			},
 
-			sendOffer: function (targetUserId, offer) {
+			sendOffer: function (targetUserId, offerData) {
 				/// <summary>Sends offer to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
@@ -31,13 +31,13 @@
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveOffer,
 					receiverId: targetUserId,
-					data: { sdp: offer }
+					data: offerData
 				};
 
 				this.trigger(xrtc.HandshakeController.events.sendOffer, request);
 			},
 
-			sendAnswer: function (targetUserId, answer) {
+			sendAnswer: function (targetUserId, answerData) {
 				/// <summary>Sends answer to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
@@ -45,7 +45,7 @@
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveAnswer,
 					receiverId: targetUserId,
-					data: { sdp: answer }
+					data: answerData
 				};
 
 				this.trigger(xrtc.HandshakeController.events.sendAnswer, request);

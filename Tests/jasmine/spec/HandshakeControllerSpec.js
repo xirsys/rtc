@@ -9,6 +9,7 @@
 ///<reference path="~/Scripts/xRtc/DataChannel.js" />
 ///<reference path="~/Scripts/xRtc/EventDispatcher.js" />
 ///<reference path="~/Scripts/xRtc/HandshakeController.js" />
+///<reference path="~/Scripts/xRtc/IceCandidateFilter.js" />
 ///<reference path="~/Scripts/xRtc/Logger.js" />
 ///<reference path="~/Scripts/xRtc/Room.js" />
 ///<reference path="~/Scripts/xRtc/ServerConnector.js" />
@@ -56,10 +57,10 @@ describe("HandshakeController", function () {
 		it("'sendOffer' event if sendOffer method is called", function () {
 			handshakeController.on(xRtc.HandshakeController.events.sendOffer, eventObject.eventHandler);
 
-			handshakeController.sendOffer('username', {});
+			handshakeController.sendOffer('username', { offer: 'offer' });
 
 			expectedArg.eventName = xRtc.HandshakeController.events.receiveOffer;
-			expectedArg.data.sdp = {};
+			expectedArg.data.offer = 'offer';
 			
 			expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 		});
@@ -67,10 +68,10 @@ describe("HandshakeController", function () {
 		it("'sendAnswer' event if sendAnswer method is called", function () {
 			handshakeController.on(xRtc.HandshakeController.events.sendAnswer, eventObject.eventHandler);
 
-			handshakeController.sendAnswer('username', {});
+			handshakeController.sendAnswer('username', { answer: 'answer' });
 
 			expectedArg.eventName = xRtc.HandshakeController.events.receiveAnswer;
-			expectedArg.data.sdp = {};
+			expectedArg.data.answer = 'answer';
 
 			expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 		});
