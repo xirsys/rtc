@@ -53,6 +53,7 @@
 				serverConnector
 					.on(xrtc.ServerConnector.events.connectionOpen, proxy(onConnectionOpen))
 					.on(xrtc.ServerConnector.events.connectionClose, proxy(onConnectionClose))
+					.on(xrtc.ServerConnector.events.tokenExpired, proxy(onTokenExpired))
 					.on(xrtc.ServerConnector.serverEvents.participantsUpdated, proxy(onParticipantsUpdated))
 					.on(xrtc.ServerConnector.serverEvents.participantConnected, proxy(onParticipantConnected))
 					.on(xrtc.ServerConnector.serverEvents.participantDisconnected, proxy(onParticipantDisconnected));
@@ -106,6 +107,10 @@
 
 		function onConnectionClose(event) {
 			this.trigger(xrtc.Room.events.leave);
+		}
+		
+		function onTokenExpired(event) {
+			this.trigger(xrtc.Room.events.tokenExpired, event);
 		}
 
 		function subscribeOnHandshakeControllerEvents() {
@@ -162,7 +167,8 @@
 			
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
-			participantDisconnected: 'participantdisconnected'
+			participantDisconnected: 'participantdisconnected',
+			tokenExpired: 'tokenexpired'
 		}
 	});
 })(window);

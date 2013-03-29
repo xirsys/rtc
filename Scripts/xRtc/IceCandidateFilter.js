@@ -70,7 +70,6 @@
 			//for (var i = 0; i < iceServers.length; i++) {
 			//	var server = iceServers[i];
 			//
-			//	debugger;
 			//}
 		}
 

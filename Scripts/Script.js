@@ -177,16 +177,7 @@ var chat = {};
 					chat.contactsList.updateState(state);
 				});
 
-			serverConnector = new xRtc.ServerConnector()
-				.on(xrtc.ServerConnector.events.connectionClose, function (data) {
-					chat.addSystemMessage('You was disconnected by the server.');
-
-					//todo: possible this is redundant
-					authManager.getToken(userData, function (token) {
-						chat.addSystemMessage('Trying reconnect with the server.');
-						room.join(token);
-					});
-				});
+			serverConnector = new xRtc.ServerConnector();
 
 			room = new xRtc.Room(serverConnector)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
@@ -201,6 +192,21 @@ var chat = {};
 					chat.addSystemMessage(data.paticipantId + ' left the room.');
 
 					chat.contactsList.refreshParticipants();
+				})
+				.on(xrtc.Room.events.join, function () {
+					chat.addSystemMessage('You have connected to the server.');
+				})
+				.on(xrtc.Room.events.leave, function () {
+					chat.addSystemMessage('You have been disconnectod by the server.');
+					chat.addSystemMessage('Trying reconnect with the server.');
+
+					//todo: possible this is redundant
+					authManager.getToken(userData, function (token) {
+						room.join(token);
+					});
+				})
+				.on(xrtc.Room.events.tokenExpired, function (data) {
+					chat.addSystemMessage('Your token is expired.');
 				});
 
 			room.addHandshake(connection.getHandshake());
@@ -276,7 +282,7 @@ var chat = {};
 
 		disconnect: function (contact) {
 			console.log('Disconnection from participant...', contact);
-			
+
 			connection.endSession();
 		},
 
@@ -340,14 +346,14 @@ var chat = {};
 					value.remove();
 				}
 			});
-			
+
 			var videoData = {
 				name: data.participantId,
 				isMe: data.stream.isLocal(),
 				isVideoAvailable: data.stream.videoAvailable,
 				isAudioAvailable: data.stream.audioAvailable
 			};
-			
+
 			var participantItem = $('#video-tmpl').tmpl(videoData);
 			$('#video').append(participantItem);
 
@@ -360,12 +366,12 @@ var chat = {};
 		removeParticipant: function (participantId) {
 			$('#video .person[data-name="' + participantId + '"]').remove();
 		},
-		
-		setLogger: function(value) {
+
+		setLogger: function (value) {
 			logger = value;
 		},
-		
-		getServerConnector: function() {
+
+		getServerConnector: function () {
 			return serverConnector;
 		},
 
@@ -383,7 +389,7 @@ var chat = {};
 			}
 		}
 	});
-	
+
 })(chat, xRtc);
 
 var setIceServers = function (params) {
@@ -404,7 +410,7 @@ var setIceServers = function (params) {
 };
 
 $(document).ready(function () {
-	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true , test: true});
+	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true, test: true });
 
 	chat.init();
 	chat.setLogger(true);

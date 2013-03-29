@@ -6,7 +6,8 @@
 	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector() {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			socket = null;
+			socket = null,
+			currentToken = null;
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, xrtc.Ajax, {
 			_logger: logger,
@@ -14,6 +15,7 @@
 			connect: function (token) {
 				/// <summary>Connects to WebSocket server</summary>
 
+				currentToken = token;
 				getWebSocketUrl.call(this, proxy(connect, token));
 			},
 
@@ -23,6 +25,7 @@
 				if (socket) {
 					socket.close();
 					socket = null;
+					currentToken = null;
 					logger.info('disconnect', 'Connection with WS has been broken');
 				} else {
 					logger.debug('disconnect', 'Connection with WS has not been established yet');
@@ -116,46 +119,55 @@
 
 		function parseMessage(msg) {
 			var json, result = null;
-			try {
-				json = JSON.parse(msg.data);
+			if (msg.data === '"Token invalid"') {
+				result = {
+					eventName: xrtc.ServerConnector.events.tokenExpired,
+					data: {
+						token: currentToken
+					}
+				};
+			} else {
+				try {
+					json = JSON.parse(msg.data);
 
-				switch (json.Type) {
-					case 'peers':
-						result = {
-							eventName: json.Type,
-							data: {
-								senderId: json.UserId,
-								room: json.Room,
-								connections: JSON.parse(json.Message),
+					switch (json.Type) {
+						case 'peers':
+							result = {
+								eventName: json.Type,
+								data: {
+									senderId: json.UserId,
+									room: json.Room,
+									connections: JSON.parse(json.Message),
+								}
+							};
+							break;
+						case 'peer_connected':
+						case 'peer_removed':
+							result = {
+								eventName: json.Type,
+								data: {
+									senderId: json.UserId,
+									room: json.Room,
+									paticipantId: json.Message,
+								}
+							};
+							break;
+						default:
+							logger.debug('parseMessage', msg.data);
+							result = JSON.parse(json.Message);
+							if (!result.data) {
+								result.data = {};
 							}
-						};
-						break;
-					case 'peer_connected':
-					case 'peer_removed':
-						result = {
-							eventName: json.Type,
-							data: {
-								senderId: json.UserId,
-								room: json.Room,
-								paticipantId: json.Message,
-							}
-						};
-						break;
-					default:
-						logger.debug('parseMessage', msg.data);
-						result = JSON.parse(json.Message);
-						if (!result.data) {
-							result.data = {};
-						}
-						result.data.senderId = json.UserId;
-						result.data.receiverId = json.TargetUserId;
-						break;
+							result.data.senderId = json.UserId;
+							result.data.receiverId = json.TargetUserId;
+							break;
+					}
+				} catch (e) {
+					var error = new xrtc.CommonError('parseMessage', 'Message format error', e);
+					logger.error('parseMessage', error, msg);
+
+					this.trigger(xrtc.ServerConnector.events.messageFormatError, e);
 				}
-			} catch (e) {
-				var error = new xrtc.CommonError('parseMessage', 'Message format error', e);
-				logger.error('parseMessage', error, msg);
-
-				this.trigger(xrtc.ServerConnector.events.messageFormatError, e);
 			}
 
 			return result;
@@ -187,7 +199,8 @@
 			message: 'message',
 			messageFormatError: 'messageformaterror',
 
-			serverError: 'servererror'
+			serverError: 'servererror',
+			tokenExpired: 'tokenexpired'
 		},
 
 		serverEvents: {
