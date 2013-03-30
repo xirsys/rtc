@@ -3,7 +3,6 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 	xrtc.Class(xrtc, 'Logger', function Logger(className) {
-
 		xrtc.Class.extend(this, {
 			info: function(method) {
 				if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === "object" && xrtc.Logger.level.info)) {

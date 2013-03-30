@@ -2,28 +2,94 @@
 
 (function (exports) {
 	var xrtc = exports.xRtc;
+	var internal = {},
+		webrtc;
 
-	//todo: add ability to check WebRTC support. think of it!
-	var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia,
-		RTCPeerConnection = exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
-		RTCIceCandidate = exports.mozRTCIceCandidate || exports.RTCIceCandidate,
-		RTCSessionDescription = exports.mozRTCSessionDescription || exports.RTCSessionDescription,
-		isFirefox = !!navigator.mozGetUserMedia;
+	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, is) {
+		var proxy = xrtc.Class.proxy(this),
+			logger = new xrtc.Logger(this.className),
+			connectionType = type || 'default',
+			//todo: return
+			//iceServers = JSON.parse(JSON.stringify(is)),
+			ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
 
-	getUserMedia = getUserMedia.bind(navigator);
-
-	//Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
-	if (!RTCPeerConnection.prototype.getLocalStreams) {
-		xrtc.Class.extend(RTCPeerConnection.prototype, {
-			getLocalStreams: function () {
-				return this.localStreams;
+		xrtc.Class.extend(this, {
+			getType: function () {
+				return connectionType;
 			},
 
-			getRemoteStreams: function () {
-				return this.remoteStreams;
+			isAllowed: function (ice) {
+				var result = true;
+
+				switch (connectionType) {
+					case 'direct':
+						result = iceCandidatesFilters.local(ice) || iceCandidatesFilters.stun(ice);
+						break;
+					case 'server':
+						if (iceCandidatesFilters.stun(ice)) {
+							iceCandidateConverters.stun2turn(ice);
+						} else if (iceCandidatesFilters.turn(ice)) {
+							iceCandidateConverters.turn2turn(ice);
+						} else {
+							result = false;
+						}
+						break;
+					default:
+						break;
+				}
+
+				return result;
 			}
 		});
-	}
+
+		var iceCandidatesFilters = {
+			local: function (iceCandidate) {
+				var regexp = /typ host/;
+
+				return filterIceCandidate(iceCandidate, regexp);
+			},
+
+			stun: function (iceCandidate) {
+				var regexp = /typ srflx/;
+
+				return filterIceCandidate(iceCandidate, regexp);
+			},
+
+			turn: function (iceCandidate) {
+				var regexp = /typ relay/;
+
+				return filterIceCandidate(iceCandidate, regexp);
+			}
+		};
+
+		function filterIceCandidate(iceCandidate, regexp) {
+			return regexp.test(iceCandidate.candidate);
+		}
+
+		function getTurnIp() {
+			return '50.97.63.12';
+			//todo: complete
+			//for (var i = 0; i < iceServers.length; i++) {
+			//	var server = iceServers[i];
+			//
+			//}
+		}
+
+		var iceCandidateConverters = {
+			turn2turn: function (iceCandidate) {
+				var candidate = iceCandidate.candidate;
+
+				var matches = candidate.match(ipRegexp);
+				iceCandidate.candidate = candidate.replace(ipRegexp, matches[0]);
+			},
+
+			stun2turn: function (iceCandidate) {
+				var candidate = iceCandidate.candidate;
+
+				iceCandidate.candidate = candidate.replace(ipRegexp, getTurnIp());
+			}
+		};
+	});
 
 	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
 		var proxy = xrtc.Class.proxy(this),
@@ -62,7 +128,7 @@
 					throw new xrtc.CommonError('startSession', 'participantId should be specified');
 				}
 
-				iceFilter = new xrtc.IceCandidateFilter((options && options.connectionType) ? options.connectionType : null);
+				iceFilter = new internal.IceCandidateFilter((options && options.connectionType) ? options.connectionType : null);
 
 				var opts = (options && options.offer) ? options.offer : {},
 					offerOptions = {};
@@ -77,7 +143,7 @@
 
 						//Cross-browser support: FF v.21 fix
 						// todo:remove it in next versions
-						if (isFirefox) {
+						if (webrtc.isFirefox) {
 							offer.sdp = offer.sdp + 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\r\n';
 						}
 						// todo:remove it in next versions
@@ -118,7 +184,7 @@
 				var opts = {};
 				xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
 
-				getUserMedia(opts, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
+				webrtc.getUserMedia(opts, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
 
 				function onGetUserMediaSuccess(stream) {
 					localStreams.push(stream);
@@ -150,7 +216,9 @@
 					dataChannel = new xrtc.DataChannel(peerConnection.createDataChannel(name, { reliable: false }), userData.name);
 				} catch (ex) {
 					var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
-					this.trigger(xrtc.Connection.events.dataChannelCreationError, error);
+
+					logger.error('createDataChannel', error);
+					throw error;
 				}
 
 				return dataChannel;
@@ -233,7 +301,7 @@
 			}
 
 			function onIceServersGot(token, iceServers) {
-				peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
+				peerConnection = new webrtc.RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
 				peerConnection.onicecandidate = proxy(onIceCandidate);
@@ -331,7 +399,7 @@
 			}
 
 			logger.debug('receiveIce', iceData);
-			var iceCandidate = new RTCIceCandidate(JSON.parse(iceData.iceCandidate));
+			var iceCandidate = new webrtc.RTCIceCandidate(JSON.parse(iceData.iceCandidate));
 			peerConnection.addIceCandidate(iceCandidate);
 
 			this.trigger(xrtc.Connection.events.iceAdded, iceData, iceCandidate);
@@ -363,7 +431,7 @@
 					iceFilter = new xrtc.IceCandidateFilter(offerData.connectionType);
 					var sdp = JSON.parse(offerData.offer);
 
-					var remoteSessionDescription = new RTCSessionDescription(sdp);
+					var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
 					peerConnection.setRemoteDescription(remoteSessionDescription);
 
 					peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
@@ -412,7 +480,7 @@
 			logger.debug('receiveAnswer', answerData);
 			var sdp = JSON.parse(answerData.answer);
 
-			var sessionDescription = new RTCSessionDescription(sdp);
+			var sessionDescription = new webrtc.RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);
 			this.trigger(xrtc.Connection.events.answerReceived, answerData, sessionDescription);
 
@@ -508,11 +576,61 @@
 			peerConnectionOptions: {
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 			}
+		},
+		
+		webrtc: {
+			getUserMedia: (navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia).bind(navigator),
+			RTCPeerConnection: exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
+			RTCIceCandidate: exports.mozRTCIceCandidate || exports.RTCIceCandidate,
+			RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
+			URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
+			MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
+			isFirefox: !!navigator.mozGetUserMedia
 		}
 	});
 
+	webrtc = xrtc.Connection.webrtc;
+	
+	//Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
+	if (!webrtc.RTCPeerConnection.prototype.getLocalStreams) {
+		xrtc.Class.extend(webrtc.RTCPeerConnection.prototype, {
+			getLocalStreams: function () {
+				return this.localStreams;
+			},
+
+			getRemoteStreams: function () {
+				return this.remoteStreams;
+			}
+		});
+	}
+
+	//Cross-browser support: New syntax of getXXXTracks method in Chrome M26.
+	if (!webrtc.MediaStream.prototype.getVideoTracks) {
+		if (isFirefox) {
+			xrtc.Class.extend(webrtc.MediaStream.prototype, {
+				getVideoTracks: function () {
+					return [];
+				},
+
+				getAudioTracks: function () {
+					return [];
+				}
+			});
+		} else {
+			xrtc.Class.extend(webrtc.MediaStream.prototype, {
+				getVideoTracks: function () {
+					return this.videoTracks;
+				},
+
+				getAudioTracks: function () {
+					return this.audioTracks;
+				}
+			});
+		}
+	}
+
 	//Cross-browser support
-	if (isFirefox) {
+	if (webrtc.isFirefox) {
 		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for FF
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;

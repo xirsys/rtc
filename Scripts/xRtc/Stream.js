@@ -1,35 +1,7 @@
 ﻿'use strict';
 
-(function (exports) {
-	var xrtc = exports.xRtc,
-		URL = exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
-		MediaStream = exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
-		isFirefox = !!navigator.mozGetUserMedia;
-
-	//Cross-browser support: New syntax of getXXXTracks method in Chrome M26.
-	if (!MediaStream.prototype.getVideoTracks) {
-		if (isFirefox) {
-			xrtc.Class.extend(MediaStream.prototype, {
-				getVideoTracks: function () {
-					return [];
-				},
-
-				getAudioTracks: function () {
-					return [];
-				}
-			});
-		} else {
-			xrtc.Class.extend(MediaStream.prototype, {
-				getVideoTracks: function () {
-					return this.videoTracks;
-				},
-
-				getAudioTracks: function () {
-					return this.audioTracks;
-				}
-			});
-		}
-	}
+(function (xrtc) {
+	var webrtc = xrtc.Connection.webrtc;
 
 	//todo: possible we should wrap Video and Audio Tracks
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
@@ -43,37 +15,37 @@
 
 		xrtc.Class.extend(this, {
 			getURL: function () {
-				return URL.createObjectURL(stream);
+				return webrtc.URL.createObjectURL(stream);
 			},
 
 			isLocal: function () {
 				return isLocal;
 			},
 
-			assignTo: function (videoDOMElement) {
+			assignTo: function (videoDomElement) {
 				if (this.isLocal()) {
-					assignTo.call(this, videoDOMElement);
+					assignTo.call(this, videoDomElement);
 				} else {
 					// stream could not be started if it has not been downloaded yet
 					if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
-						assignTo.call(this, videoDOMElement);
+						assignTo.call(this, videoDomElement);
 					} else {
 						//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
-						setTimeout(proxy(this.assignTo, videoDOMElement), 100);
+						setTimeout(proxy(this.assignTo, videoDomElement), 100);
 					}
 				}
 			}
 		});
 
-		function assignTo(videoDOMElement) {
+		function assignTo(videoDomElement) {
 			// currently for firefox 'src' does not work, in future it can be removed
-			if (isFirefox) {
-				videoDOMElement.mozSrcObject = stream;
+			if (webrtc.isFirefox) {
+				videoDomElement.mozSrcObject = stream;
 			} else {
-				videoDOMElement.src = this.getURL();
+				videoDomElement.src = this.getURL();
 			}
 
-			videoDOMElement.play();
+			videoDomElement.play();
 		}
 
 		function getVideoEnabled() {
@@ -108,4 +80,4 @@
 			return stream.getAudioTracks().length > 0;
 		}
 	});
-})(window);
+})(xRtc);
