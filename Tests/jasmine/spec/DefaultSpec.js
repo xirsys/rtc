@@ -9,7 +9,6 @@
 ///<reference path="~/Scripts/xRtc/DataChannel.js" />
 ///<reference path="~/Scripts/xRtc/EventDispatcher.js" />
 ///<reference path="~/Scripts/xRtc/HandshakeController.js" />
-///<reference path="~/Scripts/xRtc/IceCandidateFilter.js" />
 ///<reference path="~/Scripts/xRtc/Logger.js" />
 ///<reference path="~/Scripts/xRtc/Room.js" />
 ///<reference path="~/Scripts/xRtc/ServerConnector.js" />
@@ -18,25 +17,19 @@
 describe("Connection", function () {
 	//xRtc.Logger.level = true;
 
-	var connection;
-	var userData = {
-		domain: '',
-		application: '',
-		room: '',
-		name: ''
-	};
+	var target;
 	var eventObject;
 	var eventSpy;
 
 	beforeEach(function () {
-		connection = new xRtc.Connection();
+		target = null;
 
 		eventObject = { eventHandler: function () { } };
 		eventSpy = sinon.spy(eventObject, 'eventHandler');
 	});
 
 	afterEach(function () {
-		connection = null;
+		target = null;
 
 		eventObject = null;
 		eventSpy = null;

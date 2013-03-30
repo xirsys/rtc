@@ -9,8 +9,7 @@
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			connectionType = type || 'default',
-			//todo: return
-			//iceServers = JSON.parse(JSON.stringify(is)),
+			iceServers = is && is.iceServers || null,
 			ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
 
 		xrtc.Class.extend(this, {
@@ -67,12 +66,16 @@
 		}
 
 		function getTurnIp() {
-			return '50.97.63.12';
-			//todo: complete
-			//for (var i = 0; i < iceServers.length; i++) {
-			//	var server = iceServers[i];
-			//
-			//}
+			if (iceServers) {
+				for (var i = 0; i < iceServers.length; i++) {
+					var server = iceServers[i];
+					if ('credential' in server) {
+						return server.url.split('@')[1];
+					}
+
+				}
+			}
+			return null;
 		}
 
 		var iceCandidateConverters = {
@@ -84,23 +87,29 @@
 			},
 
 			stun2turn: function (iceCandidate) {
-				var candidate = iceCandidate.candidate;
-
-				iceCandidate.candidate = candidate.replace(ipRegexp, getTurnIp());
+				var turnIp = getTurnIp();
+				if (turnIp) {
+					var candidate = iceCandidate.candidate;
+					iceCandidate.candidate = candidate.replace(ipRegexp, turnIp);
+				} else {
+					//todo: is it right?
+					iceCandidateConverters.turn2turn(iceCandidate);
+				}
 			}
 		};
 	});
 
 	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
 		var proxy = xrtc.Class.proxy(this),
-			logger = new xrtc.Logger(this.className),
-			userData = ud,
-			authManager = am,
-			remoteParticipant = null,
-			localStreams = [],
-			peerConnection = null,
-			handshakeController = null,
-			iceFilter = null,
+		    logger = new xrtc.Logger(this.className),
+		    userData = ud,
+		    authManager = am,
+		    remoteParticipant = null,
+		    localStreams = [],
+		    peerConnection = null,
+		    handshakeController = null,
+		    iceFilter = null,
+		    iceServers = null,
 
 			// 'answer' is received or 'offer' received and accepted flag.
 			// Is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
@@ -128,14 +137,13 @@
 					throw new xrtc.CommonError('startSession', 'participantId should be specified');
 				}
 
-				iceFilter = new internal.IceCandidateFilter((options && options.connectionType) ? options.connectionType : null);
-
-				var opts = (options && options.offer) ? options.offer : {},
+				var opts = options && options.offer || {},
 					offerOptions = {};
 
 				xrtc.Class.extend(offerOptions, xrtc.Connection.settings.offerOptions, opts);
 
 				initPeerConnection.call(this, participantId, function () {
+					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
@@ -150,7 +158,8 @@
 
 						var request = {
 							offer: JSON.stringify(offer),
-							connectionType: iceFilter.getType()
+							connectionType: iceFilter.getType(),
+							iceServers: iceServers
 						};
 
 						logger.debug('sendOffer', remoteParticipant, offer);
@@ -300,7 +309,7 @@
 				}
 			}
 
-			function onIceServersGot(token, iceServers) {
+			function onIceServersGot(iceServers) {
 				peerConnection = new webrtc.RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
@@ -350,7 +359,8 @@
 
 		function sendIceCandidates() {
 			for (var i = 0; i < iceCandidates.length; i++) {
-				var ice = iceCandidates[i];
+				// in the original RTCIceCandidate class 'candidate' property is immutable
+				var ice = JSON.parse(JSON.stringify(iceCandidates[i]));
 
 				if (iceFilter.isAllowed(ice)) {
 					var strIce = JSON.stringify(ice);
@@ -381,11 +391,16 @@
 
 		function getIceServers(callback) {
 			if (typeof callback === "function") {
-				authManager.getToken(userData, function (token) {
-					authManager.getIceServers(token, function (iceServers) {
-						callback(token, iceServers);
+				if (iceServers) {
+					callback(iceServers);
+				} else {
+					authManager.getToken(userData, function (token) {
+						authManager.getIceServers(token, function (servers) {
+							iceServers = servers;
+							callback(iceServers);
+						});
 					});
-				});
+				}
 			}
 		}
 
@@ -426,9 +441,11 @@
 				//End the current active call, if any
 				this.endSession();
 
+				iceServers = offerData.iceServers;
+
 				initPeerConnection.call(this, offerData.senderId, function () {
 					logger.debug('receiveOffer', offerData);
-					iceFilter = new xrtc.IceCandidateFilter(offerData.connectionType);
+					iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
 					var sdp = JSON.parse(offerData.offer);
 
 					var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
@@ -501,6 +518,7 @@
 				peerConnection.close();
 				peerConnection = null;
 				iceCandidates = [];
+				iceServers = null;
 
 				var closedParticipant = remoteParticipant;
 				remoteParticipant = null;
@@ -577,7 +595,7 @@
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 			}
 		},
-		
+
 		webrtc: {
 			getUserMedia: (navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia).bind(navigator),
 			RTCPeerConnection: exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
@@ -590,7 +608,7 @@
 	});
 
 	webrtc = xrtc.Connection.webrtc;
-	
+
 	//Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
 	if (!webrtc.RTCPeerConnection.prototype.getLocalStreams) {
 		xrtc.Class.extend(webrtc.RTCPeerConnection.prototype, {
