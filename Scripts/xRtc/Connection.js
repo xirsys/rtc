@@ -174,13 +174,16 @@
 				// it can change from version to version
 				var isLocalStreamAdded = localStreams.length > 0,
 					states = {
+						//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
 						'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
 
 						// Chrome M25
+						//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
 						'new': isLocalStreamAdded ? 'ready' : 'not-ready',
 						'opening': 'connecting',
 						'active': 'connected',
 						'closing': 'disconnecting',
+						//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
 						'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
 
 						// Chrome M26+
@@ -189,7 +192,8 @@
 						'have-remote-offer': 'connecting'
 					},
 
-					state = peerConnection ? peerConnection.readyState : 'notinitialized';
+					// peerConnection.readyState was removed since M27
+					state = peerConnection ? (peerConnection.readyState) : 'notinitialized';
 
 				return states[state];
 			}
@@ -232,13 +236,9 @@
 				peerConnection = new RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
-				peerConnection.onopen = proxy(onOpen);
 				peerConnection.onicecandidate = proxy(onIceCandidate);
+				// peerConnection.onstatechange was removed since M27
 				peerConnection.onstatechange = proxy(onStateChange);
-
-				function onOpen(evt) {
-					this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
-				}
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
@@ -247,7 +247,12 @@
 				}
 
 				function onStateChange(evt) {
-					this.trigger(xrtc.Connection.events.stateChanged, this.getState());
+					var state = this.getState();
+					if (state === 'connected') {
+						this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
+					}
+
+					this.trigger(xrtc.Connection.events.stateChanged, state);
 				}
 
 				for (var i = 0, len = localStreams.length; i < len; i++) {
@@ -307,13 +312,13 @@
 		}
 
 		function getIceServers(callback) {
-			authManager.getToken(userData, function (token) {
-				authManager.getIceServers(token, function (iceServers) {
-					if (typeof callback === "function") {
+			if (typeof callback === "function") {
+				authManager.getToken(userData, function (token) {
+					authManager.getIceServers(token, function (iceServers) {
 						callback(token, iceServers);
-					}
+					});
 				});
-			});
+			}
 		}
 
 		function onReceiveIce(iceData) {
@@ -497,6 +502,9 @@
 				}
 			},
 
+			// Interop Notes between Chrome M25 and Firefox Nightly (version 21):
+			// Chrome does not yet do DTLS-SRTP by default whereas Firefox only does DTLS-SRTP. In order to get interop,
+			// you must supply Chrome with a PC constructor constraint to enable DTLS: { 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}
 			peerConnectionOptions: {
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 			}
