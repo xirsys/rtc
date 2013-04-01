@@ -314,12 +314,17 @@
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
 				peerConnection.onicecandidate = proxy(onIceCandidate);
-				// peerConnection.onstatechange was removed since M27
+				// peerConnection.onstatechange has been removed since M27
 				peerConnection.onstatechange = proxy(onStateChange);
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
-						handleIceCandidate.call(this, evt.candidate);
+						// in the original RTCIceCandidate class 'candidate' property is immutable
+						var ice = JSON.parse(JSON.stringify(evt.candidate));
+
+						if (iceFilter.isAllowed(ice)) {
+							handleIceCandidate.call(this, ice);
+						}
 					}
 				}
 
@@ -359,14 +364,10 @@
 
 		function sendIceCandidates() {
 			for (var i = 0; i < iceCandidates.length; i++) {
-				// in the original RTCIceCandidate class 'candidate' property is immutable
-				var ice = JSON.parse(JSON.stringify(iceCandidates[i]));
+				var ice = JSON.stringify(iceCandidates[i]);
 
-				if (iceFilter.isAllowed(ice)) {
-					var strIce = JSON.stringify(ice);
-					handshakeController.sendIce(remoteParticipant, strIce);
-					this.trigger(xrtc.Connection.events.iceSent, strIce);
-				}
+				handshakeController.sendIce(remoteParticipant, ice);
+				this.trigger(xrtc.Connection.events.iceSent, ice);
 			}
 
 			iceCandidates = [];

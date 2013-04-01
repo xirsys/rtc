@@ -17,6 +17,23 @@
 describe("IceCandidateFilter", function () {
 	//xRtc.Logger.level = true;
 
+	function getIceCandidate(candidate) {
+		var iceCandidate = {
+			candidate: candidate,
+			sdpMLineIndex: 0,
+			sdpMid: "audio"
+		};
+
+		return iceCandidate;
+	}
+
+
+	var iceCandidates = {
+		local: "a=candidate:2378510017 1 udp 2113937151 192.168.33.81 61190 typ host generation 0\r\n",
+		stun: "a=candidate:210577525 1 udp 1845501695 86.57.152.230 61190 typ srflx raddr 192.168.33.81 rport 61190 generation 0\r\n",
+		turn: "a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 86.57.152.230 rport 61191 generation 0\r\n"
+	};
+
 	var stubs = {
 		rtcPeerConnection: null,
 		authManager: null,
@@ -25,27 +42,20 @@ describe("IceCandidateFilter", function () {
 
 	var connection;
 	var handshake;
-	var iceCandidate;
 	var peerConnection;
 	var iceSendSpy;
-	var answerData = {
-		receiverId: 'Me',
-		senderId: 'username',
-		answer: '{}'
-	};
+
 
 	beforeEach(function () {
-		iceCandidate = {
-			sdpMLineIndex: 0,
-			sdpMid: "audio"
-		};
-
 		stubs.rtcSessionDescription = sinon.stub(xRtc.Connection.webrtc, 'RTCSessionDescription', function () { });
 
 		stubs.rtcPeerConnection = sinon.stub(xRtc.Connection.webrtc, 'RTCPeerConnection', function () {
 			peerConnection = this;
 
 			this.createOffer = function (success, failure, options) { };
+			this.createAnswer = function(success, failure, options) {
+				success({});
+			};
 			this.setLocalDescription = function (description) { };
 			this.setRemoteDescription = function (description) { };
 			this.getRemoteStreams = function () {
@@ -63,7 +73,7 @@ describe("IceCandidateFilter", function () {
 			};
 		});
 
-		connection = new xRtc.Connection({}, new xRtc.AuthManager());
+		connection = new xRtc.Connection({ name: 'username' }, new xRtc.AuthManager());
 		handshake = connection.getHandshake();
 
 		iceSendSpy = sinon.spy(handshake, 'sendIce');
@@ -71,7 +81,6 @@ describe("IceCandidateFilter", function () {
 
 	afterEach(function () {
 		connection = null;
-		iceCandidate = null;
 		handshake = null;
 		peerConnection = null;
 		iceSendSpy = null;
@@ -82,150 +91,244 @@ describe("IceCandidateFilter", function () {
 		}
 	});
 
-	describe("Default", function () {
+	describe("Client starts session", function () {
+		var answerData;
+
 		beforeEach(function () {
-			connection.startSession('username');
-			handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
+			answerData = {
+				receiverId: 'Me',
+				senderId: 'username',
+				answer: '{}'
+			};
+		});
+		
+		afterEach(function () {
+			answerData = null;
 		});
 
-		it("passes and does not modify local udp ice candidate", function () {
-			var candidate = "a=candidate:2378510017 1 udp 2113937151 192.168.33.81 61190 typ host generation 0\r\n";
-			iceCandidate.candidate = candidate;
+		describe("Default", function () {
+			beforeEach(function () {
+				connection.startSession('username');
+				handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("passes and does not modify local ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.local);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
+				expect(ice.candidate).toEqual(iceCandidates.local);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.local)));
+			});
+
+			it("passes and does not modify stun ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.stun);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.stun);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.stun)));
+			});
+
+			it("passes and does not modify turn ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.turn);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.turn);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.turn)));
+			});
 		});
 
-		it("passes and does not modify local tcp ice candidate", function () {
-			var candidate = "a=candidate:3276198449 2 tcp 1509957375 192.168.33.81 59780 typ host generation 0\r\n";
-			iceCandidate.candidate = candidate;
+		describe("Direct", function () {
+			beforeEach(function () {
+				connection.startSession('username', { connectionType: 'direct' });
+				handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("passes and does not modify local ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.local);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
+				expect(ice.candidate).toEqual(iceCandidates.local);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.local)));
+			});
+
+			it("passes and does not modify stun ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.stun);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.stun);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.stun)));
+			});
+
+			it("does not pass and does not modify turn ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.turn);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.turn);
+				expect(iceSendSpy.called).toBeFalsy();
+			});
 		});
 
-		it("passes and does not modify stun ice candidate", function () {
-			var candidate = "a=candidate:210577525 1 udp 1845501695 86.57.152.230 61190 typ srflx raddr 192.168.33.81 rport 61190 generation 0\r\n";
-			iceCandidate.candidate = candidate;
+		describe("Server", function () {
+			beforeEach(function () {
+				connection.startSession('username', { connectionType: 'server' });
+				handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("does not pass and does not modify local ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.local);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
-		});
+				expect(ice.candidate).toEqual(iceCandidates.local);
+				expect(iceSendSpy.called).toBeFalsy();
+			});
 
-		it("passes and does not modify turn ice candidate", function () {
-			var candidate = "a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 86.57.152.230 rport 61191 generation 0\r\n";
-			iceCandidate.candidate = candidate;
+			it("passes and modifies stun ice candidate", function () {
+				var expectedIce = getIceCandidate("a=candidate:210577525 1 udp 1845501695 222.222.222.222 61190 typ srflx raddr 222.222.222.222 rport 61190 generation 0\r\n");
+				var ice = getIceCandidate(iceCandidates.stun);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+				expect(ice.candidate).toEqual(iceCandidates.stun);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(expectedIce));
+			});
 
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
+			it("passes and modifies turn ice candidate", function () {
+				var expectedIce = getIceCandidate("a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 50.97.63.12 rport 61191 generation 0\r\n");
+				var ice = getIceCandidate(iceCandidates.turn);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.turn);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(expectedIce));
+			});
 		});
 	});
 
-	describe("Direct", function () {
+	describe("Client accepts offer", function () {
+		var offerData;
+
 		beforeEach(function () {
-			connection.startSession('username', { connectionType: 'direct' });
-			handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
+			offerData = {
+				offer: '{}',
+				receiverId: 'username',
+				senderId: 'username2',
+				iceServers: { iceServers: [{ url: 'stun:111.111.111.111' }, { url: 'turn:username@222.222.222.222', credential: 'free' }] }
+			};
+
+			connection.on(xRtc.Connection.events.incomingCall, function (offer) {
+				offer.accept();
+			});
 		});
 
-		it("passes and does not modify local udp ice candidate", function () {
-			var candidate = "a=candidate:2378510017 1 udp 2113937151 192.168.33.81 61190 typ host generation 0\r\n";
-			iceCandidate.candidate = candidate;
-
-			peerConnection.onicecandidate({ candidate: iceCandidate });
-
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
+		afterEach(function() {
+			offerData = null;
 		});
 
-		it("passes and does not modify local tcp ice candidate", function () {
-			var candidate = "a=candidate:3276198449 2 tcp 1509957375 192.168.33.81 59780 typ host generation 0\r\n";
-			iceCandidate.candidate = candidate;
+		describe("Default", function () {
+			beforeEach(function () {
+				offerData.connectionType = 'default';
+				handshake.trigger(xRtc.HandshakeController.events.receiveOffer, offerData);
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("passes and does not modify local ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.local);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
+				expect(ice.candidate).toEqual(iceCandidates.local);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.local)));
+			});
+
+			it("passes and does not modify stun ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.stun);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.stun);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.stun)));
+			});
+
+			it("passes and does not modify turn ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.turn);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.turn);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.turn)));
+			});
 		});
 
-		it("passes and does not modify stun ice candidate", function () {
-			var candidate = "a=candidate:210577525 1 udp 1845501695 86.57.152.230 61190 typ srflx raddr 192.168.33.81 rport 61190 generation 0\r\n";
-			iceCandidate.candidate = candidate;
+		describe("Direct", function () {
+			beforeEach(function () {
+				offerData.connectionType = 'direct';
+				handshake.trigger(xRtc.HandshakeController.events.receiveOffer, offerData);
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("passes and does not modify local ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.local);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeTruthy();
-			expect(iceCandidate.candidate).toEqual(candidate);
+				expect(ice.candidate).toEqual(iceCandidates.local);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.local)));
+			});
+
+			it("passes and does not modify stun ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.stun);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.stun);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(getIceCandidate(iceCandidates.stun)));
+			});
+
+			it("does not pass and does not modify turn ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.turn);
+				peerConnection.onicecandidate({ candidate: ice });
+
+				expect(ice.candidate).toEqual(iceCandidates.turn);
+				expect(iceSendSpy.called).toBeFalsy();
+			});
 		});
 
-		it("does not pass and does not modify turn ice candidate", function () {
-			var candidate = "a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 86.57.152.230 rport 61191 generation 0\r\n";
-			iceCandidate.candidate = candidate;
+		describe("Server", function () {
+			beforeEach(function () {
+				offerData.connectionType = 'server';
+				handshake.trigger(xRtc.HandshakeController.events.receiveOffer, offerData);
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("does not pass and does not modify local ice candidate", function () {
+				var ice = getIceCandidate(iceCandidates.local);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeFalsy();
-			expect(iceCandidate.candidate).toEqual(candidate);
-		});
-	});
+				expect(ice.candidate).toEqual(iceCandidates.local);
+				expect(iceSendSpy.called).toBeFalsy();
+			});
 
-	describe("Server", function () {
-		beforeEach(function () {
-			connection.startSession('username', { connectionType: 'server' });
-			handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
-		});
+			it("passes and modifies stun ice candidate", function () {
+				var expectedIce = getIceCandidate("a=candidate:210577525 1 udp 1845501695 222.222.222.222 61190 typ srflx raddr 222.222.222.222 rport 61190 generation 0\r\n");
+				var ice = getIceCandidate(iceCandidates.stun);
+				peerConnection.onicecandidate({ candidate: ice });
 
-		it("does not pass and does not modify local udp ice candidate", function () {
-			var candidate = "a=candidate:2378510017 1 udp 2113937151 192.168.33.81 61190 typ host generation 0\r\n";
-			iceCandidate.candidate = candidate;
+				expect(ice.candidate).toEqual(iceCandidates.stun);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(expectedIce));
+			});
 
-			peerConnection.onicecandidate({ candidate: iceCandidate });
+			it("passes and modifies turn ice candidate", function () {
+				var expectedIce = getIceCandidate("a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 50.97.63.12 rport 61191 generation 0\r\n");
+				var ice = getIceCandidate(iceCandidates.turn);
+				peerConnection.onicecandidate({ candidate: ice });
 
-			expect(iceSendSpy.called).toBeFalsy();
-			expect(iceCandidate.candidate).toEqual(candidate);
-		});
-
-		it("does not pass and does not modify local tcp ice candidate", function () {
-			var candidate = "a=candidate:3276198449 2 tcp 1509957375 192.168.33.81 59780 typ host generation 0\r\n";
-			iceCandidate.candidate = candidate;
-
-			peerConnection.onicecandidate({ candidate: iceCandidate });
-
-			expect(iceSendSpy.called).toBeFalsy();
-			expect(iceCandidate.candidate).toEqual(candidate);
-		});
-
-		//todo: fix it
-		xit("passes and modifies stun ice candidate", function () {
-			var candidate = "a=candidate:210577525 2 udp 1845501695 86.57.152.230 61190 typ srflx raddr 192.168.33.81 rport 61190 generation 0\r\n";
-			var expectedCandidate = "a=candidate:210577525 2 udp 1845501695 222.222.222.222 61190 typ srflx raddr 222.222.222.222 rport 61190 generation 0\r\n";
-			iceCandidate.candidate = candidate;
-
-			peerConnection.onicecandidate({ candidate: iceCandidate });
-
-			expect(iceSendSpy.called).toBeTruthy();
-			//this is does not work, because Connection works with copy and does not change original object
-			expect(iceCandidate.candidate).toEqual(expectedCandidate);
-		});
-
-		//todo: fix it
-		xit("passes and modifies turn ice candidate", function () {
-			var candidate = "a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 86.57.152.230 rport 61191 generation 0\r\n";
-			var expectedCandidate = "a=candidate:3801838492 1 udp 7935 50.97.63.12 50592 typ relay raddr 50.97.63.12 rport 61191 generation 0\r\n";
-			iceCandidate.candidate = candidate;
-
-			peerConnection.onicecandidate({ candidate: iceCandidate });
-
-			expect(iceSendSpy.called).toBeTruthy();
-			//this is does not work, because Connection works with copy and does not change original object
-			expect(iceCandidate.candidate).toEqual(expectedCandidate);
+				expect(ice.candidate).toEqual(iceCandidates.turn);
+				expect(iceSendSpy.called).toBeTruthy();
+				expect(iceSendSpy.args[0][1]).toEqual(JSON.stringify(expectedIce));
+			});
 		});
 	});
 });
