@@ -215,6 +215,73 @@
 				}
 			},
 
+			addScreenSharing: function () {
+				/// <summary>Asks user to allow use microphone and share his screen</summary>
+
+				var videoStream,
+					audioStream,
+					streamsQuantity = 0;
+
+				var videoOptions = {
+						video: {
+							mandatory: {
+								chromeMediaSource: 'screen'
+							}
+						}
+					},
+					audioOptions = {
+						audio: true
+					};
+
+				webrtc.getUserMedia(videoOptions, proxy(onGetVideoSuccess), proxy(onGetUserMediaError));
+				webrtc.getUserMedia(audioOptions, proxy(onGetAudioSuccess), proxy(onGetUserMediaError));
+
+				function onGetVideoSuccess(stream) {
+					videoStream = stream;
+					streamsQuantity++;
+
+					handleStreams.call(this);
+				}
+
+				function onGetAudioSuccess(stream) {
+					audioStream = stream;
+					streamsQuantity++;
+
+					handleStreams.call(this);
+				}
+
+				function handleStreams() {
+					if (streamsQuantity == 2) {
+						var mediaStreamTracks = [];
+						addTracks(mediaStreamTracks, audioStream.getAudioTracks());
+						addTracks(mediaStreamTracks, videoStream.getVideoTracks());
+						
+						var stream = new xrtc.Connection.webrtc.MediaStream(mediaStreamTracks);
+
+						var data = {
+							stream: new xrtc.Stream(stream),
+							participantId: userData.name
+						};
+
+						logger.debug('addMedia', data.stream);
+						this.trigger(xrtc.Connection.events.streamAdded, data);
+					}
+				}
+
+				function addTracks(array, tracks) {
+					for (var i = 0; i < tracks.length; i++) {
+						array.push(tracks[i]);
+					}
+				}
+
+				function onGetUserMediaError(err) {
+					var error = new xrtc.CommonError('addMedia', "Cannot get UserMedia", err);
+
+					logger.error('addMedia', error);
+					this.trigger(xrtc.Connection.events.streamError, error);
+				}
+			},
+
 			createDataChannel: function (name) {
 				/// <summary>Creates new instance of DataChannel</summary>
 				/// <param name="name" type="string">Name for DataChannel. Must be unique</param>

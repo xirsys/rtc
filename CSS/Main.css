@@ -69,6 +69,7 @@ table.form .button-block {
 
 .person .video video {
 	display: block;
+	max-height: 360px;
 }
 
 .person .buttons {
