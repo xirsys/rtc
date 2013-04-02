@@ -14,6 +14,8 @@
 ///<reference path="~/Scripts/xRtc/ServerConnector.js" />
 ///<reference path="~/Scripts/xRtc/Stream.js" />
 
+
+/* This file is used only like spec template */
 describe("Connection", function () {
 	//xRtc.Logger.level = true;
 
