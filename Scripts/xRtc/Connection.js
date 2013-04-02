@@ -190,96 +190,49 @@
 				/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
 				/// <param name="options" type="object">Optional param. Local media options</param>
 
-				var opts = {};
-				xrtc.Class.extend(opts, xrtc.Connection.settings.mediaOptions, options || {});
+				var mediaOptions = {};
+				xrtc.Class.extend(mediaOptions, xrtc.Connection.settings.mediaOptions, options || {});
 
-				webrtc.getUserMedia(opts, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
-
-				function onGetUserMediaSuccess(stream) {
-					localStreams.push(stream);
-
-					var data = {
-						stream: new xrtc.Stream(stream),
-						participantId: userData.name
-					};
-
-					logger.debug('addMedia', data.stream);
-					this.trigger(xrtc.Connection.events.streamAdded, data);
-				}
-
-				function onGetUserMediaError(err) {
-					var error = new xrtc.CommonError('addMedia', "Cannot get UserMedia", err);
-
-					logger.error('addMedia', error);
-					this.trigger(xrtc.Connection.events.streamError, error);
-				}
+				getUserMedia.call(this, mediaOptions, 'camera');
 			},
 
 			addScreenSharing: function () {
-				/// <summary>Asks user to allow use microphone and share his screen</summary>
+				/// <summary>Asks user to allow share his screen</summary>
 
-				var videoStream,
-					audioStream,
-					streamsQuantity = 0;
-
-				var videoOptions = {
-						video: {
-							mandatory: {
-								chromeMediaSource: 'screen'
-							}
+				var screenOptions = {
+					video: {
+						mandatory: {
+							chromeMediaSource: 'screen'
 						}
-					},
-					audioOptions = {
-						audio: true
-					};
+					}
+				};
 
-				webrtc.getUserMedia(videoOptions, proxy(onGetVideoSuccess), proxy(onGetUserMediaError));
-				webrtc.getUserMedia(audioOptions, proxy(onGetAudioSuccess), proxy(onGetUserMediaError));
+				getUserMedia.call(this, screenOptions, 'screen', function () {
+					updateStreams.call(this);
+				});
+			},
 
-				function onGetVideoSuccess(stream) {
-					videoStream = stream;
-					streamsQuantity++;
+			stopScreenSharing: function () {
+				/// <summary>Ends screen sharing</summary>
+				
+				var streamsToLeave = [];
 
-					handleStreams.call(this);
-				}
+				for (var i = 0, len = localStreams.length; i < len; i++) {
+					var streamData = localStreams[i];
 
-				function onGetAudioSuccess(stream) {
-					audioStream = stream;
-					streamsQuantity++;
-
-					handleStreams.call(this);
-				}
-
-				function handleStreams() {
-					if (streamsQuantity == 2) {
-						var mediaStreamTracks = [];
-						addTracks(mediaStreamTracks, audioStream.getAudioTracks());
-						addTracks(mediaStreamTracks, videoStream.getVideoTracks());
+					if (streamData.kind === 'screen') {
+						//removes stream from p2p connection if it exists
+						peerConnection && peerConnection.removeStream(streamData.stream);
 						
-						var stream = new xrtc.Connection.webrtc.MediaStream(mediaStreamTracks);
-
-						var data = {
-							stream: new xrtc.Stream(stream),
-							participantId: userData.name
-						};
-
-						logger.debug('addMedia', data.stream);
-						this.trigger(xrtc.Connection.events.streamAdded, data);
+						streamData.stream.stop();
+					} else {
+						streamsToLeave.push(streamData);
 					}
 				}
+				
+				localStreams = streamsToLeave;
 
-				function addTracks(array, tracks) {
-					for (var i = 0; i < tracks.length; i++) {
-						array.push(tracks[i]);
-					}
-				}
-
-				function onGetUserMediaError(err) {
-					var error = new xrtc.CommonError('addMedia', "Cannot get UserMedia", err);
-
-					logger.error('addMedia', error);
-					this.trigger(xrtc.Connection.events.streamError, error);
-				}
+				updateStreams.call(this);
 			},
 
 			createDataChannel: function (name) {
@@ -361,10 +314,12 @@
 				peerConnection.onstatechange = // M25-M26
 					peerConnection.onsignalingstatechange = // M27+
 					proxy(onConnectionStateChange);
-				
+
 				peerConnection.onicechange = // M25-M26
 					peerConnection.oniceconnectionstatechange = // M27+
 					proxy(onIceStateChange);
+
+				peerConnection.onaddstream = proxy(onAddStream);
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
@@ -388,9 +343,13 @@
 						this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 					}
 				}
+				
+				function onAddStream(evt) {
+					addRemoteSteam.call(this, evt.stream);
+				}
 
 				for (var i = 0, len = localStreams.length; i < len; i++) {
-					peerConnection.addStream(localStreams[i]);
+					peerConnection.addStream(localStreams[i].stream);
 				}
 
 				this.trigger(xrtc.Connection.events.initialized);
@@ -425,21 +384,58 @@
 			iceCandidates = [];
 		}
 
-		function addRemoteSteam() {
-			var streams = peerConnection.getRemoteStreams();
+		function getUserMedia(options, kind, callback) {
+			webrtc.getUserMedia(options, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
 
-			//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
-			if (streams.length > 0) {
-				var data = {
-					stream: new xrtc.Stream(streams[0]),
-					participantId: remoteParticipant
-				};
-
-				this.trigger(xrtc.Connection.events.streamAdded, data);
-			} else {
-				// will make pause if there is not any remote streams
-				setTimeout(proxy(addRemoteSteam), 100);
+			function onGetUserMediaSuccess(stream) {
+				addLocalStream.call(this, stream, kind);
+				
+				if (typeof callback === "function") {
+					callback.call(this);
+				}
 			}
+
+			function onGetUserMediaError(err) {
+				var error = new xrtc.CommonError('addMedia', "Cannot get UserMedia", err);
+				error.options = options;
+
+				logger.error('addMedia', error);
+				this.trigger(xrtc.Connection.events.streamError, error);
+			}
+		}
+
+		function addLocalStream(stream, kind) {
+			localStreams.push({
+				kind: kind,
+				stream: stream
+			});
+			
+			// add stream to p2p connection if it exists
+			peerConnection && peerConnection.addStream(stream);
+
+			var streamData = {
+				stream: new xrtc.Stream(stream),
+				participantId: userData.name
+			};
+
+			logger.debug('addLocalStream', streamData);
+			this.trigger(xrtc.Connection.events.streamAdded, streamData);
+		}
+
+		function addRemoteSteam(stream) {
+			var streamData = {
+				stream: new xrtc.Stream(stream),
+				participantId: remoteParticipant
+			};
+
+			logger.debug('addRemoteSteam', streamData);
+			this.trigger(xrtc.Connection.events.streamAdded, streamData);
+		}
+
+		function updateStreams() {
+			var participant = remoteParticipant;
+			closePeerConnection.call(this);
+			this.startSession(participant);
 		}
 
 		function getIceServers(callback) {
@@ -482,18 +478,29 @@
 				return;
 			}
 
-			var data = {
-				participantName: offerData.senderId,
-				accept: proxy(onAcceptCall),
-				decline: proxy(onDeclineCall)
-			};
+			var isUpdate = !!peerConnection && (offerData.senderId === remoteParticipant),
+				data = {
+					participantName: offerData.senderId,
+					accept: proxy(onAcceptCall),
+					decline: proxy(onDeclineCall)
+				};
 
-			this.trigger(xrtc.Connection.events.incomingCall, data);
+			
+			if (isUpdate) {
+				data.accept();
+			} else {
+				this.trigger(xrtc.Connection.events.incomingCall, data);
+			}
+
 
 			function onAcceptCall() {
-				//End the current active call, if any
-				this.endSession();
-
+				if (isUpdate) {
+					closePeerConnection.call(this);
+				} else {
+					//End the current active call, if any
+					this.endSession();
+				}
+				
 				iceServers = offerData.iceServers;
 
 				initPeerConnection.call(this, offerData.senderId, function () {
@@ -519,7 +526,6 @@
 						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
 						allowIceSending.call(this);
-						addRemoteSteam.call(this);
 					}
 
 					function onCreateAnswerError(err) {
@@ -553,8 +559,6 @@
 			var sessionDescription = new webrtc.RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);
 			this.trigger(xrtc.Connection.events.answerReceived, answerData, sessionDescription);
-
-			addRemoteSteam.call(this);
 		}
 
 		function onReceiveBye(response) {
@@ -572,6 +576,7 @@
 				peerConnection = null;
 				iceCandidates = [];
 				iceServers = null;
+				connectionEstablished = false;
 
 				var closedParticipant = remoteParticipant;
 				remoteParticipant = null;

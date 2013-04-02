@@ -115,6 +115,20 @@ var chat = {};
 				$form.find(':text').val('');
 			});
 
+			$('.share-screen').on('click', 'button.share', function (e) {
+				e.preventDefault();
+				var btn = $(this);
+
+				if (btn.hasClass('start')) {
+					connection.addScreenSharing();
+				} else {
+					connection.stopScreenSharing();
+				}
+
+				btn.parent().children().toggleClass('hide');
+			});
+
+
 			$(document)
 				.on('click', '#contacts .buttons .connect', function (e) {
 					e.preventDefault();
@@ -140,7 +154,7 @@ var chat = {};
 
 			connection = new xRtc.Connection(userData, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
-					chat.addParticipant(data);
+					chat.addVideo(data);
 					chat.contactsList.updateState();
 				})
 				.on(xrtc.Connection.events.initialized, function () {
@@ -166,7 +180,7 @@ var chat = {};
 				})
 				.on(xrtc.Connection.events.connectionClosed, function (participantId) {
 					chat.contactsList.refreshParticipants();
-					chat.removeParticipant(participantId);
+					chat.removeVideo(participantId);
 					chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
 				})
 				.on(xrtc.Connection.events.offerDeclined, function (participantId) {
@@ -340,31 +354,49 @@ var chat = {};
 			}
 		},
 
-		addParticipant: function (data) {
-			$.each($('#video .person'), function (index, value) {
-				if (!$(value).hasClass('my')) {
-					value.remove();
-				}
-			});
+		addVideo: function (data) {
+			var stream = data.stream.getStream();
+
+			stream.onended = function (evt) {
+				chat.removeVideoById(evt.srcElement.id);
+			};
 
 			var videoData = {
 				name: data.participantId,
 				isMe: data.stream.isLocal(),
 				isVideoAvailable: data.stream.videoAvailable,
-				isAudioAvailable: data.stream.audioAvailable
+				isAudioAvailable: data.stream.audioAvailable,
+				id: stream.id
 			};
+			
+
 
 			var participantItem = $('#video-tmpl').tmpl(videoData);
 			$('#video').append(participantItem);
 
-			var video = participantItem.find('video').removeClass('hide').get(0);
+			var video = participantItem.find('video')
+				.removeClass('hide')
+				.get(0);
 			data.stream.assignTo(video);
 
 			participantItem.data('stream', data.stream);
 		},
 
-		removeParticipant: function (participantId) {
+		removeVideo: function (participantId) {
 			$('#video .person[data-name="' + participantId + '"]').remove();
+		},
+
+		removeVideoById: function (id) {
+			$('#' + id).closest('.person').remove();
+		},
+		
+		clearStreams: function() {
+			$('#video .person').each(function () {
+				var item = $(this);
+				if (!item.hasClass('my')) {
+					chat.removeVideo(item.data('name'));
+				}
+			});
 		},
 
 		setLogger: function (value) {

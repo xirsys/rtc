@@ -66,6 +66,13 @@
 				<label class="radio inline"><input type="radio" name="connectionType" value="direct" /> Direct</label>
 				<label class="radio inline"><input type="radio" name="connectionType" value="server" /> Server</label>
 			</form>
+			
+			<div class="input-block-level well">
+				<div class="share-screen">
+					<button class="share start btn btn-warning">Share screen</button>
+					<button class="share stop  btn btn-warning hide">Stop sharing screen</button>
+				</div>
+			</div>
 		</div>
 		<table id="chat-table">
 			<tr>
@@ -151,17 +158,17 @@
 		<div class="person {{if isMe}}my{{/if}}" data-name="${name}">
 			<div class="name">${name}</div>
 			<div class="video">
-				<video class="hide"></video>
+				<video class="hide" id="${id}"></video>
 			</div>
 			<div class="buttons">
 				{{if isVideoAvailable}}
-					<button class="mute-video disable btn btn-danger"><span class="icon-picture icon-white"></span> Disable video</button>
-					<button class="mute-video enable  btn btn-success hide"><span class="icon-facetime-video icon-white"></span> Enable video</button>
+				<button class="mute-video disable btn btn-danger"><span class="icon-picture icon-white"></span> Disable video</button>
+				<button class="mute-video enable  btn btn-success hide"><span class="icon-facetime-video icon-white"></span> Enable video</button>
 				{{/if}}
 				
 				{{if isAudioAvailable}}
-					<button class="mute-audio disable btn btn-danger"><span class="icon-volume-off icon-white"></span> Disable audio</button>
-					<button class="mute-audio enable  btn btn-success hide"><span class="icon-volume-up icon-white"></span> Enable audio</button>
+				<button class="mute-audio disable btn btn-danger"><span class="icon-volume-off icon-white"></span> Disable audio</button>
+				<button class="mute-audio enable  btn btn-success hide"><span class="icon-volume-up icon-white"></span> Enable audio</button>
 				{{/if}}
 			</div>
 		</div>

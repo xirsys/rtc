@@ -14,6 +14,10 @@
 		xrtc.Class.property(this, 'audioAvailable', getAudioAvailable);
 
 		xrtc.Class.extend(this, {
+			getStream: function () {
+				return stream;
+			},
+			
 			getURL: function () {
 				return webrtc.URL.createObjectURL(stream);
 			},
