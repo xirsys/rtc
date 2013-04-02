@@ -211,7 +211,7 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
-			connection.addScreenSharing();
+			connection.addMedia();
 
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(connection, xrtc.Connection.events);

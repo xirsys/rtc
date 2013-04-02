@@ -315,31 +315,7 @@
 			getState: function () {
 				/// <summary>Returns the state of p2p connection</summary>
 
-				// it can change from version to version
-				var isLocalStreamAdded = localStreams.length > 0,
-					states = {
-						//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
-						'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
-
-						// Chrome M25
-						//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
-						'new': isLocalStreamAdded ? 'ready' : 'not-ready',
-						'opening': 'connecting',
-						'active': 'connected',
-						'closing': 'disconnecting',
-						//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
-						'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
-
-						// Chrome M26+
-						'stable': 'connected',
-						'have-local-offer': 'ready',
-						'have-remote-offer': 'connecting'
-					},
-
-					// peerConnection.readyState was removed since M27
-					state = peerConnection ? (peerConnection.readyState) : 'notinitialized';
-
-				return states[state];
+				return getSignalingState.call(this);
 			}
 		});
 
@@ -381,8 +357,14 @@
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
 				peerConnection.onicecandidate = proxy(onIceCandidate);
-				// peerConnection.onstatechange has been removed since M27
-				peerConnection.onstatechange = proxy(onStateChange);
+				
+				peerConnection.onstatechange = // M25-M26
+					peerConnection.onsignalingstatechange = // M27+
+					proxy(onConnectionStateChange);
+				
+				peerConnection.onicechange = // M25-M26
+					peerConnection.oniceconnectionstatechange = // M27+
+					proxy(onIceStateChange);
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
@@ -395,13 +377,16 @@
 					}
 				}
 
-				function onStateChange(evt) {
-					var state = this.getState();
+				function onConnectionStateChange(evt) {
+					this.trigger(xrtc.Connection.events.stateChanged, this.getState());
+				}
+
+				function onIceStateChange(evt) {
+					var state = getIceState.call(this);
+
 					if (state === 'connected') {
 						this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 					}
-
-					this.trigger(xrtc.Connection.events.stateChanged, state);
 				}
 
 				for (var i = 0, len = localStreams.length; i < len; i++) {
@@ -601,6 +586,44 @@
 						break;
 				}
 			}
+		}
+
+		function getIceState() {
+			var state = peerConnection
+							&& (peerConnection.iceConnectionState // M26+
+							|| peerConnection.iceState) // M25
+						|| 'notinitialized';
+
+			return state;
+		}
+
+		function getSignalingState() {
+			// it can change from version to version
+			var isLocalStreamAdded = localStreams.length > 0,
+				states = {
+					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
+					'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
+
+					// Chrome M25
+					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
+					'new': isLocalStreamAdded ? 'ready' : 'not-ready',
+					'opening': 'connecting',
+					'active': 'connected',
+					'closing': 'disconnecting',
+					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
+					'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
+
+					// Chrome M26+
+					'stable': 'connected',
+					'have-local-offer': 'ready',
+					'have-remote-offer': 'connecting'
+				},
+				state = peerConnection
+						&& (peerConnection.signalingState // M26+
+						|| peerConnection.readyState) // M25-M26
+					|| 'notinitialized';
+
+			return states[state];
 		}
 	});
 
