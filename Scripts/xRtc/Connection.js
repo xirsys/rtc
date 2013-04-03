@@ -212,29 +212,6 @@
 				});
 			},
 
-			stopScreenSharing: function () {
-				/// <summary>Ends screen sharing</summary>
-				
-				var streamsToLeave = [];
-
-				for (var i = 0, len = localStreams.length; i < len; i++) {
-					var streamData = localStreams[i];
-
-					if (streamData.kind === 'screen') {
-						//removes stream from p2p connection if it exists
-						peerConnection && peerConnection.removeStream(streamData.stream);
-						
-						streamData.stream.stop();
-					} else {
-						streamsToLeave.push(streamData);
-					}
-				}
-				
-				localStreams = streamsToLeave;
-
-				updateStreams.call(this);
-			},
-
 			createDataChannel: function (name) {
 				/// <summary>Creates new instance of DataChannel</summary>
 				/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
@@ -319,6 +296,7 @@
 					peerConnection.oniceconnectionstatechange = // M27+
 					proxy(onIceStateChange);
 
+				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
 				peerConnection.onaddstream = proxy(onAddStream);
 
 				function onIceCandidate(evt) {
@@ -384,11 +362,11 @@
 			iceCandidates = [];
 		}
 
-		function getUserMedia(options, kind, callback) {
+		function getUserMedia(options, callback) {
 			webrtc.getUserMedia(options, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
 
 			function onGetUserMediaSuccess(stream) {
-				addLocalStream.call(this, stream, kind);
+				addLocalStream.call(this, stream);
 				
 				if (typeof callback === "function") {
 					callback.call(this);
@@ -404,14 +382,8 @@
 			}
 		}
 
-		function addLocalStream(stream, kind) {
-			localStreams.push({
-				kind: kind,
-				stream: stream
-			});
-			
-			// add stream to p2p connection if it exists
-			peerConnection && peerConnection.addStream(stream);
+		function addLocalStream(stream) {
+			localStreams.push(stream);
 
 			var streamData = {
 				stream: new xrtc.Stream(stream),
@@ -478,29 +450,18 @@
 				return;
 			}
 
-			var isUpdate = !!peerConnection && (offerData.senderId === remoteParticipant),
-				data = {
+			var data = {
 					participantName: offerData.senderId,
 					accept: proxy(onAcceptCall),
 					decline: proxy(onDeclineCall)
 				};
 
-			
-			if (isUpdate) {
-				data.accept();
-			} else {
-				this.trigger(xrtc.Connection.events.incomingCall, data);
-			}
-
+			this.trigger(xrtc.Connection.events.incomingCall, data);
 
 			function onAcceptCall() {
-				if (isUpdate) {
-					closePeerConnection.call(this);
-				} else {
-					//End the current active call, if any
-					this.endSession();
-				}
-				
+				//End the current active call, if any
+				this.endSession();
+
 				iceServers = offerData.iceServers;
 
 				initPeerConnection.call(this, offerData.senderId, function () {
