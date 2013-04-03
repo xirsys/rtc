@@ -191,22 +191,26 @@
 				/// <param name="options" type="object">Optional param. Local media options</param>
 
 				var mediaOptions = options || { video: true, audio: true };
-				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen" && mediaOptions.audio) {
+				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {
 					getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
-						getUserMedia.call(this, { audio: true }, function (audioStream) {
-
-							function addTracks(array, tracks) {
-								for (var i = 0; i < tracks.length; i++) {
-									array.push(tracks[i]);
+						if (mediaOptions.audio) {
+							getUserMedia.call(this, { audio: true }, function(audioStream) {
+								function addTracks(array, tracks) {
+									for (var i = 0; i < tracks.length; i++) {
+										array.push(tracks[i]);
+									}
 								}
-							}
 
-							var mediaStreamTracks = [];
-							addTracks(mediaStreamTracks, audioStream.getAudioTracks());
-							addTracks(mediaStreamTracks, screenSharingStream.getVideoTracks());
+								//Combine audio and video components of different streams in one stream
+								var mediaStreamTracks = [];
+								addTracks(mediaStreamTracks, audioStream.getAudioTracks());
+								addTracks(mediaStreamTracks, screenSharingStream.getVideoTracks());
 
-							addLocalStream.call(this, new webrtc.MediaStream(mediaStreamTracks));
-						});
+								addLocalStream.call(this, new webrtc.MediaStream(mediaStreamTracks));
+							});
+						} else {
+							addLocalStream.call(this, screenSharingStream);
+						}
 					});
 				} else {
 					getUserMedia.call(this, mediaOptions, function (stream) {
