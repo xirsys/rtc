@@ -332,7 +332,7 @@
 				}
 
 				for (var i = 0, len = localStreams.length; i < len; i++) {
-					peerConnection.addStream(localStreams[i].stream);
+					peerConnection.addStream(localStreams[i]);
 				}
 
 				this.trigger(xrtc.Connection.events.initialized);
@@ -678,23 +678,23 @@
 
 	//Cross-browser support: New syntax of getXXXTracks method in Chrome M26.
 	if (!webrtc.MediaStream.prototype.getVideoTracks) {
-		if (isFirefox) {
+		if (webrtc.isFirefox) {
 			xrtc.Class.extend(webrtc.MediaStream.prototype, {
-				getVideoTracks: function () {
+				getVideoTracks: function() {
 					return [];
 				},
 
-				getAudioTracks: function () {
+				getAudioTracks: function() {
 					return [];
 				}
 			});
 		} else {
 			xrtc.Class.extend(webrtc.MediaStream.prototype, {
-				getVideoTracks: function () {
+				getVideoTracks: function() {
 					return this.videoTracks;
 				},
 
-				getAudioTracks: function () {
+				getAudioTracks: function() {
 					return this.audioTracks;
 				}
 			});

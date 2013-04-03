@@ -211,7 +211,7 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
-			if (confirm('Want share screen?')) {
+			if (confirm('Do you want share the screen or prefer just a video conference?')) {
 				// Possible variants of usage see in comments below
 
 				/*connection.addMedia({
