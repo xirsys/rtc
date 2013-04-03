@@ -190,7 +190,6 @@
 				/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
 				/// <param name="options" type="object">Optional param. Local media options</param>
 
-				debugger;
 				var mediaOptions = options || { video: true, audio: true };
 				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen" && mediaOptions.audio) {
 					getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
