@@ -115,20 +115,6 @@ var chat = {};
 				$form.find(':text').val('');
 			});
 
-			$('.share-screen').on('click', 'button.share', function (e) {
-				e.preventDefault();
-				var btn = $(this);
-
-				if (btn.hasClass('start')) {
-					connection.addScreenSharing();
-				} else {
-					connection.stopScreenSharing();
-				}
-
-				btn.parent().children().toggleClass('hide');
-			});
-
-
 			$(document)
 				.on('click', '#contacts .buttons .connect', function (e) {
 					e.preventDefault();
@@ -225,7 +211,62 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
-			connection.addMedia();
+			if (confirm('Want share screen?')) {
+				// Possible variants of usage see in comments below
+
+				/*connection.addMedia({
+					video: {
+						mandatory: {
+							mediaSource: 'screen'
+						}
+					}
+				});*/
+
+				/*connection.addMedia({
+					video: {
+						mandatory: {
+							mediaSource: 'screen'
+						}
+					},
+					audio: true
+				});*/
+
+				/*connection.addMedia({
+					audio: true
+				});*/
+
+				/*connection.addMedia({
+					video: true
+					audio: true
+				});*/
+
+				/*connection.addMedia({
+					video: true
+					audio: true
+				});*/
+
+				/*connection.addMedia({
+					video: {
+						mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
+						optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
+					},
+					audio: true
+				});*/
+				
+				/*connection.addMedia();*/
+
+				connection.addMedia({
+					video: {
+						mandatory: {
+							mediaSource: 'screen'
+						}
+					},
+					audio: true
+				});
+			}
+			else {
+				connection.addMedia();
+			}
 
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(connection, xrtc.Connection.events);
@@ -368,7 +409,7 @@ var chat = {};
 				isAudioAvailable: data.stream.audioAvailable,
 				id: stream.id
 			};
-			
+
 
 
 			var participantItem = $('#video-tmpl').tmpl(videoData);
@@ -389,8 +430,8 @@ var chat = {};
 		removeVideoById: function (id) {
 			$('#' + id).closest('.person').remove();
 		},
-		
-		clearStreams: function() {
+
+		clearStreams: function () {
 			$('#video .person').each(function () {
 				var item = $(this);
 				if (!item.hasClass('my')) {

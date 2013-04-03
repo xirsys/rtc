@@ -101,15 +101,15 @@
 
 	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
 		var proxy = xrtc.Class.proxy(this),
-		    logger = new xrtc.Logger(this.className),
-		    userData = ud,
-		    authManager = am,
-		    remoteParticipant = null,
-		    localStreams = [],
-		    peerConnection = null,
-		    handshakeController = null,
-		    iceFilter = null,
-		    iceServers = null,
+			logger = new xrtc.Logger(this.className),
+			userData = ud,
+			authManager = am,
+			remoteParticipant = null,
+			localStreams = [],
+			peerConnection = null,
+			handshakeController = null,
+			iceFilter = null,
+			iceServers = null,
 
 			// 'answer' is received or 'offer' received and accepted flag.
 			// Is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
@@ -193,23 +193,28 @@
 				var mediaOptions = {};
 				xrtc.Class.extend(mediaOptions, xrtc.Connection.settings.mediaOptions, options || {});
 
-				getUserMedia.call(this, mediaOptions, 'camera');
-			},
+				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen" && mediaOptions.audio) {
+					getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
+						getUserMedia.call(this, { audio: true }, function (audioStream) {
 
-			addScreenSharing: function () {
-				/// <summary>Asks user to allow share his screen</summary>
+							function addTracks(array, tracks) {
+								for (var i = 0; i < tracks.length; i++) {
+									array.push(tracks[i]);
+								}
+							}
 
-				var screenOptions = {
-					video: {
-						mandatory: {
-							chromeMediaSource: 'screen'
-						}
-					}
-				};
+							var mediaStreamTracks = [];
+							addTracks(mediaStreamTracks, audioStream.getAudioTracks());
+							addTracks(mediaStreamTracks, screenSharingStream.getVideoTracks());
 
-				getUserMedia.call(this, screenOptions, 'screen', function () {
-					updateStreams.call(this);
-				});
+							addLocalStream.call(this, new webrtc.MediaStream(mediaStreamTracks));
+						});
+					});
+				} else {
+					getUserMedia.call(this, mediaOptions, function (stream) {
+						addLocalStream.call(this, stream);
+					});
+				}
 			},
 
 			createDataChannel: function (name) {
@@ -287,7 +292,7 @@
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
 				peerConnection.onicecandidate = proxy(onIceCandidate);
-				
+
 				peerConnection.onstatechange = // M25-M26
 					peerConnection.onsignalingstatechange = // M27+
 					proxy(onConnectionStateChange);
@@ -321,7 +326,7 @@
 						this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 					}
 				}
-				
+
 				function onAddStream(evt) {
 					addRemoteSteam.call(this, evt.stream);
 				}
@@ -366,10 +371,8 @@
 			webrtc.getUserMedia(options, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
 
 			function onGetUserMediaSuccess(stream) {
-				addLocalStream.call(this, stream);
-				
 				if (typeof callback === "function") {
-					callback.call(this);
+					callback.call(this, stream);
 				}
 			}
 
@@ -402,12 +405,6 @@
 
 			logger.debug('addRemoteSteam', streamData);
 			this.trigger(xrtc.Connection.events.streamAdded, streamData);
-		}
-
-		function updateStreams() {
-			var participant = remoteParticipant;
-			closePeerConnection.call(this);
-			this.startSession(participant);
 		}
 
 		function getIceServers(callback) {
@@ -451,10 +448,10 @@
 			}
 
 			var data = {
-					participantName: offerData.senderId,
-					accept: proxy(onAcceptCall),
-					decline: proxy(onDeclineCall)
-				};
+				participantName: offerData.senderId,
+				accept: proxy(onAcceptCall),
+				decline: proxy(onDeclineCall)
+			};
 
 			this.trigger(xrtc.Connection.events.incomingCall, data);
 
@@ -639,10 +636,10 @@
 
 			mediaOptions: {
 				audio: true,
-				video: {
+				video: true /*{
 					mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
 					optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
-				}
+				}*/
 			},
 
 			// Interop Notes between Chrome M25 and Firefox Nightly (version 21):
