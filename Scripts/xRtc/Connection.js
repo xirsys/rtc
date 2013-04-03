@@ -190,9 +190,8 @@
 				/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
 				/// <param name="options" type="object">Optional param. Local media options</param>
 
-				var mediaOptions = {};
-				xrtc.Class.extend(mediaOptions, xrtc.Connection.settings.mediaOptions, options || {});
-
+				debugger;
+				var mediaOptions = options || { video: true, audio: true };
 				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen" && mediaOptions.audio) {
 					getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
 						getUserMedia.call(this, { audio: true }, function (audioStream) {
@@ -634,14 +633,6 @@
 				}
 			},
 
-			mediaOptions: {
-				audio: true,
-				video: true /*{
-					mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
-					optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
-				}*/
-			},
-
 			// Interop Notes between Chrome M25 and Firefox Nightly (version 21):
 			// Chrome does not yet do DTLS-SRTP by default whereas Firefox only does DTLS-SRTP. In order to get interop,
 			// you must supply Chrome with a PC constructor constraint to enable DTLS: { 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}
@@ -680,21 +671,21 @@
 	if (!webrtc.MediaStream.prototype.getVideoTracks) {
 		if (webrtc.isFirefox) {
 			xrtc.Class.extend(webrtc.MediaStream.prototype, {
-				getVideoTracks: function() {
+				getVideoTracks: function () {
 					return [];
 				},
 
-				getAudioTracks: function() {
+				getAudioTracks: function () {
 					return [];
 				}
 			});
 		} else {
 			xrtc.Class.extend(webrtc.MediaStream.prototype, {
-				getVideoTracks: function() {
+				getVideoTracks: function () {
 					return this.videoTracks;
 				},
 
-				getAudioTracks: function() {
+				getAudioTracks: function () {
 					return this.audioTracks;
 				}
 			});
