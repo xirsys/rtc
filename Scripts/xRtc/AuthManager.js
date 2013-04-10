@@ -64,12 +64,12 @@
 				response = JSON.parse(response);
 				logger.debug('getToken', response);
 
-				if (!!response && !!response.E && response.E != '') {
-					var error = new xrtc.CommonError('getToken', response.E);
+				if (!!response && !!response.e && response.e != '') {
+					var error = new xrtc.CommonError('getToken', response.e);
 					logger.error('getToken', error);
 					this.trigger(xrtc.AuthManager.events.serverError, error);
 				} else {
-					var token = response.D.token;
+					var token = response.d.token;
 					logger.info('getToken', token);
 
 					if (typeof (callback) === 'function') {
@@ -88,12 +88,12 @@
 				response = JSON.parse(response);
 				logger.debug('getIceServers', response);
 
-				if (!!response && !!response.E && response.E != '') {
-					var error = new xrtc.CommonError('getIceServers', response.E);
+				if (!!response && !!response.e && response.e != '') {
+					var error = new xrtc.CommonError('getIceServers', response.e);
 					logger.error('getIceServers', error);
 					this.trigger(xrtc.AuthManager.events.serverError, error);
 				} else {
-					var iceServers = JSON.parse(response.D);
+					var iceServers = response.d;
 
 					// todo: remove it in next version of Firefox
 					convertIceServerDNStoIP(iceServers.iceServers);
@@ -113,8 +113,8 @@
 		// todo: remove it in next version of Firefox
 		function convertIceServerDNStoIP(iceServers) {
 			var addresses = {
-				'stun.influxis.com': '50.97.63.12',
-				'turn.influxis.com': '50.97.63.12'
+				'stun.influxis.com': '127.0.0.1',
+				'turn.influxis.com': '127.0.0.1'
 			};
 
 			for (var i = 0; i < iceServers.length; i++) {
@@ -134,7 +134,7 @@
 		},
 
 		settings: {
-			URL: 'http://turn.influxis.com/',
+			URL: 'http://localhost:8080/',
 
 			tokenParams: {
 				type: 'token_request',

@@ -59,12 +59,12 @@
 				response = JSON.parse(response);
 				logger.debug('getWebSocketURL', response);
 
-				if (!!response && !!response.E && response.E != '') {
-					var error = new xrtc.CommonError('getWebSocketURL', 'Error occured while getting the URL of WebSockets', response.E);
+				if (!!response && !!response.e && response.e != '') {
+					var error = new xrtc.CommonError('getWebSocketURL', 'Error occured while getting the URL of WebSockets', response.e);
 					logger.error('getWebSocketURL', error);
 					this.trigger(xrtc.ServerConnector.events.serverError, error);
 				} else {
-					var url = response.D.value;
+					var url = response.d.value;
 					logger.info('getWebSocketURL', url);
 
 					if (typeof (callback) === 'function') {
@@ -78,7 +78,7 @@
 
 		function connect(url, token) {
 			// todo: remove "/ws/"
-			socket = new WebSocket(url + '/ws/' + token);
+			socket = new WebSocket(url + '/ws/' + encodeURIComponent(token));
 			socket.onopen = proxy(socketOnOpen);
 			socket.onclose = proxy(socketOnClose);
 			socket.onerror = proxy(socketOnError);
@@ -129,37 +129,36 @@
 			} else {
 				try {
 					json = JSON.parse(msg.data);
-
-					switch (json.Type) {
+					switch (json.type) {
 						case 'peers':
 							result = {
-								eventName: json.Type,
+								eventName: json.type,
 								data: {
-									senderId: json.UserId,
-									room: json.Room,
-									connections: JSON.parse(json.Message),
+									senderId: json.userId,
+									room: json.room,
+									connections: json.message.users,
 								}
 							};
 							break;
 						case 'peer_connected':
 						case 'peer_removed':
 							result = {
-								eventName: json.Type,
+								eventName: json.type,
 								data: {
-									senderId: json.UserId,
-									room: json.Room,
-									paticipantId: json.Message,
+									senderId: json.userId,
+									room: json.room,
+									paticipantId: json.message,
 								}
 							};
 							break;
 						default:
 							logger.debug('parseMessage', msg.data);
-							result = JSON.parse(json.Message);
+							result = json.message;
 							if (!result.data) {
 								result.data = {};
 							}
-							result.data.senderId = json.UserId;
-							result.data.receiverId = json.TargetUserId;
+							result.data.senderId = json.userId;
+							result.data.receiverId = result.targetUserId;
 							break;
 					}
 				} catch (e) {
@@ -210,7 +209,7 @@
 		},
 
 		settings: {
-			URL: 'http://turn.influxis.com/ws'
+			URL: 'http://localhost:8080/wsList'
 		}
 	});
 })(window);
