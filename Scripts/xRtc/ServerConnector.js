@@ -209,7 +209,7 @@
 		},
 
 		settings: {
-			URL: 'http://localhost:' + getParameterByName("port") + '/wsList'
+			URL: 'http://turn.influxis.com/wsList'
 		}
 	});
 })(window);

@@ -134,7 +134,7 @@
 		},
 
 		settings: {
-			URL: 'http://localhost:' + getParameterByName("port") + '/',
+			URL: 'http://turn.influxis.com/',
 
 			tokenParams: {
 				type: 'token_request',
@@ -155,5 +155,3 @@ function getParameterByName(name) {
 	else
 		return decodeURIComponent(results[1].replace(/\+/g, " "));
 }
-
-alert(getParameterByName("port"));

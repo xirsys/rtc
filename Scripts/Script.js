@@ -211,7 +211,7 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
-			if (confirm('Do you want share the screen or prefer just a video conference?')) {
+			//if (confirm('Do you want share the screen or prefer just a video conference?')) {
 				// Possible variants of usage see in comments below
 
 				/*connection.addMedia({
@@ -255,7 +255,11 @@ var chat = {};
 				
 				/*connection.addMedia();*/
 
-				connection.addMedia({
+			
+
+
+
+			/*	connection.addMedia({
 					video: {
 						mandatory: {
 							mediaSource: 'screen'
@@ -264,9 +268,9 @@ var chat = {};
 					audio: true
 				});
 			}
-			else {
+			else {*/
 				connection.addMedia();
-			}
+			//}
 
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(connection, xrtc.Connection.events);
