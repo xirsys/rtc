@@ -134,7 +134,7 @@
 		},
 
 		settings: {
-			URL: 'http://localhost:8080/',
+			URL: 'http://localhost:' + getParameterByName("port") + '/',
 
 			tokenParams: {
 				type: 'token_request',
@@ -144,3 +144,16 @@
 		}
 	});
 })(window);
+
+function getParameterByName(name) {
+	name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+	var regexS = "[\\?&]" + name + "=([^&#]*)";
+	var regex = new RegExp(regexS);
+	var results = regex.exec(window.location.search);
+	if(results == null)
+		return "";
+	else
+		return decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+alert(getParameterByName("port"));

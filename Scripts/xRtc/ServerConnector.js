@@ -134,7 +134,7 @@
 							result = {
 								eventName: json.type,
 								data: {
-									senderId: json.userId,
+									senderId: json.userid,
 									room: json.room,
 									connections: json.message.users,
 								}
@@ -145,7 +145,7 @@
 							result = {
 								eventName: json.type,
 								data: {
-									senderId: json.userId,
+									senderId: json.userid,
 									room: json.room,
 									paticipantId: json.message,
 								}
@@ -157,7 +157,7 @@
 							if (!result.data) {
 								result.data = {};
 							}
-							result.data.senderId = json.userId;
+							result.data.senderId = json.userid;
 							result.data.receiverId = result.targetUserId;
 							break;
 					}
@@ -209,7 +209,18 @@
 		},
 
 		settings: {
-			URL: 'http://localhost:8080/wsList'
+			URL: 'http://localhost:' + getParameterByName("port") + '/wsList'
 		}
 	});
 })(window);
+
+function getParameterByName(name) {
+	name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+	var regexS = "[\\?&]" + name + "=([^&#]*)";
+	var regex = new RegExp(regexS);
+	var results = regex.exec(window.location.search);
+	if(results == null)
+		return "";
+	else
+		return decodeURIComponent(results[1].replace(/\+/g, " "));
+}
