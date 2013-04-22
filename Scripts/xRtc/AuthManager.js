@@ -113,8 +113,8 @@
 		// todo: remove it in next version of Firefox
 		function convertIceServerDNStoIP(iceServers) {
 			var addresses = {
-				'stun.influxis.com': '127.0.0.1',
-				'turn.influxis.com': '127.0.0.1'
+				'stun.influxis.com': '50.97.63.12',
+				'turn.influxis.com': '50.97.63.12'
 			};
 
 			for (var i = 0; i < iceServers.length; i++) {
