@@ -103,7 +103,7 @@
 
 		function socketOnClose(evt) {
 			if (pingIntervalId) {
-				clearInterval(this.refreshIntervalId);
+				clearInterval(pingIntervalId);
 			}
 
 			var data = { event: evt };
