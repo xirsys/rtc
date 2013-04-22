@@ -2,12 +2,17 @@
 
 (function (exports) {
 	var xrtc = exports.xRtc;
+	var setInterval = exports.setInterval;
+	var clearInterval = exports.clearInterval;
 
-	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector() {
+	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector(options) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			socket = null,
-			currentToken = null;
+			currentToken = null,
+			//default ping interval is 5sec
+			pingInterval = options ? options.pingInterval : 5000,
+			pingIntervalId = null;
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, xrtc.Ajax, {
 			_logger: logger,
@@ -88,10 +93,19 @@
 		function socketOnOpen(evt) {
 			var data = { event: evt };
 			logger.debug('open', data);
+
+			if (pingInterval) {
+				pingIntervalId = pingServer.call(this, pingInterval);
+			}
+
 			this.trigger(xrtc.ServerConnector.events.connectionOpen, data);
 		}
 
 		function socketOnClose(evt) {
+			if (pingIntervalId) {
+				clearInterval(this.refreshIntervalId);
+			}
+
 			var data = { event: evt };
 			logger.debug('close', data);
 			this.trigger(xrtc.ServerConnector.events.connectionClose, data);
@@ -188,6 +202,19 @@
 
 			return result;
 		}
+
+		function pingServer(interval) {
+			var self = this;
+			if (!interval) {
+				throw new xrtc.CommonError('pingServer', 'interval should be specified');
+			}
+
+			return setInterval(function () {
+				var pingRequest = {};
+				self.send.call(this, pingRequest);
+			},
+			interval);
+		}
 	});
 
 	xrtc.ServerConnector.extend({
@@ -219,7 +246,7 @@ function getParameterByName(name) {
 	var regexS = "[\\?&]" + name + "=([^&#]*)";
 	var regex = new RegExp(regexS);
 	var results = regex.exec(window.location.search);
-	if(results == null)
+	if (results == null)
 		return "";
 	else
 		return decodeURIComponent(results[1].replace(/\+/g, " "));

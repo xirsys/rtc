@@ -177,7 +177,8 @@ var chat = {};
 					chat.contactsList.updateState(state);
 				});
 
-			serverConnector = new xRtc.ServerConnector();
+			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
+			//serverConnector = new xRtc.ServerConnector();
 
 			room = new xRtc.Room(serverConnector)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
