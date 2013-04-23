@@ -177,7 +177,13 @@ var chat = {};
 					chat.contactsList.updateState(state);
 				});
 
+			// heartbeat interval is 30sec
 			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
+
+			// heartbeat interval is not defined (infinite)
+			//serverConnector = new xRtc.ServerConnector({ pingInterval: null });
+
+			//heartbeat interval is 5sec (default value)
 			serverConnector = new xRtc.ServerConnector();
 
 			room = new xRtc.Room(serverConnector)

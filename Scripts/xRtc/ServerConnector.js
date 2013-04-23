@@ -1,9 +1,9 @@
 ﻿'use strict';
 
 (function (exports) {
-	var xrtc = exports.xRtc;
-	var setInterval = exports.setInterval;
-	var clearInterval = exports.clearInterval;
+	var xrtc = exports.xRtc,
+		setInterval = exports.setInterval,
+		clearInterval = exports.clearInterval;
 
 	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector(options) {
 		var proxy = xrtc.Class.proxy(this),
@@ -205,14 +205,12 @@
 
 		function pingServer(interval) {
 			var self = this;
-			if (!interval) {
-				throw new xrtc.CommonError('pingServer', 'interval should be specified');
-			}
 
 			return setInterval(function () {
-				var pingRequest = {};
-				self.send.call(this, pingRequest);
-			},
+					// ping request is empty message
+					var pingRequest = {};
+					self.send.call(this, pingRequest);
+				},
 			interval);
 		}
 	});
@@ -240,14 +238,3 @@
 		}
 	});
 })(window);
-
-function getParameterByName(name) {
-	name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-	var regexS = "[\\?&]" + name + "=([^&#]*)";
-	var regex = new RegExp(regexS);
-	var results = regex.exec(window.location.search);
-	if (results == null)
-		return "";
-	else
-		return decodeURIComponent(results[1].replace(/\+/g, " "));
-}
