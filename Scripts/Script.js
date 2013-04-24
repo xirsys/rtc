@@ -342,7 +342,7 @@ var chat = {};
 		connect: function (contact) {
 			console.log('Connecting to participant...', contact);
 
-			var options = $('#connecton-form').serializeObject();
+			var options = $('#connection-form').serializeObject();
 			connection.startSession(contact, options);
 		},
 
