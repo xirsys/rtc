@@ -500,6 +500,8 @@ $(document).ready(function () {
 	chat.setLogger(true);
 	//wsTest.init();
 
+	xRtc.AuthManager.settings.tokenHandler = "http://rtc.localhost.com:8889/getToken.php";
+
 	var pageParams = getParams();
 	setIceServers(pageParams);
 

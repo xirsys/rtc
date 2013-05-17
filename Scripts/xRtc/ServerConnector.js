@@ -234,7 +234,8 @@
 		},
 
 		settings: {
-			URL: 'http://turn.influxis.com/wsList'
+			//URL: 'http://turn.influxis.com/wsList'
+			URL: 'http://localhost:8081/wsList'
 		}
 	});
 })(window);

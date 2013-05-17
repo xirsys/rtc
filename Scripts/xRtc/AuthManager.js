@@ -12,8 +12,10 @@
 			_logger: logger,
 
 			getToken: function (userData, callback) {
-				var url = xrtc.AuthManager.settings.URL + 'getToken',
-					data = 'data=' + JSON.stringify(getTokenRequestParams.call(this, userData));
+				var url = xrtc.AuthManager.settings.tokenHandler,
+					data = getTokenRequestParams.call(this, userData).join("&");
+
+				console.log( data );
 
 				this.ajax(url, 'POST', data, proxy(handleTokenRequest, userData, callback));
 			},
@@ -44,15 +46,12 @@
 
 		function getTokenRequestParams(userData) {
 			var tokenParams = xrtc.AuthManager.settings.tokenParams,
-				result = {
-					Type: tokenParams.type,
-					Authentication: tokenParams.authentication,
-					Authorization: tokenParams.authorization,
-					Domain: userData.domain,
-					Application: userData.application,
-					Room: userData.room,
-					Ident: userData.name
-				};
+				result = [
+					"domain=" + userData.domain,
+					"application=" + userData.application,
+					"room=" + userData.room,
+					"username=" + userData.name
+				];
 
 			logger.info('getTokenRequestParams', result);
 
@@ -113,8 +112,9 @@
 		// todo: remove it in next version of Firefox
 		function convertIceServerDNStoIP(iceServers) {
 			var addresses = {
-				'stun.influxis.com': '50.97.63.12',
-				'turn.influxis.com': '50.97.63.12'
+				'localhost': '127.0.0.1'
+				/*'stun.influxis.com': '50.97.63.12',
+				'turn.influxis.com': '50.97.63.12'*/
 			};
 
 			for (var i = 0; i < iceServers.length; i++) {
@@ -134,7 +134,9 @@
 		},
 
 		settings: {
-			URL: 'http://turn.influxis.com/',
+			URL: 'http://localhost:8081/',
+			//URL: 'http://turn.influxis.com/',
+			tokenHandler: 'http://localhost:8081/getToken',
 
 			tokenParams: {
 				type: 'token_request',
