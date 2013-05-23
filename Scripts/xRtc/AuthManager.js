@@ -14,9 +14,6 @@
 			getToken: function (userData, callback) {
 				var url = xrtc.AuthManager.settings.tokenHandler,
 					data = getTokenRequestParams.call(this, userData).join("&");
-
-				console.log( data );
-
 				this.ajax(url, 'POST', data, proxy(handleTokenRequest, userData, callback));
 			},
 
