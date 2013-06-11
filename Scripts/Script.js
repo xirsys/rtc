@@ -501,6 +501,7 @@ $(document).ready(function () {
 	//wsTest.init();
 
 	xRtc.AuthManager.settings.tokenHandler = "http://rtc.localhost.com:8889/getToken.php";
+	xRtc.AuthManager.settings.iceHandler = "http://rtc.localhost.com:8889/getIceServers.php";
 
 	var pageParams = getParams();
 	setIceServers(pageParams);

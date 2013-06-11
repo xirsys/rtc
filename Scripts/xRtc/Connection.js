@@ -415,7 +415,7 @@
 					callback(iceServers);
 				} else {
 					authManager.getToken(userData, function (token) {
-						authManager.getIceServers(token, function (servers) {
+						authManager.getIceServers(token, userData, function (servers) {
 							iceServers = servers;
 							callback(iceServers);
 						});

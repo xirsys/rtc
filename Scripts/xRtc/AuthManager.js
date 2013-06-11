@@ -17,10 +17,10 @@
 				this.ajax(url, 'POST', data, proxy(handleTokenRequest, userData, callback));
 			},
 
-			getIceServers: function (token, callback) {
+			getIceServers: function (token, userData, callback) {
 				var iceServers = iceServersCache[token];
 				if (iceServers) {
-					logger.info('getIceServers', iceServers);
+					logger.info('getIceServers', iceServers, typeof(callback));
 
 					if (typeof (callback) === 'function') {
 						callback(iceServers);
@@ -32,10 +32,9 @@
 
 						this.getIceServers(token, callback);
 					} else {
-						var url = xrtc.AuthManager.settings.URL + 'getIceServers',
-							data = 'token=' + token;
-
-						this.ajax(url, 'POST', data, proxy(handleIceServersRequest, token, callback));
+						var url = xrtc.AuthManager.settings.iceHandler,
+							data = getIceRequestParams.call(this, userData).join("&");
+						this.ajax(url, 'POST', data, proxy(handleIceServersRequest, token, userData, callback));
 					}
 				}
 			}
@@ -51,6 +50,18 @@
 				];
 
 			logger.info('getTokenRequestParams', result);
+
+			return result;
+		}
+
+		function getIceRequestParams(userData) {
+			var result = [
+					"domain=" + userData.domain,
+					"application=" + userData.application,
+					"username=" + userData.name
+				];
+
+			logger.info('getIceRequestParams', result);
 
 			return result;
 		}
@@ -79,7 +90,8 @@
 			}
 		}
 
-		function handleIceServersRequest(response, token, callback) {
+		function handleIceServersRequest(response, token, userData, callback) {
+			logger.info("handleIceServersRequest CALLBACK IS ", callback);
 			try {
 				response = JSON.parse(response);
 				logger.debug('getIceServers', response);
@@ -103,7 +115,7 @@
 			}
 
 			//call this method again to get it from cache or if error occures
-			this.getIceServers(token, callback);
+			this.getIceServers(token, userData, callback);
 		}
 
 		// todo: remove it in next version of Firefox
@@ -134,6 +146,7 @@
 			URL: 'http://localhost:8081/',
 			//URL: 'http://turn.influxis.com/',
 			tokenHandler: 'http://localhost:8081/getToken',
+			iceHandler: 'http://localhost:8081/getIceServers',
 
 			tokenParams: {
 				type: 'token_request',
