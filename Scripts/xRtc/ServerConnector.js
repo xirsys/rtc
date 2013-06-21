@@ -235,7 +235,7 @@
 
 		settings: {
 			//URL: 'http://turn.influxis.com/wsList'
-			URL: 'http://localhost:8081/wsList'
+			URL: 'http://beta.xirsys.com:8889/wsList'
 		}
 	});
 })(window);

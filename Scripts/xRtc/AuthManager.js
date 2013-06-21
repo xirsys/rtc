@@ -121,7 +121,8 @@
 		// todo: remove it in next version of Firefox
 		function convertIceServerDNStoIP(iceServers) {
 			var addresses = {
-				'localhost': '127.0.0.1'
+				'localhost': '127.0.0.1',
+				'beta.xirsys.com': '75.126.93.106'
 				/*'stun.influxis.com': '50.97.63.12',
 				'turn.influxis.com': '50.97.63.12'*/
 			};
@@ -143,8 +144,8 @@
 		},
 
 		settings: {
-			URL: 'http://localhost:8081/',
-			//URL: 'http://turn.influxis.com/',
+			//URL: 'http://localhost:8081/',
+			URL: 'http://beta.xirsys.com:8889/',
 			tokenHandler: 'http://localhost:8081/getToken',
 			iceHandler: 'http://localhost:8081/getIceServers',
 

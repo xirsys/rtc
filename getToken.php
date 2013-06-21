@@ -1,7 +1,7 @@
 <?php
 
 //set POST variables
-$url = 'http://localhost:8081/getToken';
+$url = 'http://beta.xirsys.com:8889/getToken';
 $fields_string = '';
 $fields = array(
 	'domain' => $_POST["domain"],
@@ -9,7 +9,7 @@ $fields = array(
 	'room' => $_POST["room"],
 	'username' => $_POST["username"],
 	'ident' => urlencode("Lazarus404"),
-	'secret' => urlencode("12345")
+	'secret' => urlencode("32f1feb0-d9be-11e2-aa44-21571220d868")
 );
 
 //url-ify the data for the POST
