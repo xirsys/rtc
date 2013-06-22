@@ -146,8 +146,8 @@
 		settings: {
 			//URL: 'http://localhost:8081/',
 			URL: 'http://beta.xirsys.com:8889/',
-			tokenHandler: 'http://localhost:8081/getToken',
-			iceHandler: 'http://localhost:8081/getIceServers',
+			tokenHandler: 'http://beta.xirsys.com:8889/getToken',
+			iceHandler: 'http://beta.xirsys.com:8889/getIceServers',
 
 			tokenParams: {
 				type: 'token_request',
