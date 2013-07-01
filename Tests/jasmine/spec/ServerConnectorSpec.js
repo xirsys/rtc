@@ -196,7 +196,7 @@ describe("ServerConnector", function () {
 
 				webSocketStub.onmessage({ data: peer_connected });
 				
-				expectedArg.paticipantId = 'username1';
+				expectedArg.participantId = 'username1';
 
 				expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 			});
@@ -207,7 +207,7 @@ describe("ServerConnector", function () {
 
 				webSocketStub.onmessage({ data: peer_removed });
 
-				expectedArg.paticipantId = 'username1';
+				expectedArg.participantId = 'username1';
 
 				expect(eventSpy.withArgs(expectedArg).calledOnce).toBeTruthy();
 			});

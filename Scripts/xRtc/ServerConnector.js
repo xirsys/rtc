@@ -161,7 +161,7 @@
 								data: {
 									senderId: json.userid,
 									room: json.room,
-									paticipantId: json.message,
+									participantId: json.message,
 								}
 							};
 							break;

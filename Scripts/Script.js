@@ -191,12 +191,12 @@ var chat = {};
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantConnected, function (data) {
-					chat.addSystemMessage(data.paticipantId + ' entered the room.');
+					chat.addSystemMessage(data.participantId + ' entered the room.');
 
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantDisconnected, function (data) {
-					chat.addSystemMessage(data.paticipantId + ' left the room.');
+					chat.addSystemMessage(data.participantId + ' left the room.');
 
 					chat.contactsList.refreshParticipants();
 				})

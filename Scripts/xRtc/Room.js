@@ -78,23 +78,23 @@
 			participants = data.connections;
 			orderParticipants();
 
-			this.trigger(xrtc.Room.events.participantsUpdated, { paticipants: this.getParticipants() });
+			this.trigger(xrtc.Room.events.participantsUpdated, { participants: this.getParticipants() });
 		}
 
 		function onParticipantConnected(data) {
 			name = data.room;
-			participants.push(data.paticipantId);
+			participants.push(data.participantId);
 			orderParticipants();
 
-			this.trigger(xrtc.Room.events.participantConnected, { paticipantId: data.paticipantId });
+			this.trigger(xrtc.Room.events.participantConnected, { participantId: data.participantId });
 		}
 
 		function onParticipantDisconnected(data) {
 			name = data.room;
-			participants.pop(data.paticipantId);
+			participants.pop(data.participantId);
 			orderParticipants();
 
-			this.trigger(xrtc.Room.events.participantDisconnected, { paticipantId: data.paticipantId });
+			this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
 		}
 
 		function orderParticipants() {
