@@ -139,7 +139,7 @@ var chat = {};
 			var authManager = new xRtc.AuthManager();
 
 			//connection = new xRtc.Connection(userData.name)
-			connection = new xRtc.Connection(userData, authManager)
+			connection = new xRtc.Connection(userData, { autoReply: false }, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
 					chat.addVideo(data);
 					chat.contactsList.updateState();

@@ -99,14 +99,10 @@
 		};
 	});
 
-	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
+	xrtc.Class(xrtc, 'Connection', function Connection(ud, connOptions, am) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			userData = {
-				domain : 'designrealm.co.uk',//exports.document.domain,
-				application : 'Test', //'Default',
-				room : 'Test', //'Default'
-			},
+			userData = {},
 			authManager = am || new xRtc.AuthManager(),
 			remoteParticipant = null,
 			localStreams = [],
@@ -114,20 +110,31 @@
 			handshakeController = null,
 			iceFilter = null,
 			iceServers = null,
-
 			// 'answer' is received or 'offer' received and accepted flag.
 			// Is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
 			connectionEstablished = false,
-
 			// It is tempoprary storage of ice candidates.
 			// Ice candidates should be send to remote participant after receiving answer strictly.
 			// If the application will send ice candidates after 'offer' sending then it can be skiped by remote appication
 			// because there is no guarantee of connection establishing and while the application/user will be thinking
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
-			iceCandidates = [];
+			iceCandidates = [],
+			connectionOptions = {};
 
-		initUserData(ud);
+		// userData initialization
+		xrtc.Class.extend(userData, xrtc.Connection.settings.userData);
+		if (typeof ud === 'string') {
+			userData.name = ud;
+		} else {
+			xrtc.Class.extend(userData, ud);
+		}
+
+		// connectionOptions initialization
+		xrtc.Class.extend(connectionOptions, xrtc.Connection.settings.options);
+		if (connOptions) {
+			xrtc.Class.extend(connectionOptions, connOptions);
+		};
 
 		initHandshakeController.call(this);
 
@@ -265,15 +272,6 @@
 				return userData;
 			}
 		});
-		
-		function initUserData(userDataValue) {
-			if (typeof userDataValue === 'string') {
-				userData.name = userDataValue;
-			}
-			else {
-				xrtc.Class.extend(userData, userDataValue);
-			}
-		}
 
 		function initHandshakeController() {
 			handshakeController = new xrtc.HandshakeController();
@@ -460,6 +458,8 @@
 		}
 
 		function onReceiveOffer(offerData) {
+			var self = this;
+
 			//todo: Need to check offerData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
 
 			// Skip 'offer' if it is not for me. It is temporary fix, because handshake shouldn't pass the 'offer' to wrong target.
@@ -468,13 +468,18 @@
 				return;
 			}
 
-			var data = {
-				participantName: offerData.senderId,
-				accept: proxy(onAcceptCall),
-				decline: proxy(onDeclineCall)
-			};
+			var data = { participantName: offerData.senderId };
+
+			if (!connectionOptions.autoReply) {
+				data.accept = proxy(onAcceptCall);
+				data.decline = proxy(onDeclineCall);
+			}
 
 			this.trigger(xrtc.Connection.events.incomingCall, data);
+			
+			if (connectionOptions.autoReply) {
+				onAcceptCall.call(self);
+			}
 
 			function onAcceptCall() {
 				//End the current active call, if any
@@ -660,6 +665,16 @@
 			// you must supply Chrome with a PC constructor constraint to enable DTLS: { 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}
 			peerConnectionOptions: {
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
+			},
+
+			userData: {
+				domain: 'designrealm.co.uk',//exports.document.domain,
+				application: 'Test', //'Default',
+				room: 'Test', //'Default'
+			},
+
+			options: {
+				autoReply: true
 			}
 		},
 
