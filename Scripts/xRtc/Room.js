@@ -3,14 +3,15 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, 'Room', function Room(serverConnector) {
+	xrtc.Class(xrtc, 'Room', function Room(sc) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			name = null,
 			participants = [],
 			handshakeController = null,
 			isHandshakeSubscribed = false,
-			isServerConnectorSubscribed = false;
+			isServerConnectorSubscribed = false,
+			serverConnector = sc || new xrtc.ServerConnector();
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
