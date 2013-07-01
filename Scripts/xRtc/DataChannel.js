@@ -24,7 +24,7 @@
 				logger.info('send', arguments);
 
 				var data = {
-					userid: userId,
+					userId: userId,
 					message: message
 				};
 
