@@ -138,7 +138,7 @@ var chat = {};
 
 			var authManager = new xRtc.AuthManager();
 
-			//connection = new xRtc.Connection(userData.name, authManager)
+			//connection = new xRtc.Connection(userData.name)
 			connection = new xRtc.Connection(userData, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
 					chat.addVideo(data);

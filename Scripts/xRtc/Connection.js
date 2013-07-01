@@ -107,7 +107,7 @@
 				application : 'Test', //'Default',
 				room : 'Test', //'Default'
 			},
-			authManager = am,
+			authManager = am || new xRtc.AuthManager(),
 			remoteParticipant = null,
 			localStreams = [],
 			peerConnection = null,
