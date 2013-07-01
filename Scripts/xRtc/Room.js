@@ -91,7 +91,7 @@
 
 		function onParticipantDisconnected(data) {
 			name = data.room;
-			participants.pop(data.participantId);
+			participants.splice(participants.indexOf(data.participantId), 1);
 			orderParticipants();
 
 			this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
