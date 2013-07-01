@@ -110,8 +110,8 @@ var chat = {};
 				e.preventDefault();
 				var $form = $(this);
 
-				var message = $form.serializeObject();
-				chat.sendMessage(message);
+				var messageObj = $form.serializeObject();
+				chat.sendMessage(messageObj.message);
 				$form.find(':text').val('');
 			});
 
@@ -150,9 +150,8 @@ var chat = {};
 					if (textChannel) {
 						chat.subscribe(textChannel, xrtc.DataChannel.events);
 
-						textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
-							var message = JSON.parse(messageData.message);
-							chat.addMessage(message.userId, message.message);
+						textChannel.on(xrtc.DataChannel.events.message, function (data) {
+							chat.addMessage(data.userId, data.message);
 						});
 					} else {
 						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
@@ -261,8 +260,8 @@ var chat = {};
 		sendMessage: function (message) {
 			console.log('Sending message...', message);
 			if (textChannel) {
-				textChannel.send(message.message);
-				chat.addMessage(userData.name, message.message, true);
+				textChannel.send(message);
+				chat.addMessage(userData.name, message, true);
 			} else {
 				chat.addSystemMessage('DataChannel is not created. Please, see log.');
 			}
