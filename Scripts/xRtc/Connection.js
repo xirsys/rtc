@@ -102,7 +102,11 @@
 	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			userData = ud,
+			userData = {
+				domain : 'designrealm.co.uk',//exports.document.domain,
+				application : 'Test', //'Default',
+				room : 'Test', //'Default'
+			},
 			authManager = am,
 			remoteParticipant = null,
 			localStreams = [],
@@ -122,6 +126,8 @@
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
 			iceCandidates = [];
+
+		initUserData(ud);
 
 		initHandshakeController.call(this);
 
@@ -253,8 +259,21 @@
 				/// <summary>Returns the state of p2p connection</summary>
 
 				return getSignalingState.call(this);
+			},
+			
+			getUserData: function() {
+				return userData;
 			}
 		});
+		
+		function initUserData(userDataValue) {
+			if (typeof userDataValue === 'string') {
+				userData.name = userDataValue;
+			}
+			else {
+				xrtc.Class.extend(userData, userDataValue);
+			}
+		}
 
 		function initHandshakeController() {
 			handshakeController = new xrtc.HandshakeController();

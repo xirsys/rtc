@@ -138,6 +138,7 @@ var chat = {};
 
 			var authManager = new xRtc.AuthManager();
 
+			//connection = new xRtc.Connection(userData.name, authManager)
 			connection = new xRtc.Connection(userData, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
 					chat.addVideo(data);
@@ -176,6 +177,8 @@ var chat = {};
 				.on(xrtc.Connection.events.stateChanged, function (state) {
 					chat.contactsList.updateState(state);
 				});
+
+			userData = connection.getUserData();
 
 			// heartbeat interval is 30sec
 			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
@@ -218,66 +221,7 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
-			//if (confirm('Do you want share the screen or prefer just a video conference?')) {
-				// Possible variants of usage see in comments below
-
-				/*connection.addMedia({
-					video: {
-						mandatory: {
-							mediaSource: 'screen'
-						}
-					}
-				});*/
-
-				/*connection.addMedia({
-					video: {
-						mandatory: {
-							mediaSource: 'screen'
-						}
-					},
-					audio: true
-				});*/
-
-				/*connection.addMedia({
-					audio: true
-				});*/
-
-				/*connection.addMedia({
-					video: true
-					audio: true
-				});*/
-
-				/*connection.addMedia({
-					video: true
-					audio: true
-				});*/
-
-				/*connection.addMedia({
-					video: {
-						mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
-						optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
-					},
-					audio: true
-				});*/
-				
-				/*connection.addMedia();*/
-
-			
-
-
-
-			/*	connection.addMedia({
-					video: {
-						mandatory: {
-							mediaSource: 'screen'
-						}
-					},
-					audio: true
-				});
-			}
-			else {*/
-				connection.addMedia();
-			//}
+			connection.addMedia();
 
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(connection, xrtc.Connection.events);
