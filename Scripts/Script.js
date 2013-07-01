@@ -139,7 +139,7 @@ var chat = {};
 			var authManager = new xRtc.AuthManager();
 
 			//connection = new xRtc.Connection(userData.name)
-			connection = new xRtc.Connection(userData, { autoReply: false }, authManager)
+			connection = new xRtc.Connection(userData, { autoReply: settings.autoAcceptCall }, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
 					chat.addVideo(data);
 					chat.contactsList.updateState();
@@ -157,9 +157,6 @@ var chat = {};
 						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
-				.on(xrtc.Connection.events.incomingCall, function (call) {
-					chat.acceptCall(call);
-				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
 					chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
@@ -176,6 +173,12 @@ var chat = {};
 				.on(xrtc.Connection.events.stateChanged, function (state) {
 					chat.contactsList.updateState(state);
 				});
+
+			if (!settings.autoAcceptCall) {
+				connection.on(xrtc.Connection.events.incomingCall, function(call) {
+					chat.acceptCall(call);
+				});
+			}
 
 			userData = connection.getUserData();
 
@@ -238,22 +241,18 @@ var chat = {};
 		},
 
 		acceptCall: function (incomingCall) {
-			if (settings.autoAcceptCall) {
+			/*
+			//todo: possible to decline call if any connection already is established
+			if (connection.getState() === 'connected') {
+				incomingCall.decline();
+				return;
+			}*/
+
+			//todo: make it more pretty
+			if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
 				incomingCall.accept();
 			} else {
-				/*
-				//todo: possible to decline call if any connection already is established
-				if (connection.getState() === 'connected') {
-					incomingCall.decline();
-					return;
-				}*/
-
-				//todo: make it more pretty
-				if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
-					incomingCall.accept();
-				} else {
-					incomingCall.decline();
-				}
+				incomingCall.decline();
 			}
 		},
 

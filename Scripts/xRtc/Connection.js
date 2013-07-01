@@ -150,10 +150,12 @@
 					throw new xrtc.CommonError('startSession', 'participantId should be specified');
 				}
 
-				var opts = options && options.offer || {},
-					offerOptions = {};
-
-				xrtc.Class.extend(offerOptions, xrtc.Connection.settings.offerOptions, opts);
+				var offerOptions = {};
+				// offerOptions initialization
+				xrtc.Class.extend(offerOptions, xrtc.Connection.settings.offerOptions);
+				if (options && options.offer) {
+					xrtc.Class.extend(offerOptions, options.offer);
+				}
 
 				initPeerConnection.call(this, participantId, function () {
 					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
@@ -468,7 +470,10 @@
 				return;
 			}
 
-			var data = { participantName: offerData.senderId };
+			var data = {
+				participantName: offerData.senderId,
+				connectionType: offerData.connectionType
+			};
 
 			if (!connectionOptions.autoReply) {
 				data.accept = proxy(onAcceptCall);
