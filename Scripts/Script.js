@@ -223,6 +223,59 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						mediaSource: 'screen'
+					}
+				},
+				audio: true
+			});*/
+
+			/*connection.addMedia({
+				audio: true
+			});*/
+
+			/*connection.addMedia({
+				video: true
+				audio: true
+			});*/
+
+			/*connection.addMedia({
+				video: true
+				audio: true
+			});*/
+
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						maxWidth: 320,
+						maxHeight: 180
+					}
+				},
+				audio: true
+			});*/
+
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						maxWidth: 640,
+						maxHeight: 360
+					}
+				},
+				audio: true
+			});*/
+
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						maxWidth: 1280,
+						maxHeight: 720
+					}
+				},
+				audio: true
+			});*/
+
 			connection.addMedia();
 
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
