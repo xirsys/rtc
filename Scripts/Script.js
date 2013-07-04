@@ -144,18 +144,28 @@ var chat = {};
 					chat.addVideo(data);
 					chat.contactsList.updateState();
 				})
-				.on(xrtc.Connection.events.initialized, function () {
+				.on(xrtc.Connection.events.initialized, function() {
+				})
+				.on(xrtc.Connection.events.offerCreating, function () {
 					textChannel = connection.createDataChannel('textChat');
 
 					if (textChannel) {
 						chat.subscribe(textChannel, xrtc.DataChannel.events);
 
-						textChannel.on(xrtc.DataChannel.events.message, function (data) {
-							chat.addMessage(data.userId, data.message);
+						textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+							chat.addMessage(msgData.userId, msgData.message);
 						});
 					} else {
 						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
+				})
+				.on(xrtc.Connection.events.dataChannelCreated, function (data) {
+					textChannel = data.channel;
+					chat.subscribe(textChannel, xrtc.DataChannel.events);
+
+					textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+						chat.addMessage(msgData.userId, msgData.message);
+					});
 				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');

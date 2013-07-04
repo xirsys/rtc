@@ -43,13 +43,23 @@
 
 		function assignTo(videoDomElement) {
 			// currently for firefox 'src' does not work, in future it can be removed
-			if (webrtc.isFirefox) {
+			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 				videoDomElement.mozSrcObject = stream;
 			} else {
 				videoDomElement.src = this.getURL();
 			}
 
 			videoDomElement.play();
+		}
+
+		function reassign(to, from) {
+			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+				to.mozSrcObject = from.mozSrcObject;
+			} else {
+				to.src = from.src;
+			}
+
+			to.play();
 		}
 
 		function getVideoEnabled() {

@@ -145,6 +145,7 @@
 				/// <summary>Starts the process of p2p connection establishment</summary>
 				/// <param name="participantId" type="string">Name of remote participant</param>
 				/// <param name="options" type="object">Optional param. Offer options and connection type</param>
+				var self = this;
 
 				if (!participantId) {
 					throw new xrtc.CommonError('startSession', 'participantId should be specified');
@@ -159,17 +160,19 @@
 
 				initPeerConnection.call(this, participantId, function () {
 					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
+
+					self.trigger(xrtc.Connection.events.offerCreating);
+
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
 						peerConnection.setLocalDescription(offer);
 
 						//Cross-browser support: FF v.21 fix
-						// todo:remove it in next versions
-						if (webrtc.isFirefox) {
-							offer.sdp = offer.sdp + 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\r\n';
+						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
+							var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
+							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? sdp.replace(/c=IN/g, inline) : offer.sdp;
 						}
-						// todo:remove it in next versions
 
 						var request = {
 							offer: JSON.stringify(offer),
@@ -209,7 +212,7 @@
 				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {
 					getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
 						if (mediaOptions.audio) {
-							getUserMedia.call(this, { audio: true }, function(audioStream) {
+							getUserMedia.call(this, { audio: true }, function (audioStream) {
 								function addTracks(array, tracks) {
 									for (var i = 0; i < tracks.length; i++) {
 										array.push(tracks[i]);
@@ -237,11 +240,11 @@
 			createDataChannel: function (name) {
 				/// <summary>Creates new instance of DataChannel</summary>
 				/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
-
-				var dataChannel = null;
+				var dataChannel;
 
 				try {
-					dataChannel = new xrtc.DataChannel(peerConnection.createDataChannel(name, { reliable: false }), userData.name);
+					var dc = peerConnection.createDataChannel(name, { reliable: false });
+					dataChannel = new xrtc.DataChannel(dc, userData.name);
 				} catch (ex) {
 					var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
 
@@ -269,8 +272,8 @@
 
 				return getSignalingState.call(this);
 			},
-			
-			getUserData: function() {
+
+			getUserData: function () {
 				return userData;
 			}
 		});
@@ -309,7 +312,23 @@
 			}
 
 			function onIceServersGot(iceServers) {
-				peerConnection = new webrtc.RTCPeerConnection(iceServers, xrtc.Connection.settings.peerConnectionOptions);
+				var self = this;
+
+				var browserCompatibleIceServers;
+				if (webrtc.detectedBrowser == webrtc.supportedBrowsers.firefox) {
+					browserCompatibleIceServers = { iceServers: [] };
+					for (var i = 0, len = iceServers.iceServers.length; i < len; i++) {
+						var iceServer = iceServers.iceServers[i];
+						// TURN doesn't supported by FireFox yet
+						if (iceServer.url.indexOf("turn:") === -1) {
+							browserCompatibleIceServers.iceServers.push(iceServer);
+						}
+					}
+				} else {
+					browserCompatibleIceServers = iceServers;
+				}
+
+				peerConnection = new webrtc.RTCPeerConnection(browserCompatibleIceServers, xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
 				peerConnection.onicecandidate = proxy(onIceCandidate);
@@ -318,9 +337,17 @@
 					peerConnection.onsignalingstatechange = // M27+
 					proxy(onConnectionStateChange);
 
+				// todo: track states
+				//FF event
+				peerConnection.ongatheringchange = proxy(onConnectionStateChange);
+
 				peerConnection.onicechange = // M25-M26
 					peerConnection.oniceconnectionstatechange = // M27+
 					proxy(onIceStateChange);
+
+				peerConnection.ondatachannel = function(data) {
+					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(data.channel, userData.name) });
+				};
 
 				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
 				peerConnection.onaddstream = proxy(onAddStream);
@@ -481,7 +508,7 @@
 			}
 
 			this.trigger(xrtc.Connection.events.incomingCall, data);
-			
+
 			if (connectionOptions.autoReply) {
 				onAcceptCall.call(self);
 			}
@@ -495,6 +522,12 @@
 				initPeerConnection.call(this, offerData.senderId, function () {
 					logger.debug('receiveOffer', offerData);
 					iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
+
+					// data channels doesn't work in case of interoperability Chrome and FireFox
+					/*if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
+						offerData.offer = offerData.offer.substr(0, offerData.offer.indexOf("a=mid:data"));
+					}*/
+
 					var sdp = JSON.parse(offerData.offer);
 
 					var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
@@ -629,6 +662,7 @@
 			iceAdded: 'iceadded',
 			iceSent: 'icesent',
 
+			offerCreating: 'offercreating',
 			offerSent: 'offersent',
 			offerError: 'offererror',
 
@@ -636,6 +670,7 @@
 			answerReceived: 'answerreceived',
 			answerError: 'answererror',
 
+			dataChannelCreated: 'datachannelcreated',
 			dataChannelCreationError: 'datachannelcreationerror',
 
 			connectionEstablished: 'connectionestablished',
@@ -690,14 +725,18 @@
 			RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
 			URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 			MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
-			isFirefox: !!navigator.mozGetUserMedia
+			supportedBrowsers: { chrome: "chrome", firefox: "firefox" }
 		}
 	});
 
 	webrtc = xrtc.Connection.webrtc;
+	webrtc.detectedBrowser = navigator.mozGetUserMedia ? webrtc.supportedBrowsers.firefox : webrtc.supportedBrowsers.chrome;
+	webrtc.detectedBrowserVersion = webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox
+		? parseInt(navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
+		: parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
 
-	//Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
-	if (!webrtc.RTCPeerConnection.prototype.getLocalStreams) {
+	// Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
+	if (/* For FireFox 22 webrtc.RTCPeerConnection.prototype is undefined */webrtc.RTCPeerConnection.prototype && !webrtc.RTCPeerConnection.prototype.getLocalStreams) {
 		xrtc.Class.extend(webrtc.RTCPeerConnection.prototype, {
 			getLocalStreams: function () {
 				return this.localStreams;
@@ -711,7 +750,7 @@
 
 	//Cross-browser support: New syntax of getXXXTracks method in Chrome M26.
 	if (!webrtc.MediaStream.prototype.getVideoTracks) {
-		if (webrtc.isFirefox) {
+		if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 			xrtc.Class.extend(webrtc.MediaStream.prototype, {
 				getVideoTracks: function () {
 					return [];
@@ -734,8 +773,9 @@
 		}
 	}
 
-	//Cross-browser support
-	if (webrtc.isFirefox) {
+	// todo: no need to disable data channels in case of communication between FireFox and Firefox. These flags are necessary in case of interoperability between FireFox and Chrome only
+	// Data channels does't supported in case of interoperability of FireFox and Chrome
+	if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for FF
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
