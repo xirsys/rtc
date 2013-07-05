@@ -416,8 +416,8 @@ var chat = {};
 			var stream = data.stream;
 			var participantId = data.participantId;
 
-			stream.on("ended", function (evt) {
-				chat.removeVideoById(evt.srcElement.id);
+			stream.on(xrtc.Stream.events.ended, function (streamData) {
+				chat.removeVideoById(streamData.id);
 			});
 
 			var videoData = {

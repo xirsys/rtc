@@ -7,12 +7,15 @@
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
+			events = xrtc.Stream.events,
 			isLocal = stream.constructor.name === 'LocalMediaStream';
 
 		xrtc.Class.property(this, 'videoEnabled', getVideoEnabled, setVideoEnabled);
 		xrtc.Class.property(this, 'audioEnabled', getAudioEnabled, setAudioEnabled);
 		xrtc.Class.property(this, 'videoAvailable', getVideoAvailable);
 		xrtc.Class.property(this, 'audioAvailable', getAudioAvailable);
+
+		stream.onended = proxy(onStreamEnded);
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
@@ -57,6 +60,12 @@
 			}
 
 			videoDomElement.play();
+		}
+
+		function onStreamEnded(evt) {
+			var data = { id: evt.srcElement.id };
+			logger.debug('ended', data);
+			this.trigger(events.ended, data);
 		}
 
 		function reassign(to, from) {
@@ -104,7 +113,7 @@
 
 	xrtc.Stream.extend({
 		events: {
-			join: 'ended'
+			ended: 'ended'
 		}
 	});
 })(xRtc);

@@ -68,6 +68,7 @@
 
 		function handleTokenRequest(response, userData, callback) {
 			try {
+				logger.debug('getToken', response);
 				response = JSON.parse(response);
 				logger.debug('getToken', response);
 
