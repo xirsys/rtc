@@ -165,7 +165,7 @@
 		events: {
 			join: 'join',
 			leave: 'leave',
-			
+
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',

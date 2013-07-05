@@ -6,6 +6,7 @@
 	//todo: possible we should wrap Video and Audio Tracks
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),
+			logger = new xrtc.Logger(this.className),
 			isLocal = stream.constructor.name === 'LocalMediaStream';
 
 		xrtc.Class.property(this, 'videoEnabled', getVideoEnabled, setVideoEnabled);
@@ -13,11 +14,17 @@
 		xrtc.Class.property(this, 'videoAvailable', getVideoAvailable);
 		xrtc.Class.property(this, 'audioAvailable', getAudioAvailable);
 
-		xrtc.Class.extend(this, {
+		xrtc.Class.extend(this, xrtc.EventDispatcher, {
+			_logger: logger,
+
 			getStream: function () {
 				return stream;
 			},
-			
+
+			getId: function() {
+				return stream.id;
+			},
+
 			getURL: function () {
 				return webrtc.URL.createObjectURL(stream);
 			},
@@ -92,6 +99,12 @@
 
 		function getAudioAvailable() {
 			return stream.getAudioTracks().length > 0;
+		}
+	});
+
+	xrtc.Stream.extend({
+		events: {
+			join: 'ended'
 		}
 	});
 })(xRtc);

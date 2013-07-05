@@ -403,6 +403,7 @@ var chat = {};
 
 				state = state || connection.getState();
 
+				//var contacts = $('#contacts').removeClass().addClass(state != 'not-ready' ? state : 'ready').find('.contact').removeClass('current');
 				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
 				if (!freeStates[state]) {
@@ -412,21 +413,20 @@ var chat = {};
 		},
 
 		addVideo: function (data) {
-			var stream = data.stream.getStream();
+			var stream = data.stream;
+			var participantId = data.participantId;
 
-			stream.onended = function (evt) {
+			stream.on("ended", function (evt) {
 				chat.removeVideoById(evt.srcElement.id);
-			};
+			});
 
 			var videoData = {
-				name: data.participantId,
-				isMe: data.stream.isLocal(),
-				isVideoAvailable: data.stream.videoAvailable,
-				isAudioAvailable: data.stream.audioAvailable,
-				id: stream.id
+				name: participantId,
+				isMe: stream.isLocal(),
+				isVideoAvailable: stream.videoAvailable,
+				isAudioAvailable: stream.audioAvailable,
+				id: stream.getId()
 			};
-
-
 
 			var participantItem = $('#video-tmpl').tmpl(videoData);
 			$('#video').append(participantItem);
@@ -434,9 +434,9 @@ var chat = {};
 			var video = participantItem.find('video')
 				.removeClass('hide')
 				.get(0);
-			data.stream.assignTo(video);
+			stream.assignTo(video);
 
-			participantItem.data('stream', data.stream);
+			participantItem.data('stream', stream);
 		},
 
 		removeVideo: function (participantId) {
