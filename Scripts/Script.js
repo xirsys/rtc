@@ -22,8 +22,11 @@ function getParams() {
 			btn.parent().children(buttonClass).toggleClass('hide');
 
 			var stream = btn.closest('.person').data('stream');
-
-			stream[property] = !btn.hasClass('disable');
+			try {
+				stream[property] = !btn.hasClass('disable');
+			} catch(ex) {
+				chat.addSystemMessage(ex.message);
+			}
 		});
 
 		return this;

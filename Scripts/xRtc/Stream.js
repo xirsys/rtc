@@ -84,6 +84,8 @@
 		}
 
 		function setVideoEnabled(val) {
+			checkBrowserSupport();
+
 			var videoTracks = stream.getVideoTracks();
 			for (var i = 0, len = videoTracks.length; i < len; i++) {
 				videoTracks[i].enabled = val;
@@ -96,6 +98,8 @@
 		}
 
 		function setAudioEnabled(val) {
+			checkBrowserSupport();
+
 			var audioTracks = stream.getAudioTracks();
 			for (var i = 0, len = audioTracks.length; i < len; i++) {
 				audioTracks[i].enabled = val;
@@ -108,6 +112,12 @@
 
 		function getAudioAvailable() {
 			return stream.getAudioTracks().length > 0;
+		}
+
+		function checkBrowserSupport() {
+			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+				throw new xrtc.CommonError('setVideoEnabled', 'Media stream muting is not supported by Firefox browser.');
+			}
 		}
 	});
 
