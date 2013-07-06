@@ -166,6 +166,7 @@
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
+						logger.debug('onCreateOfferSuccess', offer);
 						peerConnection.setLocalDescription(offer);
 
 						//Cross-browser support: FF v.21 fix

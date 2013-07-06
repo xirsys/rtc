@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-(function (xrtc) {
+(function (exports, xrtc) {
 	var webrtc = xrtc.Connection.webrtc;
 
 	//todo: possible we should wrap Video and Audio Tracks
@@ -68,23 +68,13 @@
 			this.trigger(events.ended, data);
 		}
 
-		function reassign(to, from) {
-			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-				to.mozSrcObject = from.mozSrcObject;
-			} else {
-				to.src = from.src;
-			}
-
-			to.play();
-		}
-
 		function getVideoEnabled() {
 			var videoTracks = stream.getVideoTracks();
 			return this.videoAvailable && videoTracks[0].enabled;
 		}
 
 		function setVideoEnabled(val) {
-			checkBrowserSupport();
+			checkPossibilityToMuteMediaTrack();
 
 			var videoTracks = stream.getVideoTracks();
 			for (var i = 0, len = videoTracks.length; i < len; i++) {
@@ -98,7 +88,7 @@
 		}
 
 		function setAudioEnabled(val) {
-			checkBrowserSupport();
+			checkPossibilityToMuteMediaTrack();
 
 			var audioTracks = stream.getAudioTracks();
 			for (var i = 0, len = audioTracks.length; i < len; i++) {
@@ -114,9 +104,9 @@
 			return stream.getAudioTracks().length > 0;
 		}
 
-		function checkBrowserSupport() {
+		function checkPossibilityToMuteMediaTrack() {
 			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-				throw new xrtc.CommonError('setVideoEnabled', 'Media stream muting is not supported by Firefox browser.');
+				throw new xrtc.CommonError('setVideoEnabled', 'Media track muting is not supported by Firefox browser.');
 			}
 		}
 	});
@@ -126,4 +116,4 @@
 			ended: 'ended'
 		}
 	});
-})(xRtc);
+})(window, xRtc);
