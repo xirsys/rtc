@@ -107,6 +107,7 @@
 			remoteParticipant = null,
 			localStreams = [],
 			peerConnection = null,
+			checkConnectionStateIntervalId = null,
 			handshakeController = null,
 			iceFilter = null,
 			iceServers = null,
@@ -169,7 +170,7 @@
 						logger.debug('onCreateOfferSuccess', offer);
 						peerConnection.setLocalDescription(offer);
 
-						//Cross-browser support: FF v.21 fix
+						//Interoperability support of FF21 and Chrome
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
 							var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
 							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? sdp.replace(/c=IN/g, inline) : offer.sdp;
@@ -338,9 +339,17 @@
 					peerConnection.onsignalingstatechange = // M27+
 					proxy(onConnectionStateChange);
 
-				// todo: track states
-				//FF event
-				peerConnection.ongatheringchange = proxy(onConnectionStateChange);
+				// in FireFox onstatechange or alternative event does not fire properly
+				if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+					var connectionState = this.getState();
+					checkConnectionStateIntervalId = exports.setInterval(function () {
+						var currentConnectionState = self.getState();
+						if (currentConnectionState != connectionState) {
+							connectionState = currentConnectionState;
+							self.trigger(xrtc.Connection.events.stateChanged, connectionState);
+						}
+					}, 100);
+				}
 
 				peerConnection.onicechange = // M25-M26
 					peerConnection.oniceconnectionstatechange = // M27+
@@ -593,6 +602,11 @@
 		}
 
 		function closePeerConnection(type) {
+			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && checkConnectionStateIntervalId) {
+				exports.clearInterval(checkConnectionStateIntervalId);
+				checkConnectionStateIntervalId = null;
+			}
+
 			if (peerConnection) {
 				peerConnection.onicecandidate = null;
 				peerConnection.close();
@@ -777,7 +791,7 @@
 	// todo: no need to disable data channels in case of communication between FireFox and Firefox. These flags are necessary in case of interoperability between FireFox and Chrome only
 	// Data channels does't supported in case of interoperability of FireFox and Chrome
 	if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for FF
+		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between FF and Chrome
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
 	}

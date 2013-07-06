@@ -45,7 +45,7 @@
 						assignTo.call(this, videoDomElement);
 					} else {
 						//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
-						setTimeout(proxy(this.assignTo, videoDomElement), 100);
+						exports.setTimeout(proxy(this.assignTo, videoDomElement), 100);
 					}
 				}
 			}
