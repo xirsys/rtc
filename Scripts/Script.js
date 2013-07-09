@@ -22,9 +22,11 @@ function getParams() {
 			btn.parent().children(buttonClass).toggleClass('hide');
 
 			var stream = btn.closest('.person').data('stream');
-
-			stream[property] = !btn.hasClass('disable');
-
+			try {
+				stream[property] = !btn.hasClass('disable');
+			} catch(ex) {
+				chat.addSystemMessage(ex.message);
+			}
 		});
 
 		return this;
@@ -111,8 +113,8 @@ var chat = {};
 				e.preventDefault();
 				var $form = $(this);
 
-				var message = $form.serializeObject();
-				chat.sendMessage(message);
+				var messageObj = $form.serializeObject();
+				chat.sendMessage(messageObj.message);
 				$form.find(':text').val('');
 			});
 
@@ -139,27 +141,34 @@ var chat = {};
 
 			var authManager = new xRtc.AuthManager();
 
-			connection = new xRtc.Connection(userData, authManager)
+			//connection = new xRtc.Connection(userData.name)
+			connection = new xRtc.Connection(userData, { autoReply: settings.autoAcceptCall }, authManager)
 				.on(xrtc.Connection.events.streamAdded, function (data) {
 					chat.addVideo(data);
 					chat.contactsList.updateState();
 				})
-				.on(xrtc.Connection.events.initialized, function () {
+				.on(xrtc.Connection.events.initialized, function() {
+				})
+				.on(xrtc.Connection.events.offerCreating, function () {
 					textChannel = connection.createDataChannel('textChat');
 
 					if (textChannel) {
 						chat.subscribe(textChannel, xrtc.DataChannel.events);
 
-						textChannel.on(xrtc.DataChannel.events.message, function (messageData) {
-							var message = JSON.parse(messageData.message);
-							chat.addMessage(message.userId, message.message);
+						textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+							chat.addMessage(msgData.userId, msgData.message);
 						});
 					} else {
 						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
 					}
 				})
-				.on(xrtc.Connection.events.incomingCall, function (call) {
-					chat.acceptCall(call);
+				.on(xrtc.Connection.events.dataChannelCreated, function (data) {
+					textChannel = data.channel;
+					chat.subscribe(textChannel, xrtc.DataChannel.events);
+
+					textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+						chat.addMessage(msgData.userId, msgData.message);
+					});
 				})
 				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 					console.log('Connection is established.');
@@ -178,6 +187,14 @@ var chat = {};
 					chat.contactsList.updateState(state);
 				});
 
+			if (!settings.autoAcceptCall) {
+				connection.on(xrtc.Connection.events.incomingCall, function(call) {
+					chat.acceptCall(call);
+				});
+			}
+
+			userData = connection.getUserData();
+
 			// heartbeat interval is 30sec
 			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
 
@@ -192,12 +209,12 @@ var chat = {};
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantConnected, function (data) {
-					chat.addSystemMessage(data.paticipantId + ' entered the room.');
+					chat.addSystemMessage(data.participantId + ' entered the room.');
 
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantDisconnected, function (data) {
-					chat.addSystemMessage(data.paticipantId + ' left the room.');
+					chat.addSystemMessage(data.participantId + ' left the room.');
 
 					chat.contactsList.refreshParticipants();
 				})
@@ -219,66 +236,60 @@ var chat = {};
 
 			room.addHandshake(connection.getHandshake());
 
-			//if (confirm('Do you want share the screen or prefer just a video conference?')) {
-				// Possible variants of usage see in comments below
-
-				/*connection.addMedia({
-					video: {
-						mandatory: {
-							mediaSource: 'screen'
-						}
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						mediaSource: 'screen'
 					}
-				});*/
+				},
+				audio: true
+			});*/
 
-				/*connection.addMedia({
-					video: {
-						mandatory: {
-							mediaSource: 'screen'
-						}
-					},
-					audio: true
-				});*/
+			/*connection.addMedia({
+				audio: true
+			});*/
 
-				/*connection.addMedia({
-					audio: true
-				});*/
+			/*connection.addMedia({
+				video: true
+				audio: true
+			});*/
 
-				/*connection.addMedia({
-					video: true
-					audio: true
-				});*/
+			/*connection.addMedia({
+				video: true
+				audio: true
+			});*/
 
-				/*connection.addMedia({
-					video: true
-					audio: true
-				});*/
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						maxWidth: 320,
+						maxHeight: 180
+					}
+				},
+				audio: true
+			});*/
 
-				/*connection.addMedia({
-					video: {
-						mandatory: { minAspectRatio: 1.333, maxAspectRatio: 1.334 },
-						optional: [{ minFrameRate: 24 }, { maxFrameRate: 24 }, { maxWidth: 320 }, { maxHeigth: 240 }]
-					},
-					audio: true
-				});*/
-				
-				/*connection.addMedia();*/
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						maxWidth: 640,
+						maxHeight: 360
+					}
+				},
+				audio: true
+			});*/
 
-			
+			/*connection.addMedia({
+				video: {
+					mandatory: {
+						maxWidth: 1280,
+						maxHeight: 720
+					}
+				},
+				audio: true
+			});*/
 
-
-
-			/*	connection.addMedia({
-					video: {
-						mandatory: {
-							mediaSource: 'screen'
-						}
-					},
-					audio: true
-				});
-			}
-			else {*/
-				connection.addMedia();
-			//}
+			connection.addMedia();
 
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(connection, xrtc.Connection.events);
@@ -296,30 +307,26 @@ var chat = {};
 		},
 
 		acceptCall: function (incomingCall) {
-			if (settings.autoAcceptCall) {
+			/*
+			//todo: possible to decline call if any connection already is established
+			if (connection.getState() === 'connected') {
+				incomingCall.decline();
+				return;
+			}*/
+
+			//todo: make it more pretty
+			if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
 				incomingCall.accept();
 			} else {
-				/*
-				//todo: possible to decline call if any connection already is established
-				if (connection.getState() === 'connected') {
-					incomingCall.decline();
-					return;
-				}*/
-
-				//todo: make it more pretty
-				if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
-					incomingCall.accept();
-				} else {
-					incomingCall.decline();
-				}
+				incomingCall.decline();
 			}
 		},
 
 		sendMessage: function (message) {
 			console.log('Sending message...', message);
 			if (textChannel) {
-				textChannel.send(message.message);
-				chat.addMessage(userData.name, message.message, true);
+				textChannel.send(message);
+				chat.addMessage(userData.name, message, true);
 			} else {
 				chat.addSystemMessage('DataChannel is not created. Please, see log.');
 			}
@@ -400,6 +407,7 @@ var chat = {};
 
 				state = state || connection.getState();
 
+				//var contacts = $('#contacts').removeClass().addClass(state != 'not-ready' ? state : 'ready').find('.contact').removeClass('current');
 				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
 				if (!freeStates[state]) {
@@ -409,21 +417,20 @@ var chat = {};
 		},
 
 		addVideo: function (data) {
-			var stream = data.stream.getStream();
+			var stream = data.stream;
+			var participantId = data.participantId;
 
-			stream.onended = function (evt) {
-				chat.removeVideoById(evt.srcElement.id);
-			};
+			stream.on(xrtc.Stream.events.ended, function (streamData) {
+				chat.removeVideoById(streamData.id);
+			});
 
 			var videoData = {
-				name: data.participantId,
-				isMe: data.stream.isLocal(),
-				isVideoAvailable: data.stream.videoAvailable,
-				isAudioAvailable: data.stream.audioAvailable,
-				id: stream.id
+				name: participantId,
+				isMe: stream.isLocal(),
+				isVideoAvailable: stream.videoAvailable,
+				isAudioAvailable: stream.audioAvailable,
+				id: stream.getId()
 			};
-
-
 
 			var participantItem = $('#video-tmpl').tmpl(videoData);
 			$('#video').append(participantItem);
@@ -431,9 +438,9 @@ var chat = {};
 			var video = participantItem.find('video')
 				.removeClass('hide')
 				.get(0);
-			data.stream.assignTo(video);
+			stream.assignTo(video);
 
-			participantItem.data('stream', data.stream);
+			participantItem.data('stream', stream);
 		},
 
 		removeVideo: function (participantId) {

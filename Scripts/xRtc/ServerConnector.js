@@ -1,9 +1,7 @@
 ﻿'use strict';
 
 (function (exports) {
-	var xrtc = exports.xRtc,
-		setInterval = exports.setInterval,
-		clearInterval = exports.clearInterval;
+	var xrtc = exports.xRtc;
 
 	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector(options) {
 		var proxy = xrtc.Class.proxy(this),
@@ -103,7 +101,8 @@
 
 		function socketOnClose(evt) {
 			if (pingIntervalId) {
-				clearInterval(pingIntervalId);
+				exports.clearInterval(pingIntervalId);
+				pingIntervalId = null;
 			}
 
 			var data = { event: evt };
@@ -161,7 +160,7 @@
 								data: {
 									senderId: json.userid,
 									room: json.room,
-									paticipantId: json.message,
+									participantId: json.message,
 								}
 							};
 							break;
@@ -206,7 +205,7 @@
 		function pingServer(interval) {
 			var self = this;
 
-			return setInterval(function () {
+			return exports.setInterval(function () {
 					// ping request is empty message
 					var pingRequest = {};
 					self.send.call(this, pingRequest);

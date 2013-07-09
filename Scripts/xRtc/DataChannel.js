@@ -24,7 +24,7 @@
 				logger.info('send', arguments);
 
 				var data = {
-					userid: userId,
+					userId: userId,
 					message: message
 				};
 
@@ -39,10 +39,8 @@
 		};
 
 		function channelOnMessage(evt) {
-			var data = {
-				event: evt,
-				message: evt.data
-			};
+			var data = JSON.parse(evt.data);
+
 			logger.debug('message', data);
 			this.trigger(events.message, data);
 		}

@@ -3,14 +3,15 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, 'Room', function Room(serverConnector) {
+	xrtc.Class(xrtc, 'Room', function Room(sc) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			name = null,
 			participants = [],
 			handshakeController = null,
 			isHandshakeSubscribed = false,
-			isServerConnectorSubscribed = false;
+			isServerConnectorSubscribed = false,
+			serverConnector = sc || new xrtc.ServerConnector();
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
@@ -78,23 +79,23 @@
 			participants = data.connections;
 			orderParticipants();
 
-			this.trigger(xrtc.Room.events.participantsUpdated, { paticipants: this.getParticipants() });
+			this.trigger(xrtc.Room.events.participantsUpdated, { participants: this.getParticipants() });
 		}
 
 		function onParticipantConnected(data) {
 			name = data.room;
-			participants.push(data.paticipantId);
+			participants.push(data.participantId);
 			orderParticipants();
 
-			this.trigger(xrtc.Room.events.participantConnected, { paticipantId: data.paticipantId });
+			this.trigger(xrtc.Room.events.participantConnected, { participantId: data.participantId });
 		}
 
 		function onParticipantDisconnected(data) {
 			name = data.room;
-			participants.pop(data.paticipantId);
+			participants.splice(participants.indexOf(data.participantId), 1);
 			orderParticipants();
 
-			this.trigger(xrtc.Room.events.participantDisconnected, { paticipantId: data.paticipantId });
+			this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
 		}
 
 		function orderParticipants() {
@@ -164,7 +165,7 @@
 		events: {
 			join: 'join',
 			leave: 'leave',
-			
+
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',
