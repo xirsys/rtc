@@ -20,75 +20,92 @@
 	<script src="Scripts/jquery-1.9.1.min.js"></script>
 	<script src="Scripts/jquery.tmpl.min.js"></script>
 	<script src="Scripts/Script.js"></script>
+
+	<script type="text/javascript" src="//use.typekit.net/lhk3lqa.js"></script>
+	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
 </head>
 <body>
 	<!--<div id="console"></div>-->
+	<header class="band">
+		<div class="container">
+			<div id="logo"></div><!-- end #logo -->
+			<a href="https://manage.xirsys.com/signup" class="button">Signup</a><!-- end .button -->
+			<a href="https://github.com/xirsys" class="social-icons"><i class="icon-github"></i></a>
+			<a href="https://twitter.com/XirSys" class="social-icons"><i class="icon-twitter"></i></a>
+		</div><!-- end container -->
+	</header><!-- end .band -->
+
+
 	<div id="step1">
-		<form id="join-form">
-			<table class="form">
-				<tr>
-					<th class="text-left">
-						<label for="domain">Domain</label></th>
-					<td>
-						<input type="text" id="domain" name="domain" value="designrealm.co.uk" /></td>
-				</tr>
-				<tr>
-					<th class="text-left">
-						<label for="application">Application</label></th>
-					<td>
-						<input type="text" id="application" name="application" value="Test" /></td>
-				</tr>
-				<tr>
-					<th class="text-left">
-						<label for="room">Room</label></th>
-					<td>
-						<input type="text" id="room" name="room" value="Test" /></td>
-				</tr>
-				<tr>
-					<th class="text-left">
-						<label for="name">Name (identity)</label></th>
-					<td>
-						<input type="text" id="name" name="name" value="Bob" /></td>
-				</tr>
-				<tr>
-					<td colspan="2" class="button-block">
-						<input type="submit" value="Join" class="btn btn-inverse" /></td>
-				</tr>
-			</table>
-		</form>
+		<div class="hero-unit">
+			<h1>Xirsys Chat Demo</h1>
+			<p>Enter a username, create a room id that you can share and connect with friends using WebRTC Technology</p>
+			<form id="join-form" class="form-horizontal">
+				<div class="control-group">
+					<label for="domain" class="control-label">Domain</label>
+					<div class="controls">
+						<input type="text" id="domain" name="domain" value="designrealm.co.uk" />
+					</div>
+				</div>
+				<div class="control-group">
+					<label for="application" class="control-label">Application</label>
+					<div class="controls">
+						<input type="text" id="application" name="application" value="Test" />
+					</div>
+				</div>
+				<div class="control-group">
+					<label for="room" class="control-label">Room</label>
+					<div class="controls">
+						<input type="text" id="room" name="room" value="Test" />
+					</div>
+				</div>
+				<div class="control-group">
+					<label for="name" class="control-label">Name (identity)</label>
+					<div class="controls">
+						<input type="text" id="name" name="name" value="Bob" />
+					</div>
+				</div>
+				<input type="submit" value="Join" class="btn btn-primary btn-large" />
+			</form>
+		</div>
 	</div>
 
-	<div id="step2">
+
+
+
+	<div id="step2" class="container">
+		<h3 class="room-title pull-left">Test</h3>
 		<div>
-			<form id="connection-form" class="input-block-level well">
-				<h3>Connection type</h3>
+			<form id="connection-form" class="pull-right">
+				<strong>Connection type: </strong>
 				<label class="radio inline"><input type="radio" name="connectionType" value="" checked="checked" /> Default</label>
 				<label class="radio inline"><input type="radio" name="connectionType" value="direct" /> Direct</label>
 				<label class="radio inline"><input type="radio" name="connectionType" value="server" /> Server</label>
 			</form>
 		</div>
-		<table id="chat-table">
-			<tr>
-				<td id="video-cell">
-					<div id="video"></div>
+
+		<div class="clear"></div>
+
+		<div id="chat-table" class="row">
+			<div id="contacts-cell" class="span4"></div>
+			<div class="span8">
+				<div id="video-cell">
+					<div id="video" class="row-fluid"></div>
 					<div class="clear"></div>
-				</td>
-				<td rowspan="2" id="contacts-cell"></td>
-			</tr>
-
-			<tr>
+				</div>
 				<td id="chat-cell">
-					<div id="chat" class="input-block-level well"></div>
 
-					<form id="chat-form">
-						<div class="chat-input">
-							<input type="text" name="message" value="" placeholder="Input message here" />
-						</div>
-						<div class="chat-button">
-							<input type="submit" class="btn btn-info" value="Send" />
-						</div>
-						<div class="clear"></div>
-					</form>
+					<div class="chat-container well">
+						<div id="chat" class="input-block-level"></div>
+
+						<form id="chat-form">
+							<div class="input-append">
+								<input type="text" name="message" value="" placeholder="Input message here"  class="chat-input" />
+								<input type="submit" class="btn btn-info" value="Send" class="chat-button" />
+							</div>
+						</form>
+					</div>
+					
 
 					<fieldset id="ws-test" class="hide">
 						<legend>Websockets functionality (for test purpose)</legend>
@@ -113,13 +130,12 @@
 						</form>
 					</fieldset>
 				</td>
-			</tr>
-		</table>
-	</div>
+			</div><!-- span8 -->
+		</div> <!-- chat-table -->
+	</div><!-- step2 -->
 
 	<script type="text/x-jquery-tmpl" id="contacts-info-tmpl">
-		<fieldset id="contacts-block">
-			<legend>${roomName}</legend>
+		<fieldset id="contacts-block" class="well">
 			<div id="contacts"></div>
 		</fieldset>
 	</script>
@@ -129,10 +145,10 @@
 			<div class="name">${name}</div>
 			{{if !isMe}}
 			<div class="buttons">
-				<button class="btn btn-info connect">Connect</button>
+				<button class="btn btn-mini btn-info connect"><span class="icon-pause"></span> Connect</button>
 				<span class="label label-info connecting">Connecting...</span>
 
-				<button class="btn btn-danger disconnect">Disconnect</button>
+				<button class="btn btn-mini btn-danger disconnect">Disconnect</button>
 				<span class="label label-important disconnecting">Disconnecting...</span>
 			</div>
 			{{/if}}
@@ -148,20 +164,20 @@
 	</script>
 
 	<script type="text/x-jquery-tmpl" id="video-tmpl">
-		<div class="person {{if isMe}}my{{/if}}" data-name="${name}">
-			<div class="name">${name}</div>
+		<div class="person {{if isMe}}my{{/if}} span6 well" data-name="${name}">
 			<div class="video">
 				<video class="hide" id="${id}"></video>
 			</div>
-			<div class="buttons">
+			<h5 class="name pull-left">${name}</h5>
+			<div class="buttons btn-group pull-right">
 				{{if isVideoAvailable}}
-				<button class="mute-video disable btn btn-danger"><span class="icon-picture icon-white"></span> Disable video</button>
-				<button class="mute-video enable  btn btn-success hide"><span class="icon-facetime-video icon-white"></span> Enable video</button>
+				<button class="mute-video disable btn btn-small"><span class="icon-pause"></span></button>
+				<button class="mute-video enable  btn btn-small active hide"><span class="icon-play"></span></button>
 				{{/if}}
 				
 				{{if isAudioAvailable}}
-				<button class="mute-audio disable btn btn-danger"><span class="icon-volume-off icon-white"></span> Disable audio</button>
-				<button class="mute-audio enable  btn btn-success hide"><span class="icon-volume-up icon-white"></span> Enable audio</button>
+				<button class="mute-audio disable btn btn-small"><span class="icon-volume-off"></span></button>
+				<button class="mute-audio enable  btn btn-small active hide"><span class="icon-volume-up"></span></button>
 				{{/if}}
 			</div>
 		</div>
