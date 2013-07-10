@@ -3,7 +3,7 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, 'Room', function Room(sc) {
+	xrtc.Class(xrtc, 'Room', function Room(info, am, sc) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			name = null,
@@ -11,7 +11,17 @@
 			handshakeController = null,
 			isHandshakeSubscribed = false,
 			isServerConnectorSubscribed = false,
+			roomInfo = {},
+			authManager = am || new xRtc.AuthManager(),
 			serverConnector = sc || new xrtc.ServerConnector();
+
+		// roomInfo initialization
+		xrtc.Class.extend(roomInfo, xrtc.Room.settings.info);
+		if (typeof info === 'string') {
+			roomInfo.name = info;
+		} else {
+			xrtc.Class.extend(roomInfo, info);
+		}
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
@@ -24,11 +34,16 @@
 			},
 
 			leave: function () {
-				name = null;
-				participants = [];
-
 				unsubscribeFromServerConnectorEvents.call(this);
 				unsubscribeFromHandshakeControllerEvents.call(this);
+
+				name = null;
+				participants = [];
+			},
+			
+			getInfo: function ()
+			{
+				return roomInfo;
 			},
 
 			addHandshake: function (hc) {
@@ -170,6 +185,18 @@
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',
 			tokenExpired: 'tokenexpired'
+		},
+
+		settings: {
+			info: {
+				domain: 'designrealm.co.uk', //exports.document.domain,
+				application: 'Test', //'Default',
+				name: 'Test', //'Default'
+			},
+
+			options: {
+				autoReply: true
+			}
 		}
 	});
 })(window);

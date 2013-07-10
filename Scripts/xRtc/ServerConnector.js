@@ -134,6 +134,7 @@
 			var json, result = null;
 			if (msg.data === '"Token invalid"') {
 				result = {
+					//todo: will be better to rename this event to tokenInvalid
 					eventName: xrtc.ServerConnector.events.tokenExpired,
 					data: {
 						token: currentToken

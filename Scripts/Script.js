@@ -204,7 +204,7 @@ var chat = {};
 			//heartbeat interval is 5sec (default value)
 			serverConnector = new xRtc.ServerConnector();
 
-			room = new xRtc.Room(serverConnector)
+			room = new xRtc.Room(userData.room, authManager, serverConnector)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
 					chat.contactsList.refreshParticipants();
 				})
