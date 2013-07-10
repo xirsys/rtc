@@ -11,6 +11,7 @@
 			handshakeController = null,
 			isHandshakeSubscribed = false,
 			isServerConnectorSubscribed = false,
+			roomOptions = {},
 			roomInfo = {},
 			authManager = am || new xRtc.AuthManager(),
 			serverConnector = sc || new xrtc.ServerConnector();
@@ -26,11 +27,60 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			join: function (token) {
+			join: function (userName, options) {
 				subscribeOnServerConnectorEvents.call(this);
 				subscribeOnHandshakeControllerEvents.call(this);
 
-				serverConnector.connect(token);
+				// roomOptions initialization
+				xrtc.Class.extend(roomOptions, xrtc.Connection.settings.options);
+				if (options) {
+					xrtc.Class.extend(roomOptions, options);
+				};
+
+				var userData = {
+					domain: roomInfo.domain,
+					application: roomInfo.application,
+					room: roomInfo.name,
+					name: userName
+				};
+
+				authManager.getToken(userData, function (token) {
+					// todo: think about best place of this initialization
+					roomInfo.user = userName;
+
+					serverConnector.connect(token);
+				});
+			},
+
+			connect: function (participantId, mediaContentOptions, connectionOptions) {
+				if (!roomInfo.user) {
+					throw new xrtc.CommonError('connect', 'Need to join the room before you connect someone.');
+				}
+
+				var self = this;
+
+				// var connection = new xRtc.Connection(userData, { autoReply: settings.autoAcceptCall }, authManager);
+
+				var connection = new xRtc.Connection(userData, authManager);
+
+				var connectingData = {
+					participantId: data.participantId,
+					connection: connection
+				};
+				self.trigger(xrtc.Room.events.connecting, connectingData);
+
+				// todo: need to prepare valid media content options
+				if (mediaContentOptions) {
+					connection.addMedia(mediaContentOptions);
+
+					//todo: if neccessary appropriate data channels should be created here. Pseudo code was added for now.
+					var channels = getChannels(mediaContentOptions);
+					for (var i = 0, len = channels.length; i < len; i++) {
+						connection.createDataChannel(channels[i].name);
+					}
+				}
+
+				connection.startSession(participantId, connectionOptions);
 			},
 
 			leave: function () {
@@ -45,6 +95,8 @@
 			{
 				return roomInfo;
 			},
+
+			// todo: need to think about obligatoriness of this method
 
 			addHandshake: function (hc) {
 				handshakeController = hc;
@@ -180,6 +232,8 @@
 		events: {
 			join: 'join',
 			leave: 'leave',
+
+			connecting: 'connecting',
 
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',

@@ -99,10 +99,10 @@
 		};
 	});
 
-	xrtc.Class(xrtc, 'Connection', function Connection(ud, connOptions, am) {
+	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			userData = {},
+			userData = ud,
 			authManager = am || new xRtc.AuthManager(),
 			remoteParticipant = null,
 			localStreams = [],
@@ -120,22 +120,7 @@
 			// because there is no guarantee of connection establishing and while the application/user will be thinking
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
-			iceCandidates = [],
-			connectionOptions = {};
-
-		// userData initialization
-		xrtc.Class.extend(userData, xrtc.Connection.settings.userData);
-		if (typeof ud === 'string') {
-			userData.name = ud;
-		} else {
-			xrtc.Class.extend(userData, ud);
-		}
-
-		// connectionOptions initialization
-		xrtc.Class.extend(connectionOptions, xrtc.Connection.settings.options);
-		if (connOptions) {
-			xrtc.Class.extend(connectionOptions, connOptions);
-		};
+			iceCandidates = [];
 
 		initHandshakeController.call(this);
 
@@ -242,14 +227,16 @@
 			createDataChannel: function (name) {
 				/// <summary>Creates new instance of DataChannel</summary>
 				/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
+				var self = this;
 				var dataChannel;
 
 				try {
 					var dc = peerConnection.createDataChannel(name, { reliable: false });
 					dataChannel = new xrtc.DataChannel(dc, userData.name);
+					// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
+					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: dataChannel });
 				} catch (ex) {
 					var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
-
 					logger.error('createDataChannel', error);
 					throw error;
 				}
@@ -512,6 +499,8 @@
 				connectionType: offerData.connectionType
 			};
 
+			// todo: move this logic to the Room object
+			// begin
 			if (!connectionOptions.autoReply) {
 				data.accept = proxy(onAcceptCall);
 				data.decline = proxy(onDeclineCall);
@@ -572,6 +561,7 @@
 			function onDeclineCall() {
 				handshakeController.sendBye(offerData.senderId, { type: 'decline' });
 			}
+			// end
 		}
 
 		function onReceiveAnswer(answerData) {
@@ -720,16 +710,6 @@
 			// you must supply Chrome with a PC constructor constraint to enable DTLS: { 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}
 			peerConnectionOptions: {
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
-			},
-
-			userData: {
-				domain: 'designrealm.co.uk',//exports.document.domain,
-				application: 'Test', //'Default',
-				room: 'Test', //'Default'
-			},
-
-			options: {
-				autoReply: true
 			}
 		},
 
