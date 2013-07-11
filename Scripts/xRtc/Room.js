@@ -8,13 +8,14 @@
 			logger = new xrtc.Logger(this.className),
 			name = null,
 			participants = [],
-			handshakeController = null,
 			isHandshakeSubscribed = false,
 			isServerConnectorSubscribed = false,
 			roomOptions = {},
 			roomInfo = {},
 			authManager = am || new xRtc.AuthManager(),
-			serverConnector = sc || new xrtc.ServerConnector();
+			serverConnector = sc || new xrtc.ServerConnector(),
+			connections = [],
+			handshakeControllers = {};
 
 		// roomInfo initialization
 		xrtc.Class.extend(roomInfo, xrtc.Room.settings.info);
@@ -27,6 +28,7 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
+			// todo: maybe will be better to rename this method to 'enter'
 			join: function (userName, options) {
 				subscribeOnServerConnectorEvents.call(this);
 				subscribeOnHandshakeControllerEvents.call(this);
@@ -52,28 +54,18 @@
 				});
 			},
 
-			connect: function (participantId, mediaContentOptions, connectionOptions) {
+			connect: function (participantId, connectionOptions) {
 				if (!roomInfo.user) {
 					throw new xrtc.CommonError('connect', 'Need to join the room before you connect someone.');
 				}
 
-				var self = this;
+				// todo: get userdata or something like this
 
-				// var connection = new xRtc.Connection(userData, { autoReply: settings.autoAcceptCall }, authManager);
-
-				var connection = new xRtc.Connection(userData, authManager);
-
-				var connectingData = {
-					participantId: data.participantId,
-					connection: connection
-				};
-				self.trigger(xrtc.Room.events.connecting, connectingData);
+				var connection = createConnection(userData, participantId);
 
 				// todo: need to prepare valid media content options
 				if (mediaContentOptions) {
-					connection.addMedia(mediaContentOptions);
-
-					//todo: if neccessary appropriate data channels should be created here. Pseudo code was added for now.
+					// todo: if neccessary, appropriate data channels should be created here. Pseudo code was added for now.
 					var channels = getChannels(mediaContentOptions);
 					for (var i = 0, len = channels.length; i < len; i++) {
 						connection.createDataChannel(channels[i].name);
@@ -90,18 +82,14 @@
 				name = null;
 				participants = [];
 			},
-			
+
 			getInfo: function ()
 			{
 				return roomInfo;
 			},
 
-			// todo: need to think about obligatoriness of this method
-
-			addHandshake: function (hc) {
-				handshakeController = hc;
-
-				subscribeOnHandshakeControllerEvents.call(this);
+			getConnections: function() {
+				return connections;
 			},
 
 			getName: function () {
@@ -121,7 +109,7 @@
 				serverConnector
 					.on(xrtc.ServerConnector.events.connectionOpen, proxy(onConnectionOpen))
 					.on(xrtc.ServerConnector.events.connectionClose, proxy(onConnectionClose))
-					.on(xrtc.ServerConnector.events.tokenExpired, proxy(onTokenExpired))
+					.on(xrtc.ServerConnector.events.tokenInvalid, proxy(onTokenInvalid))
 					.on(xrtc.ServerConnector.serverEvents.participantsUpdated, proxy(onParticipantsUpdated))
 					.on(xrtc.ServerConnector.serverEvents.participantConnected, proxy(onParticipantConnected))
 					.on(xrtc.ServerConnector.serverEvents.participantDisconnected, proxy(onParticipantDisconnected));
@@ -177,8 +165,8 @@
 			this.trigger(xrtc.Room.events.leave);
 		}
 		
-		function onTokenExpired(event) {
-			this.trigger(xrtc.Room.events.tokenExpired, event);
+		function onTokenInvalid(event) {
+			this.trigger(xrtc.Room.events.tokenInvalid, event);
 		}
 
 		function subscribeOnHandshakeControllerEvents() {
@@ -226,6 +214,57 @@
 		function onHandshakeReceiveMessage(data, event) {
 			handshakeController.trigger(event, data);
 		}
+
+		function getConnectionIndexById(connectionsArray, connectionId) {
+			var resultIndex = null;
+			for (var i = 0, len = connectionsArray.length; i < len; i++) {
+				if (connectionsArray[i].getId() === connectionId) {
+					resultIndex = i;
+					break;
+				}
+			}
+
+			return resultIndex;
+		}
+		
+		function createConnection(userData, participantId) {
+			var hc = new xrtc.HandshakeController();
+
+			var connection = new xRtc.Connection(userData, hc, authManager);
+			var connectionId = connection.getId();
+
+			handshakeControllers[connectionId] = hc;
+
+			var eventsMapping = {};
+			eventsMapping[xrtc.ServerConnector.events.receiveOffer] = xrtc.HandshakeController.events.receiveIce;
+			eventsMapping[xrtc.ServerConnector.events.receiveAnswer] = xrtc.HandshakeController.events.receiveAnswer;
+			eventsMapping[xrtc.ServerConnector.events.receiveIce] = xrtc.HandshakeController.events.receiveIce;
+			eventsMapping[xrtc.ServerConnector.events.receiveBye] = xrtc.HandshakeController.events.receiveBye;
+			for (var eventName in eventsMapping) {
+				if (eventsMapping.hasOwnProperty(eventName)) {
+					serverConnector.on(event, function (data) {
+						if (data.connectionId) {
+							var targetHc = handshakeControllers[data.connectionId];
+							if (targetHc) {
+								targetHc.trigger(eventsMapping[eventName], data);
+							}
+						}
+					});
+				}
+			}
+
+			self.trigger(xrtc.Room.events.connectionCreated, { participantId: participantId, connection: connection });
+
+			connection.on(xrtc.Connection.events.connectionClosed, function () {
+				connections.splice(getConnectionIndexById(connections, connectionId), 1);
+				// todo: maybe need to unsubscribe this handshake controllers from all events
+				delete handshakeControllers[connectionId];
+			});
+
+			connections.push(connection);
+
+			return connection;
+		}
 	});
 
 	xrtc.Room.extend({
@@ -233,12 +272,19 @@
 			join: 'join',
 			leave: 'leave',
 
-			connecting: 'connecting',
+			incomingConnection: 'incomingconnection',
+			connectionCreated: 'connectioncreated',
+			connectionDeclined: 'connectiondeclined',
+
+			receiveIce: 'receiveice',
+			receiveOffer: 'receiveoffer',
+			receiveAnswer: 'receiveanswer',
+			receiveBye: 'receivebye',
 
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',
 			participantDisconnected: 'participantdisconnected',
-			tokenExpired: 'tokenexpired'
+			tokenInvalid: 'tokenexpired'
 		},
 
 		settings: {

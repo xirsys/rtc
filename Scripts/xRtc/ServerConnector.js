@@ -46,18 +46,18 @@
 				}
 
 				var requestObject = formatRequest.call(this, request);
-				var requestJSON = JSON.stringify(requestObject);
+				var requestJson = JSON.stringify(requestObject);
 
-				logger.debug('send', requestObject, requestJSON);
-				socket.send(requestJSON);
+				logger.debug('send', requestObject, requestJson);
+				socket.send(requestJson);
 			}
 		});
 
 		function getWebSocketUrl(callback) {
-			this.ajax(xrtc.ServerConnector.settings.URL, 'POST', '', proxy(getWebSocketURLSuccess, callback));
+			this.ajax(xrtc.ServerConnector.settings.URL, 'POST', '', proxy(getWebSocketUrlSuccess, callback));
 		}
 
-		function getWebSocketURLSuccess(response, callback) {
+		function getWebSocketUrlSuccess(response, callback) {
 			try {
 				response = JSON.parse(response);
 				logger.debug('getWebSocketURL', response);
@@ -135,7 +135,7 @@
 			if (msg.data === '"Token invalid"') {
 				result = {
 					//todo: will be better to rename this event to tokenInvalid
-					eventName: xrtc.ServerConnector.events.tokenExpired,
+					eventName: xrtc.ServerConnector.events.tokenInvalid,
 					data: {
 						token: currentToken
 					}
@@ -179,7 +179,7 @@
 					var error = new xrtc.CommonError('parseMessage', 'Message format error', e);
 					logger.error('parseMessage', error, msg);
 
-					this.trigger(xrtc.ServerConnector.events.messageFormatError, e);
+					this.trigger(xrtc.ServerConnector.events.messageFormatError, error);
 				}
 			}
 
@@ -191,13 +191,13 @@
 				eventName: request.eventName
 			};
 
-			if (typeof request.data !== "undefined") {
+			if (typeof request.data !== 'undefined') {
 				result.data = request.data;
 			}
 
-			if (typeof request.receiverId !== "undefined") {
+			if (typeof request.targetUserId !== 'undefined') {
 				// we call 'toString' because 'targetUserId' can be a number, and server cannot resolve it
-				result.targetUserId = request.receiverId.toString();
+				result.targetUserId = request.targetUserId.toString();
 			}
 
 			return result;
@@ -224,9 +224,20 @@
 			messageFormatError: 'messageformaterror',
 
 			serverError: 'servererror',
-			tokenExpired: 'tokenexpired'
+			tokenInvalid: 'tokeninvalid',
+
+			receiveOffer: 'receiveoffer',
+			receiveAnswer: 'receiveanswer',
+			receiveIce: 'receiveice',
+			receiveBye: 'receivebye',
+
+			/* Server events */
+			participantsUpdated: 'peers',
+			participantConnected: 'peer_connected',
+			participantDisconnected: 'peer_removed'
 		},
 
+		// todo: these server events should be deleted
 		serverEvents: {
 			participantsUpdated: 'peers',
 			participantConnected: 'peer_connected',

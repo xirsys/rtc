@@ -230,8 +230,8 @@ var chat = {};
 						room.join(token);
 					});
 				})
-				.on(xrtc.Room.events.tokenExpired, function (data) {
-					chat.addSystemMessage('Your token is expired.');
+				.on(xrtc.Room.events.tokenInvalid, function (data) {
+					chat.addSystemMessage('Your token is invalid. Maybe the token is expired.');
 				});
 
 			room.addHandshake(connection.getHandshake());

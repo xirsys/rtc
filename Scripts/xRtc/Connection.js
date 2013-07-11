@@ -1,9 +1,9 @@
 ﻿'use strict';
 
 (function (exports) {
-	var xrtc = exports.xRtc;
-	var internal = {},
-		webrtc;
+	var xrtc = exports.xRtc,
+		internal = {},
+		webrtc = xrtc.webrtc;
 
 	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, is) {
 		var proxy = xrtc.Class.proxy(this),
@@ -105,7 +105,6 @@
 			userData = ud,
 			authManager = am || new xRtc.AuthManager(),
 			remoteParticipant = null,
-			localStreams = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
 			handshakeController = null,
@@ -116,16 +115,22 @@
 			connectionEstablished = false,
 			// It is tempoprary storage of ice candidates.
 			// Ice candidates should be send to remote participant after receiving answer strictly.
-			// If the application will send ice candidates after 'offer' sending then it can be skiped by remote appication
+			// If the application will send ice candidates after 'offer' sending then it can be skipped by remote application
 			// because there is no guarantee of connection establishing and while the application/user will be thinking
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
-			iceCandidates = [];
+			iceCandidates = [],
+			connectionId = generateGuid(),
+			remoteConnectionId = null;
 
 		initHandshakeController.call(this);
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
+
+			getId: function() {
+				return connectionId;
+			},
 
 			startSession: function (participantId, options) {
 				/// <summary>Starts the process of p2p connection establishment</summary>
@@ -155,7 +160,7 @@
 						logger.debug('onCreateOfferSuccess', offer);
 						peerConnection.setLocalDescription(offer);
 
-						//Interoperability support of FF21 and Chrome
+						// Interoperability support of FF21 and Chrome
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
 							var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
 							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? sdp.replace(/c=IN/g, inline) : offer.sdp;
@@ -168,7 +173,7 @@
 						};
 
 						logger.debug('sendOffer', remoteParticipant, offer);
-						handshakeController.sendOffer(remoteParticipant, request);
+						handshakeController.sendOffer(remoteParticipant, connectionId, request);
 						this.trigger(xrtc.Connection.events.offerSent, remoteParticipant, request);
 					}
 
@@ -184,44 +189,23 @@
 			endSession: function () {
 				/// <summary>Ends p2p connection</summary>
 
-				if (handshakeController && remoteParticipant) {
-					handshakeController.sendBye(remoteParticipant);
+				if (handshakeController && remoteParticipant && remoteConnectionId) {
+					handshakeController.sendBye(remoteParticipant, remoteConnectionId);
 				}
 
 				closePeerConnection.call(this);
 			},
 
-			addMedia: function (options) {
-				/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
-				/// <param name="options" type="object">Optional param. Local media options</param>
+			addStream: function (stream) {
+				peerConnection.addStream(stream.getStream());
 
-				var mediaOptions = options || { video: true, audio: true };
-				if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {
-					getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
-						if (mediaOptions.audio) {
-							getUserMedia.call(this, { audio: true }, function (audioStream) {
-								function addTracks(array, tracks) {
-									for (var i = 0; i < tracks.length; i++) {
-										array.push(tracks[i]);
-									}
-								}
+				var streamData = {
+					stream: stream,
+					participantId: userData.name
+				};
 
-								//Combine audio and video components of different streams in one stream
-								var mediaStreamTracks = [];
-								addTracks(mediaStreamTracks, audioStream.getAudioTracks());
-								addTracks(mediaStreamTracks, screenSharingStream.getVideoTracks());
-
-								addLocalStream.call(this, new webrtc.MediaStream(mediaStreamTracks));
-							});
-						} else {
-							addLocalStream.call(this, screenSharingStream);
-						}
-					});
-				} else {
-					getUserMedia.call(this, mediaOptions, function (stream) {
-						addLocalStream.call(this, stream);
-					});
-				}
+				logger.debug('addStream', streamData);
+				this.trigger(xrtc.Connection.events.streamAdded, streamData);
 			},
 
 			createDataChannel: function (name) {
@@ -373,11 +357,7 @@
 				}
 
 				function onAddStream(evt) {
-					addRemoteSteam.call(this, evt.stream);
-				}
-
-				for (var i = 0, len = localStreams.length; i < len; i++) {
-					peerConnection.addStream(localStreams[i]);
+					addRemoteStream.call(this, evt.stream);
 				}
 
 				this.trigger(xrtc.Connection.events.initialized);
@@ -412,43 +392,13 @@
 			iceCandidates = [];
 		}
 
-		function getUserMedia(options, callback) {
-			webrtc.getUserMedia(options, proxy(onGetUserMediaSuccess), proxy(onGetUserMediaError));
-
-			function onGetUserMediaSuccess(stream) {
-				if (typeof callback === "function") {
-					callback.call(this, stream);
-				}
-			}
-
-			function onGetUserMediaError(err) {
-				var error = new xrtc.CommonError('addMedia', "Cannot get UserMedia", err);
-				error.options = options;
-
-				logger.error('addMedia', error);
-				this.trigger(xrtc.Connection.events.streamError, error);
-			}
-		}
-
-		function addLocalStream(stream) {
-			localStreams.push(stream);
-
-			var streamData = {
-				stream: new xrtc.Stream(stream),
-				participantId: userData.name
-			};
-
-			logger.debug('addLocalStream', streamData);
-			this.trigger(xrtc.Connection.events.streamAdded, streamData);
-		}
-
-		function addRemoteSteam(stream) {
+		function addRemoteStream(stream) {
 			var streamData = {
 				stream: new xrtc.Stream(stream),
 				participantId: remoteParticipant
 			};
 
-			logger.debug('addRemoteSteam', streamData);
+			logger.debug('addRemoteStream', streamData);
 			this.trigger(xrtc.Connection.events.streamAdded, streamData);
 		}
 
@@ -514,8 +464,9 @@
 
 			function onAcceptCall() {
 				//End the current active call, if any
-				this.endSession();
+				//this.endSession();
 
+				remoteConnectionId = offerData.connectionId;
 				iceServers = offerData.iceServers;
 
 				initPeerConnection.call(this, offerData.senderId, function () {
@@ -542,7 +493,7 @@
 						};
 
 						logger.debug('sendAnswer', offerData, answer);
-						handshakeController.sendAnswer(offerData.senderId, request);
+						handshakeController.sendAnswer(offerData.senderId, remoteConnectionId, request);
 
 						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
@@ -559,7 +510,7 @@
 			}
 
 			function onDeclineCall() {
-				handshakeController.sendBye(offerData.senderId, { type: 'decline' });
+				handshakeController.sendBye(offerData.senderId, remoteConnectionId, { type: 'decline' });
 			}
 			// end
 		}
@@ -592,6 +543,8 @@
 		}
 
 		function closePeerConnection(type) {
+			var self = this;
+
 			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && checkConnectionStateIntervalId) {
 				exports.clearInterval(checkConnectionStateIntervalId);
 				checkConnectionStateIntervalId = null;
@@ -605,16 +558,20 @@
 				iceServers = null;
 				connectionEstablished = false;
 
-				var closedParticipant = remoteParticipant;
 				remoteParticipant = null;
+
+				var connectionData = {
+					sender: self,
+					closedParticipant: remoteParticipant
+				};
 
 				switch (type) {
 					case 'decline':
-						this.trigger(xrtc.Connection.events.offerDeclined, closedParticipant);
+						this.trigger(xrtc.Connection.events.offerDeclined, connectionData);
 						break;
 					case 'close':
 					default:
-						this.trigger(xrtc.Connection.events.connectionClosed, closedParticipant);
+						this.trigger(xrtc.Connection.events.connectionClosed, connectionData);
 						break;
 				}
 			}
@@ -631,7 +588,7 @@
 
 		function getSignalingState() {
 			// it can change from version to version
-			var isLocalStreamAdded = localStreams.length > 0,
+			var isLocalStreamAdded = peerConnection.getLocalStreams().length > 0,
 				states = {
 					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
 					'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
@@ -657,12 +614,19 @@
 
 			return states[state];
 		}
+
+		function generateGuid() {
+			var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+				var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+				return v.toString(16);
+			});
+			return guid;
+		};
 	});
 
 	xrtc.Connection.extend({
 		events: {
 			streamAdded: 'streamadded',
-			streamError: 'streamerror',
 
 			iceAdded: 'iceadded',
 			iceSent: 'icesent',
@@ -711,24 +675,8 @@
 			peerConnectionOptions: {
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 			}
-		},
-
-		webrtc: {
-			getUserMedia: (navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia).bind(navigator),
-			RTCPeerConnection: exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
-			RTCIceCandidate: exports.mozRTCIceCandidate || exports.RTCIceCandidate,
-			RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
-			URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
-			MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
-			supportedBrowsers: { chrome: "chrome", firefox: "firefox" }
 		}
 	});
-
-	webrtc = xrtc.Connection.webrtc;
-	webrtc.detectedBrowser = navigator.mozGetUserMedia ? webrtc.supportedBrowsers.firefox : webrtc.supportedBrowsers.chrome;
-	webrtc.detectedBrowserVersion = webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox
-		? parseInt(navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
-		: parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
 
 	// Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
 	if (/* For FireFox 22 webrtc.RTCPeerConnection.prototype is undefined */webrtc.RTCPeerConnection.prototype && !webrtc.RTCPeerConnection.prototype.getLocalStreams) {

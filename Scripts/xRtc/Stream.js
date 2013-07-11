@@ -1,7 +1,7 @@
 ﻿'use strict';
 
 (function (exports, xrtc) {
-	var webrtc = xrtc.Connection.webrtc;
+	var webrtc = xrtc.webrtc;
 
 	//todo: possible we should wrap Video and Audio Tracks
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {

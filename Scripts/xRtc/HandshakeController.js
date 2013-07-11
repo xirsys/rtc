@@ -3,66 +3,77 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
+	/// <summary>HandshakeController is internal object of xirsys library</summary>
 	xrtc.Class(xrtc, 'HandshakeController', function HandshakeController() {
 		var logger = new xrtc.Logger(this.className);
 
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			sendIce: function (targetUserId, iceCandidate) {
+			sendIce: function (targetUserId, targetConnectionId, iceCandidate) {
 				/// <summary>Sends ICE servers to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="iceCandidate" type="object">WebRTC internal object. Will be converted to JSON</param>
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveIce,
-					receiverId: targetUserId,
-					data: { iceCandidate: iceCandidate }
+					targetUserId: targetUserId,
+					data: {
+						connectionId: targetConnectionId,
+						iceCandidate: iceCandidate
+					}
 				};
 
 				this.trigger(xrtc.HandshakeController.events.sendIce, request);
 			},
 
-			sendOffer: function (targetUserId, offerData) {
+			sendOffer: function (targetUserId, targetConnectionId, offerData) {
 				/// <summary>Sends offer to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="offer" type="object">WebRTC internal object. Will be converted to JSON</param>
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveOffer,
-					receiverId: targetUserId,
-					data: offerData
+					targetUserId: targetUserId,
+					data: {
+						connectionId: targetConnectionId,
+						offer: offerData
+					}
 				};
 
 				this.trigger(xrtc.HandshakeController.events.sendOffer, request);
 			},
 
-			sendAnswer: function (targetUserId, answerData) {
+			sendAnswer: function (targetUserId, targetConnectionId, answerData) {
 				/// <summary>Sends answer to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="answer" type="object">WebRTC internal object. Will be converted to JSON</param>
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveAnswer,
-					receiverId: targetUserId,
-					data: answerData
+					targetUserId: targetUserId,
+					data: {
+						connectionId: targetConnectionId,
+						answer: answerData
+					}
 				};
 
 				this.trigger(xrtc.HandshakeController.events.sendAnswer, request);
 			},
 
-			sendBye: function (targetUserId, options) {
+			sendBye: function (targetUserId, targetConnectionId, options) {
 				/// <summary>Sends disconnection message to remote user</summary>
 				/// <param name="targetUserId" type="string">Name of remote user (receiver)</param>
 				/// <param name="options" type="object">Additional request parameters</param>
 
 				var request = {
 					eventName: xrtc.HandshakeController.events.receiveBye,
-					receiverId: targetUserId
+					targetUserId: targetUserId,
+					data: { connectionId: targetConnectionId }
 				};
 
 				if (options) {
-					request.data = options;
+					request.data.options = options;
 				}
 
 				this.trigger(xrtc.HandshakeController.events.sendBye, request);
@@ -73,15 +84,14 @@
 	xrtc.HandshakeController.extend({
 		events: {
 			sendIce: 'sendice',
-			receiveIce: 'receiveice',
-
 			sendOffer: 'sendoffer',
-			receiveOffer: 'receiveoffer',
-
 			sendAnswer: 'sendanswer',
-			receiveAnswer: 'receiveanswer',
-
 			sendBye: 'sendbye',
+
+			// note: these events of handshakeController object can be initiated by another object
+			receiveIce: 'receiveice',
+			receiveOffer: 'receiveoffer',
+			receiveAnswer: 'receiveanswer',
 			receiveBye: 'receivebye'
 		}
 	});
