@@ -1,27 +1,157 @@
-﻿.clear {
+﻿
+body {
+	font-size:18px;
+	line-height:1.5em;
+	font-family: "proxima-nova", helvetica, arial, sans-serif;
+	font-weight:100;
+	color:#4F6367;
+}
+
+
+
+h1, h2, h3, h4, h5, h6{
+	color:#1C2224;
+}
+
+
+.clear {
 	clear: both;
 	height: 0;
 }
 
+
+.button {
+	background:#86CE11;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px; 
+	border-radius: 3px;
+	display:inline-block;
+	color:#ffffff;
+	padding:5px 20px;
+	text-transform:uppercase;
+	font-size:13px;
+	line-height:13px;
+	font-weight:400;
+}
+
+.button:hover {
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px; 
+	border-radius: 3px;
+	background: #86ce11; /* Old browsers */
+	/* IE9 SVG, needs conditional override of 'filter' to 'none' */
+	background: -moz-linear-gradient(top,  #86ce11 0%, #7cc400 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#86ce11), color-stop(100%,#7cc400)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #86ce11 0%,#7cc400 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #86ce11 0%,#7cc400 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #86ce11 0%,#7cc400 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #86ce11 0%,#7cc400 100%); /* W3C */
+}
+
+/*----------------------------------------- Header ---------------------------------------------------*/
+header.band {background:#1C2224; }
+
+.touch header.band {
+position:relative;
+}
+
+header .container {
+padding-top:15px;
+padding-bottom:15px;
+}
+header .button {
+font-size:13px;
+float:right;
+line-height:20px;
+margin-top:5px;
+margin-left: 1em;
+cursor:pointer;
+}
+
+#logo {
+width:130px;
+height:40px;
+background:url(../Images/logo.png) no-repeat;
+display:block;
+float:left;
+}
+
+.svg #logo {
+background:url(../Images/logo.svg) no-repeat;
+}
+
+.social-icons{
+	float: right;
+	padding: 8px 0.5em 0;
+}
+
+.social-icons i {
+	font-size: 1.3em;
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -ms-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.social-icons:hover i{ color: #86CE11; }
+
+
+
+/*----------------------------------------- Step 1 ---------------------------------------------------*/
+
+#step1{
+	margin-top: 4em;
+}
+
+#step1 .hero-unit{
+	width: 500px;
+	margin: 0 auto;
+	padding: 20px 50px 20px 20px;	
+}
+
+#step1 label{
+	width: 80px;
+	text-align: left;
+}
+
+#step1 .form-horizontal .controls{
+	margin-left: 100px;
+}
+
+/*-----------------------------------------  ---------------------------------------------------*/
+
+#connection-form strong{
+	display: inline-block;
+	font-size: 14px;
+	line-height: 20px;
+	padding-right: 1em;
+}
+
+#connection-form .radio.inline{
+	vertical-align: inherit;
+}
+
 #chat-table {
-	width: 100%;
-	height: 100%;
 }
 
-#video-cell {
-	padding: 0 20px;
-	vertical-align: top;
+#video {
 }
 
-#contacts-cell {
-	width: 350px;
-	vertical-align: top;
-}
+#contacts-cell {}
 
 #chat-cell {
 	padding: 0 20px;
 	height: 300px;
 	vertical-align: top;
+}
+
+.chat-container{
+	padding-bottom: 5px;
+}
+
+#chat-form{
+	margin-bottom: 0;
 }
 
 table.form th,
@@ -40,11 +170,6 @@ table.form .button-block {
 	padding: 20px;
 }
 
-#step1 {
-	display: block;
-	padding: 20px 50px 20px 20px;	
-}
-
 #step2 {
 	display: none;
 	padding: 20px 50px 20px 20px;
@@ -52,8 +177,7 @@ table.form .button-block {
 
 /* Video */
 .person {
-	float: left;
-	margin: 0 10px 10px 0;
+	padding-bottom: 6px;
 }
 
 .person .name {
@@ -63,13 +187,12 @@ table.form .button-block {
 }
 
 .person .video {
-	border: 3px solid #666;
 	background: #FFF url("../Images/video-bg.png") center center no-repeat;
 }
 
 .person .video video {
 	display: block;
-	max-height: 360px;
+	max-width: 100%;
 }
 
 .person .buttons {
@@ -78,16 +201,12 @@ table.form .button-block {
 
 .person .buttons .mute-video,
 .person .buttons .mute-audio {
-	width: 130px;
 }
 
-.person.my .name {
-	color: #F00;
-}
+.person.my .name {}
 
 /* Contacts */
 #contacts-block {
-	border: 2px solid #000;
 	height: 600px;
 }
 
@@ -100,15 +219,13 @@ table.form .button-block {
 }
 
 #contacts {
-	padding: 0 10px;
 	overflow: auto;
 }
 
 .contact {
 	height: 30px;
-	margin: 5px 0;
-	padding: 2px 0;
-	border-bottom: 1px dashed #666;
+	padding: 0.4em 0;
+	border-bottom: 1px dashed #d9d9d9;
 }
 
 .contact .name {
@@ -179,15 +296,13 @@ table.form .button-block {
 
 
 #chat-form .chat-input {
-	float: left;
-	width: 90%;
+	width: 500px;
 }
 
 #chat-form .chat-button, #ws-form .chat-button {
 	float: right;
 	width: 10%;
 	text-align: right;
-	padding: 3px 0 0;
 }
 
 #chat-form .chat-input input, #ws-form .chat-input input {

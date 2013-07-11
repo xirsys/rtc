@@ -92,7 +92,7 @@ var chat = {};
 		serverConnector = null,
 		textChannel = null,
 		userData = null,
-		systemName = 'SYSTEM',
+		systemName = 'APP',
 		logger = false,
 		settings = {
 			autoAcceptCall: (getParams().autoaccept || 'false').toLowerCase() === 'true'
@@ -373,6 +373,7 @@ var chat = {};
 				var contactsData = {
 					roomName: room.getName()
 				};
+				// $('.room-title').HTML( contactsData.roomName );
 				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
 
 				var contacts = this.convertContacts(room.getParticipants());
