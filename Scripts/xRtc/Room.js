@@ -166,6 +166,14 @@
 		}
 		
 		function onIncomingConnection(data) {
+			// todo
+
+			// Skip 'offer' if it is not for me. It is temporary fix, because handshake shouldn't pass the 'offer' to wrong target.
+			// Sometimes it happened that the server had sent the 'offer' to all/wrong participants. So we decided not touch this check.
+			if (offerData.receiverId != userData.name) {
+				return;
+			}
+
 			var self = this;
 
 			if (!roomOptions.autoReply) {

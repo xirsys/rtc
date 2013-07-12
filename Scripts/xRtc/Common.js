@@ -13,6 +13,6 @@
 
 	webrtc.detectedBrowser = navigator.mozGetUserMedia ? webrtc.supportedBrowsers.firefox : webrtc.supportedBrowsers.chrome;
 	webrtc.detectedBrowserVersion = webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox
-		? parseInt(navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
-		: parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+		? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
+		: parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
 })(window, xRtc);

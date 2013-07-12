@@ -402,15 +402,7 @@
 		}
 
 		function onReceiveIce(iceData) {
-			//todo: Need to check iceData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
-
-			// Skip ice candidates, if it does not come from the application that 'offer' was received (not from your current companion)
-			// or no 'offer' had been received or sent yet (peerConnection was not created)
-			if (iceData.senderId != remoteParticipant || !peerConnection) {
-				return;
-			}
-
-			logger.debug('receiveIce', iceData);
+			logger.debug('Ice candidate was received.', iceData);
 			var iceCandidate = new webrtc.RTCIceCandidate(JSON.parse(iceData.iceCandidate));
 			peerConnection.addIceCandidate(iceCandidate);
 
@@ -418,111 +410,58 @@
 		}
 
 		function onReceiveOffer(offerData) {
-			var self = this;
+			logger.debug('Offer was received.', offerData);
+			
+			remoteConnectionId = offerData.connectionId;
+			iceServers = offerData.iceServers;
 
-			//todo: Need to check offerData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
+			initPeerConnection.call(this, offerData.senderId, function () {
+				logger.debug('receiveOffer', offerData);
+				iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
 
-			// Skip 'offer' if it is not for me. It is temporary fix, because handshake shouldn't pass the 'offer' to wrong target.
-			// Sometimes it happened that the server had sent the 'offer' to all/wrong participants. So we decided not touch this check.
-			if (offerData.receiverId != userData.name) {
-				return;
-			}
+				var sdp = JSON.parse(offerData.offer);
 
-			var data = {
-				participantName: offerData.senderId,
-				connectionType: offerData.connectionType
-			};
+				var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
+				peerConnection.setRemoteDescription(remoteSessionDescription);
 
-			// todo: move this logic to the Room object
-			// begin
-			if (!connectionOptions.autoReply) {
-				data.accept = proxy(onAcceptCall);
-				data.decline = proxy(onDeclineCall);
-			}
+				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
-			this.trigger(xrtc.Connection.events.incomingCall, data);
+				function onCreateAnswerSuccess(answer) {
+					peerConnection.setLocalDescription(answer);
 
-			if (connectionOptions.autoReply) {
-				onAcceptCall.call(self);
-			}
+					var request = {
+						answer: JSON.stringify(answer)
+					};
 
-			function onAcceptCall() {
-				//End the current active call, if any
-				//this.endSession();
+					logger.debug('sendAnswer', offerData, answer);
+					handshakeController.sendAnswer(offerData.senderId, remoteConnectionId, request);
 
-				remoteConnectionId = offerData.connectionId;
-				iceServers = offerData.iceServers;
+					this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
-				initPeerConnection.call(this, offerData.senderId, function () {
-					logger.debug('receiveOffer', offerData);
-					iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
+					allowIceSending.call(this);
+				}
 
-					// data channels doesn't work in case of interoperability Chrome and FireFox
-					/*if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
-						offerData.offer = offerData.offer.substr(0, offerData.offer.indexOf("a=mid:data"));
-					}*/
+				function onCreateAnswerError(err) {
+					var error = new xrtc.CommonError('sendAnswer', "Cannot create WebRTC answer", err);
 
-					var sdp = JSON.parse(offerData.offer);
-
-					var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
-					peerConnection.setRemoteDescription(remoteSessionDescription);
-
-					peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
-
-					function onCreateAnswerSuccess(answer) {
-						peerConnection.setLocalDescription(answer);
-
-						var request = {
-							answer: JSON.stringify(answer)
-						};
-
-						logger.debug('sendAnswer', offerData, answer);
-						handshakeController.sendAnswer(offerData.senderId, remoteConnectionId, request);
-
-						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
-
-						allowIceSending.call(this);
-					}
-
-					function onCreateAnswerError(err) {
-						var error = new xrtc.CommonError('sendAnswer', "Cannot create WebRTC answer", err);
-
-						logger.error('sendAnswer', error);
-						this.trigger(xrtc.Connection.events.answerError, error);
-					}
-				});
-			}
-
-			function onDeclineCall() {
-				handshakeController.sendBye(offerData.senderId, remoteConnectionId, { type: 'decline' });
-			}
-			// end
+					logger.error('sendAnswer', error);
+					this.trigger(xrtc.Connection.events.answerError, error);
+				}
+			});
 		}
 
 		function onReceiveAnswer(answerData) {
-			//todo: Need to check answerData parameter to the right format (existence of right fields, no errors in JSON.parse function). Will be good to verify this behavior using unit tests.
-
-			// Skip 'answer', if it does not come from the application to which the 'offer' was sent to (to current companion)
-			// or no 'offer' had been received or sent yet (peerConnection was not created)
-			if (answerData.senderId != remoteParticipant || !peerConnection) {
-				return;
-			}
+			logger.debug('Answer was received.', answerData);
 
 			allowIceSending.call(this);
 
-			logger.debug('receiveAnswer', answerData);
 			var sdp = JSON.parse(answerData.answer);
-
 			var sessionDescription = new webrtc.RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);
 			this.trigger(xrtc.Connection.events.answerReceived, answerData, sessionDescription);
 		}
 
 		function onReceiveBye(response) {
-			if (response.senderId != remoteParticipant || !peerConnection) {
-				return;
-			}
-
 			closePeerConnection.call(this, response.type || 'close');
 		}
 
@@ -630,10 +569,7 @@
 			connectionClosed: 'connectionclosed',
 
 			initialized: 'initialized',
-			stateChanged: 'statechanged',
-
-			incomingCall: 'incomingcall',
-			offerDeclined: 'offerdeclined'
+			stateChanged: 'statechanged'
 		},
 
 		settings: {
