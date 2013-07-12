@@ -166,7 +166,67 @@
 		}
 		
 		function onIncomingConnection(data) {
-			// ???
+			if (!roomOptions.autoReply) {
+				data.accept = proxy(onAcceptCall);
+				data.decline = proxy(onDeclineCall);
+			}
+
+			this.trigger(xrtc.Room.events.incomingConnection, data);
+
+			if (roomOptions.autoReply) {
+				onAcceptCall.call(self);
+			}
+
+			function onAcceptCall() {
+				//End the current active call, if any
+				//this.endSession();
+
+				remoteConnectionId = offerData.connectionId;
+				iceServers = offerData.iceServers;
+
+				initPeerConnection.call(this, offerData.senderId, function () {
+					logger.debug('receiveOffer', offerData);
+					iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
+
+					// data channels doesn't work in case of interoperability Chrome and FireFox
+					/*if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
+						offerData.offer = offerData.offer.substr(0, offerData.offer.indexOf("a=mid:data"));
+					}*/
+
+					var sdp = JSON.parse(offerData.offer);
+
+					var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
+					peerConnection.setRemoteDescription(remoteSessionDescription);
+
+					peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
+
+					function onCreateAnswerSuccess(answer) {
+						peerConnection.setLocalDescription(answer);
+
+						var request = {
+							answer: JSON.stringify(answer)
+						};
+
+						logger.debug('sendAnswer', offerData, answer);
+						handshakeController.sendAnswer(offerData.senderId, remoteConnectionId, request);
+
+						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
+
+						allowIceSending.call(this);
+					}
+
+					function onCreateAnswerError(err) {
+						var error = new xrtc.CommonError('sendAnswer', "Cannot create WebRTC answer", err);
+
+						logger.error('sendAnswer', error);
+						this.trigger(xrtc.Connection.events.answerError, error);
+					}
+				});
+			}
+
+			function onDeclineCall() {
+				serverConnector.sendBye(targetUserId, data.connectionId, { type: 'decline' });
+			}
 		}
 
 		function createConnection(userData, participantId) {

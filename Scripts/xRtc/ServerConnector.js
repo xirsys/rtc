@@ -35,23 +35,78 @@
 				}
 			},
 
-			send: function (request) {
-				/// <summary>Sends message to server</summary>
+			sendOffer: function (targetUserId, targetConnectionId, offer) {
+				var request = {
+					eventName: xrtc.ServerConnector.events.receiveOffer,
+					targetUserId: targetUserId,
+					data: {
+						connectionId: targetConnectionId,
+						offer: offer
+					}
+				};
 
-				if (!socket) {
-					var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
-					logger.error('send', error);
+				send(request);
+			},
 
-					throw error;
+			sendAnswer: function (targetUserId, targetConnectionId, answer)
+			{
+				var request = {
+					eventName: xrtc.ServerConnector.events.receiveAnswer,
+					targetUserId: targetUserId,
+					data: {
+						connectionId: targetConnectionId,
+						answer: answer
+					}
+				};
+
+				send(request);
+			},
+
+			sendIce: function (targetUserId, targetConnectionId, iceCandidate)
+			{
+				var request = {
+					eventName: xrtc.ServerConnector.events.receiveIce,
+					targetUserId: targetUserId,
+					data: {
+						connectionId: targetConnectionId,
+						iceCandidate: iceCandidate
+					}
+				};
+
+				send(request);
+			},
+
+			sendBye: function (targetUserId, targetConnectionId, byeOptions) {
+				var request = {
+					eventName: xrtc.ServerConnector.events.receiveBye,
+					targetUserId: targetUserId,
+					data: { connectionId: data.connectionId }
+				};
+
+				if (options) {
+					request.data.options = byeOptions;
 				}
 
-				var requestObject = formatRequest.call(this, request);
-				var requestJson = JSON.stringify(requestObject);
-
-				logger.debug('send', requestObject, requestJson);
-				socket.send(requestJson);
+				send(request);
 			}
 		});
+
+		function send (request) {
+			/// <summary>Sends message to server</summary>
+
+			if (!socket) {
+				var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
+				logger.error('send', error);
+
+				throw error;
+			}
+
+			var requestObject = formatRequest.call(this, request);
+			var requestJson = JSON.stringify(requestObject);
+
+			logger.debug('send', requestObject, requestJson);
+			socket.send(requestJson);
+		}
 
 		function getWebSocketUrl(callback) {
 			this.ajax(xrtc.ServerConnector.settings.URL, 'POST', '', proxy(getWebSocketUrlSuccess, callback));
