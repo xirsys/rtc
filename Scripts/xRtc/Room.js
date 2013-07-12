@@ -29,8 +29,7 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			// todo: maybe will be better to rename this method to 'enter'
-			join: function (userName, options) {
+			enter: function (userName, options) {
 				subscribeToServerEvents.call(this);
 
 				// roomOptions initialization
@@ -68,18 +67,19 @@
 
 				// todo: get userdata or something like this
 
-				var connection = createConnection(userData, participantId);
-
-				// todo: need to prepare valid media content options
-				if (mediaContentOptions) {
-					// todo: if neccessary, appropriate data channels should be created here. Pseudo code was added for now.
-					var channels = getChannels(mediaContentOptions);
-					for (var i = 0, len = channels.length; i < len; i++) {
-						connection.createDataChannel(channels[i].name);
+				createConnection(userData, participantId, function (connectionData) {
+					var connection = connectionData.connection;
+					// todo: need to prepare valid media content options
+					if (mediaContentOptions) {
+						// todo: if neccessary, appropriate data channels should be created here. Pseudo code was added for now.
+						var channels = getChannels(mediaContentOptions);
+						for (var i = 0, len = channels.length; i < len; i++) {
+							connection.createDataChannel(channels[i].name);
+						}
 					}
-				}
 
-				connection.startSession(participantId, connectionOptions);
+					connection.open(participantId, connectionOptions);
+				});
 			},
 
 			getInfo: function ()
@@ -166,6 +166,8 @@
 		}
 		
 		function onIncomingConnection(data) {
+			var self = this;
+
 			if (!roomOptions.autoReply) {
 				data.accept = proxy(onAcceptCall);
 				data.decline = proxy(onDeclineCall);
@@ -178,58 +180,21 @@
 			}
 
 			function onAcceptCall() {
-				//End the current active call, if any
-				//this.endSession();
-
-				remoteConnectionId = offerData.connectionId;
-				iceServers = offerData.iceServers;
-
-				initPeerConnection.call(this, offerData.senderId, function () {
-					logger.debug('receiveOffer', offerData);
-					iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
-
-					// data channels doesn't work in case of interoperability Chrome and FireFox
-					/*if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
-						offerData.offer = offerData.offer.substr(0, offerData.offer.indexOf("a=mid:data"));
-					}*/
-
-					var sdp = JSON.parse(offerData.offer);
-
-					var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
-					peerConnection.setRemoteDescription(remoteSessionDescription);
-
-					peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
-
-					function onCreateAnswerSuccess(answer) {
-						peerConnection.setLocalDescription(answer);
-
-						var request = {
-							answer: JSON.stringify(answer)
-						};
-
-						logger.debug('sendAnswer', offerData, answer);
-						handshakeController.sendAnswer(offerData.senderId, remoteConnectionId, request);
-
-						this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
-
-						allowIceSending.call(this);
-					}
-
-					function onCreateAnswerError(err) {
-						var error = new xrtc.CommonError('sendAnswer', "Cannot create WebRTC answer", err);
-
-						logger.error('sendAnswer', error);
-						this.trigger(xrtc.Connection.events.answerError, error);
-					}
+				createConnection(userData, participantId, function (connectionData) {
+					connectionData.handshakeController.trigger(hcEvents.receiveOffer, data);
 				});
+				//fire 'receiveOffer' event for HandshakeController
 			}
 
 			function onDeclineCall() {
+				//todo: need to think about 'bye' options definition
 				serverConnector.sendBye(targetUserId, data.connectionId, { type: 'decline' });
+
+				self.trigger(xrtc.Room.events.connectionDeclined, { userId: targetUserId, connectionId: data.connectionId });
 			}
 		}
 
-		function createConnection(userData, participantId) {
+		function createConnection(userData, participantId, connectionCreated) {
 			var hc = new xrtc.HandshakeController();
 
 			var connection = new xRtc.Connection(userData, hc, authManager);
@@ -272,13 +237,15 @@
 
 			connections.push(connection);
 
-			return connection;
+			if (typeof connectionCreated === 'function') {
+				connectionCreated({ connection: connection, handshakeController: hc });
+			}
 		}
 	});
 
 	xrtc.Room.extend({
 		events: {
-			join: 'join',
+			enter: 'enter',
 			leave: 'leave',
 
 			incomingConnection: 'incomingconnection',

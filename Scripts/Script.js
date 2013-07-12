@@ -351,13 +351,13 @@ var chat = {};
 			console.log('Connecting to participant...', contact);
 
 			var options = $('#connection-form').serializeObject();
-			connection.startSession(contact, options);
+			connection.open(contact, options);
 		},
 
 		disconnect: function (contact) {
 			console.log('Disconnection from participant...', contact);
 
-			connection.endSession();
+			connection.close();
 		},
 
 		contactsList: {

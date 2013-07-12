@@ -107,7 +107,7 @@ describe("Connection", function () {
 
 			describe("Default", function () {
 				beforeEach(function () {
-					connection.startSession('username');
+					connection.open('username');
 					handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
 				});
 
@@ -130,7 +130,7 @@ describe("Connection", function () {
 
 			describe("Direct", function () {
 				beforeEach(function () {
-					connection.startSession('username', { connectionType: 'direct' });
+					connection.open('username', { connectionType: 'direct' });
 					handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
 				});
 
@@ -163,7 +163,7 @@ describe("Connection", function () {
 
 			describe("Server", function () {
 				beforeEach(function () {
-					connection.startSession('username', { connectionType: 'server' });
+					connection.open('username', { connectionType: 'server' });
 					handshake.trigger(xRtc.HandshakeController.events.receiveAnswer, answerData);
 				});
 

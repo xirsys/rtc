@@ -132,7 +132,7 @@
 				return connectionId;
 			},
 
-			startSession: function (participantId, options) {
+			open: function (participantId, options) {
 				/// <summary>Starts the process of p2p connection establishment</summary>
 				/// <param name="participantId" type="string">Name of remote participant</param>
 				/// <param name="options" type="object">Optional param. Offer options and connection type</param>
@@ -186,7 +186,7 @@
 				});
 			},
 
-			endSession: function () {
+			close: function () {
 				/// <summary>Ends p2p connection</summary>
 
 				if (handshakeController && remoteParticipant && remoteConnectionId) {
@@ -228,27 +228,11 @@
 				return dataChannel;
 			},
 
-			getHandshake: function () {
-				/// <summary>Returns HandshakeController</summary>
-
-				return handshakeController;
-			},
-
-			getRemoteParticipantName: function () {
-				/// <summary>Returns current remote participant name</summary>
-
-				return remoteParticipant;
-			},
-
 			getState: function () {
 				/// <summary>Returns the state of p2p connection</summary>
 
 				return getSignalingState.call(this);
 			},
-
-			getUserData: function () {
-				return userData;
-			}
 		});
 
 		function initHandshakeController() {
