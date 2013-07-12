@@ -164,13 +164,11 @@
 
 			return resultIndex;
 		}
-		
-		function onIncomingConnection(data) {
-			// todo
 
-			// Skip 'offer' if it is not for me. It is temporary fix, because handshake shouldn't pass the 'offer' to wrong target.
+		function onIncomingConnection(data) {
+			// Skip 'offer' if it is not for me. It is temporary fix, because server shouldn't pass the 'offer' to wrong target.
 			// Sometimes it happened that the server had sent the 'offer' to all/wrong participants. So we decided not touch this check.
-			if (offerData.receiverId != userData.name) {
+			if (data.receiverId !== roomInfo.user) {
 				return;
 			}
 
@@ -191,7 +189,6 @@
 				createConnection(userData, participantId, function (connectionData) {
 					connectionData.handshakeController.trigger(hcEvents.receiveOffer, data);
 				});
-				//fire 'receiveOffer' event for HandshakeController
 			}
 
 			function onDeclineCall() {
