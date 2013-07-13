@@ -1,8 +1,6 @@
 ﻿'use strict';
 
 (function (exports) {
-	exports.xRtc = {};
-
 	exports.xRtc.Class = function (namespace, className, constructor) {
 		/// <summary>The base type of all classes</summary>
 

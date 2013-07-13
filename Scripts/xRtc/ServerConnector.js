@@ -91,7 +91,7 @@
 			}
 		});
 
-		function send (request) {
+		function send(request) {
 			/// <summary>Sends message to server</summary>
 
 			if (!socket) {
@@ -292,15 +292,7 @@
 			participantDisconnected: 'peer_removed'
 		},
 
-		// todo: these server events should be deleted
-		serverEvents: {
-			participantsUpdated: 'peers',
-			participantConnected: 'peer_connected',
-			participantDisconnected: 'peer_removed',
-		},
-
 		settings: {
-			//URL: 'http://turn.influxis.com/wsList'
 			URL: 'http://beta.xirsys.com:8889/wsList'
 		}
 	});

@@ -84,7 +84,6 @@ var wsTest = {};
 	});
 })(wsTest, xRtc);
 
-
 var chat = {};
 (function (chat, xrtc) {
 	var connection = null,
@@ -139,62 +138,6 @@ var chat = {};
 			$('#step1, #step2').toggle();
 			userData = ud;
 
-			var authManager = new xRtc.AuthManager();
-
-			//connection = new xRtc.Connection(userData.name)
-			connection = new xRtc.Connection(userData, { autoReply: settings.autoAcceptCall }, authManager)
-				.on(xrtc.Connection.events.streamAdded, function (data) {
-					chat.addVideo(data);
-					chat.contactsList.updateState();
-				})
-				.on(xrtc.Connection.events.initialized, function() {
-				})
-				.on(xrtc.Connection.events.offerCreating, function () {
-					textChannel = connection.createDataChannel('textChat');
-
-					if (textChannel) {
-						chat.subscribe(textChannel, xrtc.DataChannel.events);
-
-						textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
-							chat.addMessage(msgData.userId, msgData.message);
-						});
-					} else {
-						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
-					}
-				})
-				.on(xrtc.Connection.events.dataChannelCreated, function (data) {
-					textChannel = data.channel;
-					chat.subscribe(textChannel, xrtc.DataChannel.events);
-
-					textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
-						chat.addMessage(msgData.userId, msgData.message);
-					});
-				})
-				.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
-					console.log('Connection is established.');
-					chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
-				})
-				.on(xrtc.Connection.events.connectionClosed, function (participantId) {
-					chat.contactsList.refreshParticipants();
-					chat.removeVideo(participantId);
-					chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
-				})
-				.on(xrtc.Connection.events.offerDeclined, function (participantId) {
-					chat.contactsList.refreshParticipants();
-					chat.addSystemMessage(participantId + ' has declined your call');
-				})
-				.on(xrtc.Connection.events.stateChanged, function (state) {
-					chat.contactsList.updateState(state);
-				});
-
-			if (!settings.autoAcceptCall) {
-				connection.on(xrtc.Connection.events.incomingCall, function(call) {
-					chat.acceptCall(call);
-				});
-			}
-
-			userData = connection.getUserData();
-
 			// heartbeat interval is 30sec
 			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
 
@@ -202,9 +145,18 @@ var chat = {};
 			//serverConnector = new xRtc.ServerConnector({ pingInterval: null });
 
 			//heartbeat interval is 5sec (default value)
-			serverConnector = new xRtc.ServerConnector();
+			//serverConnector = new xRtc.ServerConnector();
 
-			room = new xRtc.Room(userData.room, authManager, serverConnector)
+			xrtc.getUserMedia({ video: true, audio: true },
+				function (stream) {
+					chat.addVideo({ stream: stream, participantId: userData.name });
+					chat.contactsList.updateState();
+				},
+				function (err) {
+					chat.addSystemMessage('Get media stream error. ' + err);
+				});
+
+			room = new xRtc.Room(userData.room)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
 					chat.contactsList.refreshParticipants();
 				})
@@ -218,87 +170,77 @@ var chat = {};
 
 					chat.contactsList.refreshParticipants();
 				})
-				.on(xrtc.Room.events.join, function () {
+				.on(xrtc.Room.events.enter, function () {
+					var roomInfo = room.getInfo();
+					userData = {
+						domain: roomInfo.domain,
+						application: roomInfo.application,
+						room: roomInfo.name,
+						name: roomInfo.user
+					};
 					chat.addSystemMessage('You have connected to the server.');
 				})
 				.on(xrtc.Room.events.leave, function () {
 					chat.addSystemMessage('You have been disconnectod by the server.');
-					chat.addSystemMessage('Trying reconnect with the server.');
 
-					//todo: possible this is redundant
-					authManager.getToken(userData, function (token) {
-						room.join(token);
-					});
+					chat.addSystemMessage('Trying reconnect with the server.');
+					room.enter(userData.name, { autoReply: settings.autoAcceptCall });
 				})
 				.on(xrtc.Room.events.tokenInvalid, function (data) {
 					chat.addSystemMessage('Your token is invalid. Maybe the token is expired.');
+				})
+				.on(xrtc.Room.events.connectionCreated, function (connectionData) {
+					connection = connectionData.connection;
+
+					chat.subscribe(connection, xrtc.Connection.events);
+
+					connection
+						.on(xrtc.Connection.events.localStreamAdded, function (data) {})
+						.on(xrtc.Connection.events.remoteStreamAdded, function (data) {
+							chat.addVideo(data);
+							chat.contactsList.updateState();
+						})
+						.on(xrtc.Connection.events.dataChannelCreated, function (data) {
+							textChannel = data.channel;
+							chat.subscribe(textChannel, xrtc.DataChannel.events);
+
+							textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+								chat.addMessage(msgData.userId, msgData.message);
+							});
+						})
+						.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
+							console.log('Connection is established.');
+							chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
+						})
+						.on(xrtc.Connection.events.connectionClosed, function (participantId) {
+							chat.contactsList.refreshParticipants();
+							chat.removeVideo(participantId);
+							chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
+						})
+						.on(xrtc.Connection.events.stateChanged, function (state) {
+							chat.contactsList.updateState(state);
+						});
+
+					textChannel = connection.createDataChannel('textChat');
+					if (textChannel) {
+						chat.subscribe(textChannel, xrtc.DataChannel.events);
+
+						textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+							chat.addMessage(msgData.userId, msgData.message);
+						});
+					} else {
+						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
+					}
+				})
+				.on(xrtc.Room.events.connectionDeclined, function (data) {
+					chat.contactsList.refreshParticipants();
+					chat.addSystemMessage(data.userId + ' has declined your call.');
 				});
 
-			room.addHandshake(connection.getHandshake());
-
-			/*connection.addMedia({
-				video: {
-					mandatory: {
-						mediaSource: 'screen'
-					}
-				},
-				audio: true
-			});*/
-
-			/*connection.addMedia({
-				audio: true
-			});*/
-
-			/*connection.addMedia({
-				video: true
-				audio: true
-			});*/
-
-			/*connection.addMedia({
-				video: true
-				audio: true
-			});*/
-
-			/*connection.addMedia({
-				video: {
-					mandatory: {
-						maxWidth: 320,
-						maxHeight: 180
-					}
-				},
-				audio: true
-			});*/
-
-			/*connection.addMedia({
-				video: {
-					mandatory: {
-						maxWidth: 640,
-						maxHeight: 360
-					}
-				},
-				audio: true
-			});*/
-
-			/*connection.addMedia({
-				video: {
-					mandatory: {
-						maxWidth: 1280,
-						maxHeight: 720
-					}
-				},
-				audio: true
-			});*/
-
-			connection.addMedia();
-
-			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
-			chat.subscribe(connection, xrtc.Connection.events);
-			chat.subscribe(connection.getHandshake(), xrtc.HandshakeController.events);
+			//chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(room, xrtc.Room.events);
 
-			authManager.getToken(userData, function (token) {
-				room.join(token);
-			});
+			room.enter(userData.name, { autoReply: settings.autoAcceptCall });
 		},
 
 		leaveRoom: function () {

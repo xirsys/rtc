@@ -8,7 +8,6 @@
 			logger = new xrtc.Logger(this.className),
 			hcEvents = xrtc.HandshakeController.events,
 			scEvents = xrtc.ServerConnector.events,
-			name = null,
 			participants = [],
 			isServerConnectorSubscribed = false,
 			roomOptions = {},
@@ -54,15 +53,22 @@
 			},
 
 			leave: function () {
+				serverConnector.disconnect();
+
 				unsubscribeFromServerEvents.call(this);
 
-				name = null;
+				roomOptions = {};
+				roomInfo.user = null;
 				participants = [];
+
+				//todo: maybe will be good to close all room connections. Need to discuss it with the team.
+				connections = [],
+				handshakeControllers = {};
 			},
 
 			connect: function (participantId, connectionOptions) {
 				if (!roomInfo.user) {
-					throw new xrtc.CommonError('connect', 'Need to join the room before you connect someone.');
+					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
 				}
 
 				// todo: get userdata or something like this
@@ -91,10 +97,6 @@
 				return connections;
 			},
 
-			getName: function () {
-				return name;
-			},
-
 			getParticipants: function () {
 				//return the copy of array
 				return participants.map(function (participant) {
@@ -110,21 +112,18 @@
 					.on(scEvents.connectionClose, proxy(function (event) { this.trigger(xrtc.Room.events.leave); }))
 					.on(scEvents.tokenInvalid, proxy(function (event) { this.trigger(xrtc.Room.events.tokenInvalid); }))
 					.on(scEvents.participantsUpdated, proxy(function (data) {
-						name = data.room;
 						participants = data.connections;
 						sortParticipants();
 
 						this.trigger(xrtc.Room.events.participantsUpdated, { participants: this.getParticipants() });
 					}))
 					.on(scEvents.participantConnected, proxy(function (data) {
-						name = data.room;
 						participants.push(data.participantId);
 						sortParticipants();
 
 						this.trigger(xrtc.Room.events.participantConnected, { participantId: data.participantId });
 					}))
 					.on(scEvents.participantDisconnected, proxy(function (data) {
-						name = data.room;
 						participants.splice(participants.indexOf(data.participantId), 1);
 						sortParticipants();
 

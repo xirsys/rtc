@@ -99,15 +99,16 @@
 		};
 	});
 
-	xrtc.Class(xrtc, 'Connection', function Connection(ud, am) {
+	xrtc.Class(xrtc, 'Connection', function Connection(ud, hc, am) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
+			// need to think about necessity of this property. Maybe will be better to store function which returns this data.
 			userData = ud,
 			authManager = am || new xRtc.AuthManager(),
 			remoteParticipant = null,
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
-			handshakeController = null,
+			handshakeController = hc,
 			iceFilter = null,
 			iceServers = null,
 			// 'answer' is received or 'offer' received and accepted flag.
@@ -152,8 +153,6 @@
 				initPeerConnection.call(this, participantId, function () {
 					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
 
-					self.trigger(xrtc.Connection.events.offerCreating);
-
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
@@ -181,7 +180,7 @@
 						var error = new xrtc.CommonError('startSession', "Cannot create WebRTC offer", err);
 
 						logger.error('sendOffer', error);
-						this.trigger(xrtc.Connection.events.offerError, error);
+						this.trigger(xrtc.Connection.events.createofferError, error);
 					}
 				});
 			},
@@ -205,7 +204,7 @@
 				};
 
 				logger.debug('addStream', streamData);
-				this.trigger(xrtc.Connection.events.streamAdded, streamData);
+				this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
 			},
 
 			createDataChannel: function (name) {
@@ -215,6 +214,9 @@
 				var dataChannel;
 
 				try {
+					// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
+					// reliable data channels currently supports only by FF. It is default value.
+					// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
 					var dc = peerConnection.createDataChannel(name, { reliable: false });
 					dataChannel = new xrtc.DataChannel(dc, userData.name);
 					// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
@@ -335,6 +337,7 @@
 				function onIceStateChange(evt) {
 					var state = getIceState.call(this);
 
+					// remove hardcoded value
 					if (state === 'connected') {
 						this.trigger(xrtc.Connection.events.connectionEstablished, remoteParticipant);
 					}
@@ -343,8 +346,6 @@
 				function onAddStream(evt) {
 					addRemoteStream.call(this, evt.stream);
 				}
-
-				this.trigger(xrtc.Connection.events.initialized);
 
 				callCallback();
 			}
@@ -383,7 +384,7 @@
 			};
 
 			logger.debug('addRemoteStream', streamData);
-			this.trigger(xrtc.Connection.events.streamAdded, streamData);
+			this.trigger(xrtc.Connection.events.remoteStreamAdded, streamData);
 		}
 
 		function getIceServers(callback) {
@@ -445,7 +446,7 @@
 					var error = new xrtc.CommonError('sendAnswer', "Cannot create WebRTC answer", err);
 
 					logger.error('sendAnswer', error);
-					this.trigger(xrtc.Connection.events.answerError, error);
+					this.trigger(xrtc.Connection.events.createAnswerError, error);
 				}
 			});
 		}
@@ -509,6 +510,7 @@
 			return state;
 		}
 
+		// todo: need to think about available states
 		function getSignalingState() {
 			// it can change from version to version
 			var isLocalStreamAdded = peerConnection.getLocalStreams().length > 0,
@@ -538,6 +540,7 @@
 			return states[state];
 		}
 
+		// todo: need to move this method to xrtc.utils
 		function generateGuid() {
 			var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
 				var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -549,18 +552,18 @@
 
 	xrtc.Connection.extend({
 		events: {
-			streamAdded: 'streamadded',
+			localStreamAdded: 'localstreamadded',
+			remoteStreamAdded: 'remotestreamadded',
 
 			iceAdded: 'iceadded',
 			iceSent: 'icesent',
 
-			offerCreating: 'offercreating',
 			offerSent: 'offersent',
-			offerError: 'offererror',
+			createOfferError: 'createoffererror',
 
 			answerSent: 'answersent',
 			answerReceived: 'answerreceived',
-			answerError: 'answererror',
+			createAnswerError: 'createanswererror',
 
 			dataChannelCreated: 'datachannelcreated',
 			dataChannelCreationError: 'datachannelcreationerror',
@@ -568,7 +571,6 @@
 			connectionEstablished: 'connectionestablished',
 			connectionClosed: 'connectionclosed',
 
-			initialized: 'initialized',
 			stateChanged: 'statechanged'
 		},
 
