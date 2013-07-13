@@ -149,7 +149,7 @@ var chat = {};
 
 			xrtc.getUserMedia({ video: true, audio: true },
 				function (stream) {
-					chat.addVideo({ stream: stream, participantId: userData.name });
+					chat.addVideo({ stream: stream, isLocalStream: true, participantId: userData.name });
 					chat.contactsList.updateState();
 				},
 				function (err) {
@@ -197,6 +197,7 @@ var chat = {};
 					connection
 						.on(xrtc.Connection.events.localStreamAdded, function (data) {})
 						.on(xrtc.Connection.events.remoteStreamAdded, function (data) {
+							data.isLocalStream = false;
 							chat.addVideo(data);
 							chat.contactsList.updateState();
 						})
@@ -347,13 +348,15 @@ var chat = {};
 					'not-ready': true
 				};
 
-				state = state || connection.getState();
+				if (connection) {
+					state = state || connection.getState();
 
-				//var contacts = $('#contacts').removeClass().addClass(state != 'not-ready' ? state : 'ready').find('.contact').removeClass('current');
-				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
+					//var contacts = $('#contacts').removeClass().addClass(state != 'not-ready' ? state : 'ready').find('.contact').removeClass('current');
+					var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
-				if (!freeStates[state]) {
-					contacts.filter('[data-name="' + connection.getRemoteParticipantName() + '"]').addClass('current');
+					if (!freeStates[state]) {
+						contacts.filter('[data-name="' + connection.getRemoteParticipantName() + '"]').addClass('current');
+					}
 				}
 			}
 		},
@@ -368,7 +371,7 @@ var chat = {};
 
 			var videoData = {
 				name: participantId,
-				isMe: stream.isLocal(),
+				isMe: data.isLocalStream,
 				isVideoAvailable: stream.videoAvailable,
 				isAudioAvailable: stream.audioAvailable,
 				id: stream.getId()

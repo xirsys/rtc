@@ -7,8 +7,7 @@
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			events = xrtc.Stream.events,
-			isLocal = stream.constructor.name === 'LocalMediaStream';
+			events = xrtc.Stream.events;
 
 		xrtc.Class.property(this, 'videoEnabled', getVideoEnabled, setVideoEnabled);
 		xrtc.Class.property(this, 'audioEnabled', getAudioEnabled, setAudioEnabled);
@@ -24,7 +23,7 @@
 				return stream;
 			},
 
-			getId: function() {
+			getId: function () {
 				return stream.id;
 			},
 
@@ -32,21 +31,13 @@
 				return webrtc.URL.createObjectURL(stream);
 			},
 
-			isLocal: function () {
-				return isLocal;
-			},
-
 			assignTo: function (videoDomElement) {
-				if (this.isLocal()) {
+				// stream could not be started if it has not been downloaded yet
+				if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
 					assignTo.call(this, videoDomElement);
 				} else {
-					// stream could not be started if it has not been downloaded yet
-					if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
-						assignTo.call(this, videoDomElement);
-					} else {
-						//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
-						exports.setTimeout(proxy(this.assignTo, videoDomElement), 100);
-					}
+					//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
+					exports.setTimeout(proxy(this.assignTo, videoDomElement), 100);
 				}
 			}
 		});

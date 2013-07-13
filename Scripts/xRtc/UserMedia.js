@@ -1,13 +1,14 @@
 ﻿'use strict';
 
-(function (exports, xrtc) {
-	var webrtc = xrtc.webrtc,
+(function (exports) {
+	var xrtc = exports.xRtc,
+		webrtc = xrtc.webrtc,
 		getUserMedia = function(options, successCallback, errorCallback) {
 			webrtc.getUserMedia(options, onGetUserMediaSuccess, onGetUserMediaError);
 
 			function onGetUserMediaSuccess(stream) {
 				if (typeof successCallback === "function") {
-					successCallback(stream);
+					successCallback(new xrtc.Stream(stream));
 				}
 			}
 
@@ -45,9 +46,7 @@
 				}
 			}, errorCallback);
 		} else {
-			getUserMedia.call(this, mediaOptions, function (stream) {
-				successCallback(stream);
-			}, errorCallback);
+			getUserMedia.call(this, mediaOptions, successCallback, errorCallback);
 		}
 	};
-})(window, xRtc);
+})(window);
