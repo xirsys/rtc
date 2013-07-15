@@ -22,8 +22,8 @@
 				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, targetConnectionId, answerData);
 			},
 
-			sendBye: function (targetUserId, targetConnectionId, options) {
-				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, targetConnectionId, options);
+			sendBye: function (targetUserId, targetConnectionId) {
+				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, targetConnectionId);
 			}
 		});
 	});

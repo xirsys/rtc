@@ -80,10 +80,10 @@
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveBye,
 					targetUserId: targetUserId,
-					data: { connectionId: data.connectionId }
+					data: { connectionId: targetConnectionId }
 				};
 
-				if (options) {
+				if (byeOptions) {
 					request.data.options = byeOptions;
 				}
 

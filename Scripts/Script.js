@@ -218,14 +218,14 @@ var chat = {};
 						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {
 							chat.addSystemMessage('Failed to create data channel ' + data.channelName + '. You need Chrome M25 or later with --enable-data-channels flag.');
 						})
-						.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
+						.on(xrtc.Connection.events.connectionEstablished, function (data) {
 							console.log('Connection is established.');
-							chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
+							chat.addSystemMessage("p2p connection has been established with '" + data.userId + "'.");
 						})
-						.on(xrtc.Connection.events.connectionClosed, function (participantId) {
+						.on(xrtc.Connection.events.connectionClosed, function (data) {
 							chat.contactsList.refreshParticipants();
 							chat.removeVideo(participantId);
-							chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
+							chat.addSystemMessage('p2p connection with ' + data.userId + ' has been closed.');
 							connection = null;
 							remoteParticipantId = null;
 						})

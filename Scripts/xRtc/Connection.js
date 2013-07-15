@@ -106,6 +106,8 @@
 			userData = ud,
 			authManager = am || new xRtc.AuthManager(),
 			remoteUserId = targetId,
+			localStreams = [],
+			dataChannels = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
 			handshakeController = hc,
@@ -188,40 +190,21 @@
 				closePeerConnection.call(this);
 			},
 
-			addStream: function (stream) {
-				initPeerConnection.call(self, remoteUserId, function () {
-					peerConnection.addStream(stream.getStream());
+			addStream: function (xrtcStream) {
+				var stream = xrtcStream.getStream();
+				localStreams.push(stream);
 
-					var streamData = {
-						stream: stream,
-						participantId: userData.name
-					};
+				var streamData = {
+					stream: xrtcStream,
+					participantId: userData.name
+				};
 
-					logger.debug('addStream', streamData);
-					this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
-				});
+				logger.debug('addLocalStream', streamData);
+				this.trigger(xrtc.Connection.events.streamAdded, streamData);
 			},
 
 			createDataChannel: function (name) {
-				/// <summary>Creates new instance of DataChannel</summary>
-				/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
-				var self = this;
-				initPeerConnection.call(self, remoteUserId, function () {
-					var dataChannel;
-					try {
-						// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
-						// reliable data channels currently supports only by FF. It is default value.
-						// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
-						var dc = peerConnection.createDataChannel(name, { reliable: false });
-						dataChannel = new xrtc.DataChannel(dc, userData.name);
-						// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
-						self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: dataChannel });
-					} catch (ex) {
-						var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
-						logger.error('createDataChannel', error);
-						self.trigger(xrtc.Connection.events.datachannelcreationerror, { channelName: name, error: error });
-					}
-				});
+				dataChannels.push(name);
 			},
 
 			getState: function () {
@@ -300,6 +283,7 @@
 					}, 100);
 				}
 
+				// todo: need to think about the necessity of this handlers
 				peerConnection.onicechange = // M25-M26
 					peerConnection.oniceconnectionstatechange = // M27+
 					proxy(onIceStateChange);
@@ -331,7 +315,7 @@
 
 					// remove hardcoded value
 					if (state === 'connected') {
-						this.trigger(xrtc.Connection.events.connectionEstablished, remoteUserId);
+						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
 					}
 				}
 
@@ -339,7 +323,35 @@
 					addRemoteStream.call(this, evt.stream);
 				}
 
+				for (var i = 0, len = localStreams.length; i < len; i++) {
+					peerConnection.addStream(localStreams[i]);
+				}
+
+				for (var i = 0, len = dataChannels.length; i < len; i++) {
+					createDataChannel.call(this, dataChannels[i]);
+				}
+
 				callCallback();
+			}
+		}
+
+		function createDataChannel(name) {
+			/// <summary>Creates new instance of DataChannel</summary>
+			/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
+			var self = this;
+			var dataChannel;
+			try {
+				// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
+				// reliable data channels currently supports only by FF. It is default value.
+				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
+				var dc = peerConnection.createDataChannel(name, { reliable: false });
+				dataChannel = new xrtc.DataChannel(dc, userData.name);
+				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
+				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: dataChannel });
+			} catch (ex) {
+				var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
+				logger.error('createDataChannel', error);
+				self.trigger(xrtc.Connection.events.datachannelcreationerror, { channelName: name, error: error });
 			}
 		}
 
@@ -456,11 +468,11 @@
 			this.trigger(xrtc.Connection.events.answerReceived, answerData, sessionDescription);
 		}
 
-		function onReceiveBye(response) {
-			closePeerConnection.call(this, response.type || 'close');
+		function onReceiveBye() {
+			closePeerConnection.call(this);
 		}
 
-		function closePeerConnection(type) {
+		function closePeerConnection() {
 			var self = this;
 
 			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && checkConnectionStateIntervalId) {
@@ -476,22 +488,14 @@
 				iceServers = null;
 				connectionEstablished = false;
 
-				remoteUserId = null;
-
 				var connectionData = {
 					sender: self,
-					closedParticipant: remoteUserId
+					userId: remoteUserId
 				};
 
-				switch (type) {
-					case 'decline':
-						this.trigger(xrtc.Connection.events.offerDeclined, connectionData);
-						break;
-					case 'close':
-					default:
-						this.trigger(xrtc.Connection.events.connectionClosed, connectionData);
-						break;
-				}
+				remoteUserId = null;
+
+				this.trigger(xrtc.Connection.events.connectionClosed, connectionData);
 			}
 		}
 
@@ -507,7 +511,7 @@
 		// todo: need to think about available states
 		function getSignalingState() {
 			// it can change from version to version
-			var isLocalStreamAdded = peerConnection && peerConnection.getLocalStreams().length > 0,
+			var isLocalStreamAdded = localStreams.length > 0,
 				states = {
 					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
 					'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
@@ -559,7 +563,7 @@
 			answerReceived: 'answerreceived',
 			createAnswerError: 'createanswererror',
 
-			dataChannelCreated: 'datachannelcreated',
+			dataChannelCreated: 'datachanneladded',
 			dataChannelCreationError: 'datachannelcreationerror',
 
 			connectionEstablished: 'connectionestablished',

@@ -28,6 +28,7 @@
 					message: message
 				};
 
+				// todo: check data channel state before sending
 				dataChannel.send(JSON.stringify(data));
 			}
 		});

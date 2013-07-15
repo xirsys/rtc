@@ -242,8 +242,8 @@
 			.on(hcEvents.sendIce, proxy(function (userId, connId, ice) {
 				serverConnector.sendIce(userId, connId, ice);
 			}))
-			.on(hcEvents.sendBye, proxy(function (userId, connId, bye) {
-				serverConnector.sendBye(userId, connId, bye);
+			.on(hcEvents.sendBye, proxy(function (userId, connId) {
+				serverConnector.sendBye(userId, connId);
 			}));
 
 			self.trigger(xrtc.Room.events.connectionCreated, { userId: targetUserId, connection: connection });

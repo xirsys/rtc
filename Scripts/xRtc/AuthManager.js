@@ -83,7 +83,13 @@
 					if (!token) {
 						logger.error('getToken', response.d);
 						this.trigger(xrtc.AuthManager.events.serverError, response.d);
-					} else {
+					}
+					// todo: need to discuss it with the team
+					else if (token == '') {
+						logger.error('getToken', 'Server returned an empty token.');
+						this.trigger(xrtc.AuthManager.events.serverError, 'Server returned an empty token.');
+					}
+					else {
 						logger.info('getToken', token);
 
 						if (typeof(callback) === 'function') {
