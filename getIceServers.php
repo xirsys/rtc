@@ -7,8 +7,8 @@ $fields = array(
 	'domain' => $_POST["domain"],
 	'application' => $_POST["application"],
 	'username' => $_POST["username"],
-	'ident' => urlencode("Lazarus404"),
-	'secret' => urlencode("32f1feb0-d9be-11e2-aa44-21571220d868")
+	'ident' => urlencode("leesylvester"),
+	'secret' => urlencode("7b6ffc50-d9b9-11e2-bbde-45359b958022")
 );
 
 //url-ify the data for the POST

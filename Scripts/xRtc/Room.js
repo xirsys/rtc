@@ -12,6 +12,7 @@
 			isServerConnectorSubscribed = false,
 			roomOptions = {},
 			roomInfo = {},
+			currentUserData = null,
 			authManager = am || new xRtc.AuthManager(),
 			serverConnector = sc || new xrtc.ServerConnector(),
 			connections = [],
@@ -37,14 +38,14 @@
 					xrtc.Class.extend(roomOptions, options);
 				};
 
-				var userData = {
+				currentUserData = {
 					domain: roomInfo.domain,
 					application: roomInfo.application,
 					room: roomInfo.name,
 					name: userName
 				};
 
-				authManager.getToken(userData, function (token) {
+				authManager.getToken(currentUserData, function (token) {
 					// todo: think about best place of this initialization
 					roomInfo.user = userName;
 
@@ -58,6 +59,7 @@
 				unsubscribeFromServerEvents.call(this);
 
 				roomOptions = {};
+				currentUserData = null;
 				roomInfo.user = null;
 				participants = [];
 
@@ -73,27 +75,26 @@
 
 				// todo: get userdata or something like this
 
-				createConnection(userData, participantId, function (connectionData) {
+				createConnection.call(this, currentUserData, participantId, function (connectionData) {
 					var connection = connectionData.connection;
 					// todo: need to prepare valid media content options
-					if (mediaContentOptions) {
+					/*if (mediaContentOptions) {
 						// todo: if neccessary, appropriate data channels should be created here. Pseudo code was added for now.
 						var channels = getChannels(mediaContentOptions);
 						for (var i = 0, len = channels.length; i < len; i++) {
 							connection.createDataChannel(channels[i].name);
 						}
-					}
+					}*/
 
 					connection.open(participantId, connectionOptions);
 				});
 			},
 
-			getInfo: function ()
-			{
+			getInfo: function () {
 				return roomInfo;
 			},
 
-			getConnections: function() {
+			getConnections: function () {
 				return connections;
 			},
 
@@ -108,7 +109,7 @@
 		function subscribeToServerEvents() {
 			if (!isServerConnectorSubscribed) {
 				serverConnector
-					.on(scEvents.connectionOpen, proxy(function (event) { this.trigger(xrtc.Room.events.join); }))
+					.on(scEvents.connectionOpen, proxy(function (event) { this.trigger(xrtc.Room.events.enter); }))
 					.on(scEvents.connectionClose, proxy(function (event) { this.trigger(xrtc.Room.events.leave); }))
 					.on(scEvents.tokenInvalid, proxy(function (event) { this.trigger(xrtc.Room.events.tokenInvalid); }))
 					.on(scEvents.participantsUpdated, proxy(function (data) {
@@ -141,7 +142,7 @@
 					.off(scEvents.participantsUpdated)
 					.off(scEvents.participantConnected)
 					.off(scEvents.participantDisconnected);
-				
+
 				// todo: what about another events? (connectionOpen, connectionClose, tokenInvalid). Need to think about it later.
 
 				isServerConnectorSubscribed = false;
@@ -185,53 +186,67 @@
 			}
 
 			function onAcceptCall() {
-				createConnection(userData, participantId, function (connectionData) {
-					connectionData.handshakeController.trigger(hcEvents.receiveOffer, data);
+				createConnection.call(self, currentUserData, data.senderId, function (connectionData) {
+					//todo: need to think about offer data format
+					var offerData = data.offer;
+					offerData.senderId = data.senderId;
+					offerData.connectionId = data.connectionId;
+
+					connectionData.handshakeController.trigger(hcEvents.receiveOffer, offerData);
 				});
 			}
 
 			function onDeclineCall() {
-				//todo: need to think about 'bye' options definition
-				serverConnector.sendBye(targetUserId, data.connectionId, { type: 'decline' });
+				//todo: need to think about 'bye' options definition and about senderId property name
+				serverConnector.sendBye(data.senderId, data.connectionId, { type: 'decline' });
 
-				self.trigger(xrtc.Room.events.connectionDeclined, { userId: targetUserId, connectionId: data.connectionId });
+				self.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
 			}
 		}
 
-		function createConnection(userData, participantId, connectionCreated) {
+		function createConnection(userData, targetUserId, connectionCreated) {
+			var self = this;
 			var hc = new xrtc.HandshakeController();
 
-			var connection = new xRtc.Connection(userData, hc, authManager);
+			var connection = new xRtc.Connection(userData, targetUserId, hc, authManager);
 			var connectionId = connection.getId();
 
 			handshakeControllers[connectionId] = hc;
 
 			var eventsMapping = {};
-			eventsMapping[scEvents.receiveOffer] = hcEvents.receiveOffer; // ???
+			eventsMapping[scEvents.receiveOffer] = hcEvents.receiveOffer; // ?
 			eventsMapping[scEvents.receiveAnswer] = hcEvents.receiveAnswer;
 			eventsMapping[scEvents.receiveIce] = hcEvents.receiveIce;
 			eventsMapping[scEvents.receiveBye] = hcEvents.receiveBye;
-			for (var eventName in eventsMapping) {
-				if (eventsMapping.hasOwnProperty(eventName)) {
-					serverConnector.on(event, function (data) {
-						if (data.connectionId) {
-							var targetHc = handshakeControllers[data.connectionId];
-							if (targetHc) {
-								targetHc.trigger(eventsMapping[eventName], data);
+			for (var event in eventsMapping) {
+				if (eventsMapping.hasOwnProperty(event)) {
+					(function (eventName) {
+						serverConnector.on(eventName, function (data) {
+							if (data.connectionId) {
+								var targetHc = handshakeControllers[data.connectionId];
+								if (targetHc) {
+									targetHc.trigger(eventsMapping[eventName], data);
+								}
 							}
-						}
-					});
+						});
+					})(event);
 				}
 			}
 
-			var hcSendEvents = [hcEvents.sendOffer, hcEvents.sendAnswer, hcEvents.sendIce, hcEvents.sendBye];
-			for (var i = 0, len = hcSendEvents.length; i < len; i++) {
-				hc.on(hcSendEvents[i], proxy(function (data) {
-					serverConnector.send(data);
-				}));
-			}
+			hc.on(hcEvents.sendOffer, proxy(function (userId, connId, offer) {
+				serverConnector.sendOffer(userId, connId, offer);
+			}))
+			.on(hcEvents.sendAnswer, proxy(function (userId, connId, answer) {
+				serverConnector.sendAnswer(userId, connId, answer);
+			}))
+			.on(hcEvents.sendIce, proxy(function (userId, connId, ice) {
+				serverConnector.sendIce(userId, connId, ice);
+			}))
+			.on(hcEvents.sendBye, proxy(function (userId, connId, bye) {
+				serverConnector.sendBye(userId, connId, bye);
+			}));
 
-			self.trigger(xrtc.Room.events.connectionCreated, { participantId: participantId, connection: connection });
+			self.trigger(xrtc.Room.events.connectionCreated, { userId: targetUserId, connection: connection });
 
 			connection.on(xrtc.Connection.events.connectionClosed, function () {
 				connections.splice(getConnectionIndexById(connections, connectionId), 1);

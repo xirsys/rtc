@@ -24,7 +24,7 @@ function getParams() {
 			var stream = btn.closest('.person').data('stream');
 			try {
 				stream[property] = !btn.hasClass('disable');
-			} catch(ex) {
+			} catch (ex) {
 				chat.addSystemMessage(ex.message);
 			}
 		});
@@ -87,6 +87,9 @@ var wsTest = {};
 var chat = {};
 (function (chat, xrtc) {
 	var connection = null,
+		remoteParticipantId = null,
+		localMediaStreamObtained = null,
+		localMediaStream = null,
 		room = null,
 		serverConnector = null,
 		textChannel = null,
@@ -150,6 +153,8 @@ var chat = {};
 			xrtc.getUserMedia({ video: true, audio: true },
 				function (stream) {
 					chat.addVideo({ stream: stream, isLocalStream: true, participantId: userData.name });
+					localMediaStreamObtained = true;
+					localMediaStream = stream;
 					chat.contactsList.updateState();
 				},
 				function (err) {
@@ -191,11 +196,12 @@ var chat = {};
 				})
 				.on(xrtc.Room.events.connectionCreated, function (connectionData) {
 					connection = connectionData.connection;
+					remoteParticipantId = connectionData.userId;
 
 					chat.subscribe(connection, xrtc.Connection.events);
 
 					connection
-						.on(xrtc.Connection.events.localStreamAdded, function (data) {})
+						.on(xrtc.Connection.events.localStreamAdded, function (data) { })
 						.on(xrtc.Connection.events.remoteStreamAdded, function (data) {
 							data.isLocalStream = false;
 							chat.addVideo(data);
@@ -209,6 +215,9 @@ var chat = {};
 								chat.addMessage(msgData.userId, msgData.message);
 							});
 						})
+						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {
+							chat.addSystemMessage('Failed to create data channel ' + data.channelName + '. You need Chrome M25 or later with --enable-data-channels flag.');
+						})
 						.on(xrtc.Connection.events.connectionEstablished, function (participantId) {
 							console.log('Connection is established.');
 							chat.addSystemMessage('p2p connection has been established with ' + participantId + '.');
@@ -217,25 +226,25 @@ var chat = {};
 							chat.contactsList.refreshParticipants();
 							chat.removeVideo(participantId);
 							chat.addSystemMessage('p2p connection with ' + participantId + ' has been closed.');
+							connection = null;
+							remoteParticipantId = null;
 						})
 						.on(xrtc.Connection.events.stateChanged, function (state) {
 							chat.contactsList.updateState(state);
 						});
 
-					textChannel = connection.createDataChannel('textChat');
-					if (textChannel) {
-						chat.subscribe(textChannel, xrtc.DataChannel.events);
+					connection.addStream(localMediaStream);
 
-						textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
-							chat.addMessage(msgData.userId, msgData.message);
-						});
-					} else {
-						chat.addSystemMessage('Failed to create data channel. You need Chrome M25 or later with --enable-data-channels flag.');
-					}
+					connection.createDataChannel('textChat');
+				})
+				.on(xrtc.Room.events.incomingConnection, function (data) {
+					chat.acceptCall(data);
 				})
 				.on(xrtc.Room.events.connectionDeclined, function (data) {
 					chat.contactsList.refreshParticipants();
 					chat.addSystemMessage(data.userId + ' has declined your call.');
+					connection = null;
+					remoteParticipantId = null;
 				});
 
 			//chat.subscribe(serverConnector, xrtc.ServerConnector.events);
@@ -244,12 +253,12 @@ var chat = {};
 			room.enter(userData.name, { autoReply: settings.autoAcceptCall });
 		},
 
-		leaveRoom: function () {
+		/*leaveRoom: function () {
 			room.leave();
 			$('#step1, #step2').toggle();
-		},
+		},*/
 
-		acceptCall: function (incomingCall) {
+		acceptCall: function (incomingConnectionData) {
 			/*
 			//todo: possible to decline call if any connection already is established
 			if (connection.getState() === 'connected') {
@@ -257,11 +266,11 @@ var chat = {};
 				return;
 			}*/
 
-			//todo: make it more pretty
-			if (confirm('User "' + incomingCall.participantName + '" is calling to you. Would you like to answer?')) {
-				incomingCall.accept();
+			//todo: need to think about senderId property name
+			if (confirm('User "' + incomingConnectionData.senderId + '" is calling to you. Would you like to answer?')) {
+				incomingConnectionData.accept();
 			} else {
-				incomingCall.decline();
+				incomingConnectionData.decline();
 			}
 		},
 
@@ -294,7 +303,7 @@ var chat = {};
 			console.log('Connecting to participant...', contact);
 
 			var options = $('#connection-form').serializeObject();
-			connection.open(contact, options);
+			room.connect(contact, options);
 		},
 
 		disconnect: function (contact) {
@@ -313,10 +322,11 @@ var chat = {};
 			},
 
 			refreshParticipants: function () {
+				var roomInfo = room.getInfo();
 				var contactsData = {
-					roomName: room.getName()
+					roomName: roomInfo.name
 				};
-				// $('.room-title').HTML( contactsData.roomName );
+
 				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
 
 				var contacts = this.convertContacts(room.getParticipants());
@@ -345,18 +355,19 @@ var chat = {};
 			updateState: function (state) {
 				var freeStates = {
 					'ready': true,
-					'not-ready': true
+					'not-ready': false
 				};
 
 				if (connection) {
 					state = state || connection.getState();
+				} else if (localMediaStreamObtained) {
+					state = 'ready';
+				}
 
-					//var contacts = $('#contacts').removeClass().addClass(state != 'not-ready' ? state : 'ready').find('.contact').removeClass('current');
-					var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
+				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
-					if (!freeStates[state]) {
-						contacts.filter('[data-name="' + connection.getRemoteParticipantName() + '"]').addClass('current');
-					}
+				if (!freeStates[state] && remoteParticipantId) {
+					contacts.filter('[data-name="' + remoteParticipantId + '"]').addClass('current');
 				}
 			}
 		},

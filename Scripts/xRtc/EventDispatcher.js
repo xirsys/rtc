@@ -47,7 +47,7 @@
 			this._events = this._events || {};
 			var events = this._events[eventName];
 			if (!events) {
-				this._logger.warning('trigger', 'Trying to call event which is not listening.');
+				this._logger.warning('trigger', "Trying to call event which is not listening. Event name is '" + eventName + "'");
 				return this;
 			}
 

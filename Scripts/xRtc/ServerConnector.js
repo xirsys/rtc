@@ -259,12 +259,10 @@
 		}
 
 		function pingServer(interval) {
-			var self = this;
-
 			return exports.setInterval(function () {
 					// ping request is empty message
 					var pingRequest = {};
-					self.send.call(this, pingRequest);
+					send.call(this, pingRequest);
 				},
 			interval);
 		}
