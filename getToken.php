@@ -1,7 +1,7 @@
 <?php
 
 //set POST variables
-$url = 'http://beta.xirsys.com:8889/getToken';
+$url = 'http://beta.xirsys.com/getToken';
 $fields_string = '';
 $fields = array(
 	'domain' => $_POST["domain"],
@@ -33,6 +33,6 @@ curl_close($ch);
 
 //$data = json_decode($result);
 
-//header("location: http://rtc.localhost.com:8889/?token=" . $data->d->token );
+//header("location: http://localhost/rtc_client/?token=" . $data->d->token );
 
 ?>

@@ -78,10 +78,17 @@
 					this.trigger(xrtc.AuthManager.events.serverError, error);
 				} else {
 					var token = response.d.token;
-					logger.info('getToken', token);
 
-					if (typeof (callback) === 'function') {
-						callback(token);
+					// todo: need to discuss it with the team
+					if (!token) {
+						logger.error('getToken', response.d);
+						this.trigger(xrtc.AuthManager.events.serverError, response.d);
+					} else {
+						logger.info('getToken', token);
+
+						if (typeof(callback) === 'function') {
+							callback(token);
+						}
 					}
 				}
 			} catch (ex) {
@@ -124,8 +131,6 @@
 			var addresses = {
 				'localhost': '127.0.0.1',
 				'beta.xirsys.com': '75.126.93.106'
-				/*'stun.influxis.com': '50.97.63.12',
-				'turn.influxis.com': '50.97.63.12'*/
 			};
 
 			for (var i = 0; i < iceServers.length; i++) {
@@ -145,10 +150,9 @@
 		},
 
 		settings: {
-			//URL: 'http://localhost:8081/',
-			URL: 'http://beta.xirsys.com:8889/',
-			tokenHandler: 'http://beta.xirsys.com:8889/getToken',
-			iceHandler: 'http://beta.xirsys.com:8889/getIceServers',
+			URL: 'http://beta.xirsys.com/',
+			tokenHandler: 'http://beta.xirsys.com/getToken',
+			iceHandler: 'http://beta.xirsys.com/getIceServers',
 
 			tokenParams: {
 				type: 'token_request',

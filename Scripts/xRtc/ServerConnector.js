@@ -293,7 +293,7 @@
 		},
 
 		settings: {
-			URL: 'http://beta.xirsys.com:8889/wsList'
+			URL: 'http://beta.xirsys.com/wsList'
 		}
 	});
 })(window);

@@ -269,9 +269,9 @@
 
 		settings: {
 			info: {
-				domain: 'designrealm.co.uk', //exports.document.domain,
-				application: 'Test', //'Default',
-				name: 'Test', //'Default'
+				domain: 'xirsys.com', //exports.document.domain,
+				application: 'default',
+				name: 'default'
 			},
 
 			options: {
