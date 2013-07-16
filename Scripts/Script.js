@@ -90,8 +90,9 @@ var chat = {};
 		remoteParticipantId = null,
 		localMediaStreamObtained = null,
 		localMediaStream = null,
-		room = null,
+		authManager = null,
 		serverConnector = null,
+		room = null,
 		textChannel = null,
 		userData = null,
 		systemName = 'APP',
@@ -152,7 +153,7 @@ var chat = {};
 
 			xrtc.getUserMedia({ video: true, audio: true },
 				function (stream) {
-					chat.addVideo({ stream: stream, isLocalStream: true, participantId: userData.name });
+					chat.addVideo({ stream: stream, isLocalStream: true, userId: userData.name });
 					localMediaStreamObtained = true;
 					localMediaStream = stream;
 					chat.contactsList.updateState();
@@ -161,7 +162,10 @@ var chat = {};
 					chat.addSystemMessage('Get media stream error. ' + err);
 				});
 
-			room = new xRtc.Room(userData.room)
+			authManager = new xrtc.AuthManager();
+			serverConnector = new xrtc.ServerConnector();
+
+			room = new xRtc.Room(userData.room, authManager, serverConnector)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
 					chat.contactsList.refreshParticipants();
 				})
@@ -218,6 +222,9 @@ var chat = {};
 						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {
 							chat.addSystemMessage('Failed to create data channel ' + data.channelName + '. You need Chrome M25 or later with --enable-data-channels flag.');
 						})
+						.on(xrtc.Connection.events.connectionOpening, function (data) {
+							connection.createDataChannel('textChat');
+						})
 						.on(xrtc.Connection.events.connectionEstablished, function (data) {
 							console.log('Connection is established.');
 							chat.addSystemMessage("p2p connection has been established with '" + data.userId + "'.");
@@ -234,8 +241,6 @@ var chat = {};
 						});
 
 					connection.addStream(localMediaStream);
-
-					connection.createDataChannel('textChat');
 				})
 				.on(xrtc.Room.events.incomingConnection, function (data) {
 					chat.acceptCall(data);
@@ -247,7 +252,8 @@ var chat = {};
 					remoteParticipantId = null;
 				});
 
-			//chat.subscribe(serverConnector, xrtc.ServerConnector.events);
+			chat.subscribe(authManager, xrtc.AuthManager.events);
+			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(room, xrtc.Room.events);
 
 			room.enter(userData.name, { autoReply: settings.autoAcceptCall });
@@ -374,14 +380,14 @@ var chat = {};
 
 		addVideo: function (data) {
 			var stream = data.stream;
-			var participantId = data.participantId;
+			var userId = data.userId;
 
 			stream.on(xrtc.Stream.events.ended, function (streamData) {
 				chat.removeVideoById(streamData.id);
 			});
 
 			var videoData = {
-				name: participantId,
+				name: userId,
 				isMe: data.isLocalStream,
 				isVideoAvailable: stream.videoAvailable,
 				isAudioAvailable: stream.audioAvailable,
@@ -459,7 +465,8 @@ var setIceServers = function (params) {
 };
 
 $(document).ready(function () {
-	xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true, test: true });
+	//xRtc.Logger.enable({ info: true, debug: true, warning: true, error: true, test: true });
+	xRtc.Logger.enable({ debug: true, warning: true, error: true, test: true });
 
 	chat.init();
 	chat.setLogger(true);

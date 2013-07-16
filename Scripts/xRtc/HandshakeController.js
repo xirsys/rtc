@@ -10,20 +10,20 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			sendIce: function (targetUserId, targetConnectionId, iceCandidate) {
-				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, targetConnectionId, iceCandidate);
+			sendIce: function (targetUserId, targetConnectionId, connectionId, sessionDescriptionData) {
+				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, targetConnectionId, connectionId, sessionDescriptionData);
 			},
 
-			sendOffer: function (targetUserId, targetConnectionId, offerData) {
-				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, targetConnectionId, offerData);
+			sendOffer: function (targetUserId, targetConnectionId, connectionId, sessionDescriptionData) {
+				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, targetConnectionId, connectionId, sessionDescriptionData);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, answerData) {
-				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, targetConnectionId, answerData);
+			sendAnswer: function (targetUserId, targetConnectionId, connectionId, sessionDescriptionData) {
+				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, targetConnectionId, connectionId, sessionDescriptionData);
 			},
 
-			sendBye: function (targetUserId, targetConnectionId) {
-				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, targetConnectionId);
+			sendBye: function (targetUserId, targetConnectionId, connectionId) {
+				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, targetConnectionId, connectionId);
 			}
 		});
 	});

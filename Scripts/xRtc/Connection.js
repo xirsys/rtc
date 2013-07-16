@@ -106,6 +106,7 @@
 			userData = ud,
 			authManager = am || new xRtc.AuthManager(),
 			remoteUserId = targetId,
+			remoteConnectionId = null,
 			localStreams = [],
 			dataChannels = [],
 			peerConnection = null,
@@ -123,8 +124,7 @@
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
 			iceCandidates = [],
-			connectionId = generateGuid(),
-			remoteConnectionId = null;
+			connectionId = generateGuid();
 
 		subscribeToHandshakeControllerEvents.call(this);
 
@@ -144,6 +144,8 @@
 				if (options && options.offer) {
 					xrtc.Class.extend(offerOptions, options.offer);
 				}
+
+				self.trigger(xrtc.Connection.events.connectionOpening, { sender: self, userId: remoteUserId });
 
 				initPeerConnection.call(self, remoteUserId, function () {
 					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
@@ -167,7 +169,7 @@
 						};
 
 						logger.debug('sendOffer', remoteUserId, offer);
-						handshakeController.sendOffer(remoteUserId, connectionId, request);
+						handshakeController.sendOffer(remoteUserId, remoteConnectionId, connectionId, request);
 						self.trigger(xrtc.Connection.events.offerSent, remoteUserId, request);
 					}
 
@@ -184,7 +186,7 @@
 				/// <summary>Ends p2p connection</summary>
 
 				if (handshakeController && remoteUserId && remoteConnectionId) {
-					handshakeController.sendBye(remoteUserId, remoteConnectionId);
+					handshakeController.sendBye(remoteUserId, remoteConnectionId, connectionId);
 				}
 
 				closePeerConnection.call(this);
@@ -196,11 +198,11 @@
 
 				var streamData = {
 					stream: xrtcStream,
-					participantId: userData.name
+					userId: userData.name
 				};
 
 				logger.debug('addLocalStream', streamData);
-				this.trigger(xrtc.Connection.events.streamAdded, streamData);
+				this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
 			},
 
 			createDataChannel: function (name) {
@@ -339,19 +341,17 @@
 			/// <summary>Creates new instance of DataChannel</summary>
 			/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
 			var self = this;
-			var dataChannel;
 			try {
 				// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
 				// reliable data channels currently supports only by FF. It is default value.
 				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
 				var dc = peerConnection.createDataChannel(name, { reliable: false });
-				dataChannel = new xrtc.DataChannel(dc, userData.name);
 				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
-				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: dataChannel });
+				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(dc, userData.name) });
 			} catch (ex) {
 				var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
 				logger.error('createDataChannel', error);
-				self.trigger(xrtc.Connection.events.datachannelcreationerror, { channelName: name, error: error });
+				self.trigger(xrtc.Connection.events.dataChannelCreationError, { channelName: name, error: error });
 			}
 		}
 
@@ -374,7 +374,7 @@
 			for (var i = 0; i < iceCandidates.length; i++) {
 				var ice = JSON.stringify(iceCandidates[i]);
 
-				handshakeController.sendIce(remoteUserId, remoteConnectionId, ice);
+				handshakeController.sendIce(remoteUserId, remoteConnectionId, connectionId, ice);
 				this.trigger(xrtc.Connection.events.iceSent, ice);
 			}
 
@@ -385,7 +385,7 @@
 			var streamData = {
 				stream: new xrtc.Stream(stream),
 				//todo: need to think about think property name
-				participantId: remoteUserId
+				userId: remoteUserId
 			};
 
 			logger.debug('addRemoteStream', streamData);
@@ -418,10 +418,10 @@
 		function onReceiveOffer(offerData) {
 			logger.debug('Offer was received.', offerData);
 
-			remoteConnectionId = offerData.connectionId;
 			iceServers = offerData.iceServers;
+			remoteConnectionId = offerData.connectionId;
 
-			initPeerConnection.call(this, offerData.senderId, function () {
+			initPeerConnection.call(this, remoteUserId, function () {
 				logger.debug('receiveOffer', offerData);
 				iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
 
@@ -440,7 +440,7 @@
 					};
 
 					logger.debug('sendAnswer', offerData, answer);
-					handshakeController.sendAnswer(offerData.senderId, remoteConnectionId, request);
+					handshakeController.sendAnswer(remoteUserId, remoteConnectionId, connectionId, request);
 
 					this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
 
@@ -458,6 +458,8 @@
 
 		function onReceiveAnswer(answerData) {
 			logger.debug('Answer was received.', answerData);
+
+			remoteConnectionId = answerData.connectionId;
 
 			allowIceSending.call(this);
 
@@ -566,6 +568,7 @@
 			dataChannelCreated: 'datachanneladded',
 			dataChannelCreationError: 'datachannelcreationerror',
 
+			connectionOpening: 'connectionopening',
 			connectionEstablished: 'connectionestablished',
 			connectionClosed: 'connectionclosed',
 

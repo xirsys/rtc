@@ -35,12 +35,13 @@
 				}
 			},
 
-			sendOffer: function (targetUserId, targetConnectionId, offer) {
+			sendOffer: function (targetUserId, targetConnectionId, connectionId, offer) {
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveOffer,
 					targetUserId: targetUserId,
 					data: {
-						connectionId: targetConnectionId,
+						targetConnectionId: targetConnectionId,
+						connectionId: connectionId,
 						offer: offer
 					}
 				};
@@ -48,13 +49,14 @@
 				send(request);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, answer)
+			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answer)
 			{
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveAnswer,
 					targetUserId: targetUserId,
 					data: {
-						connectionId: targetConnectionId,
+						targetConnectionId: targetConnectionId,
+						connectionId: connectionId,
 						answer: answer
 					}
 				};
@@ -62,13 +64,14 @@
 				send(request);
 			},
 
-			sendIce: function (targetUserId, targetConnectionId, iceCandidate)
+			sendIce: function (targetUserId, targetConnectionId, connectionId, iceCandidate)
 			{
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveIce,
 					targetUserId: targetUserId,
 					data: {
-						connectionId: targetConnectionId,
+						targetConnectionId: targetConnectionId,
+						connectionId: connectionId,
 						iceCandidate: iceCandidate
 					}
 				};
@@ -76,11 +79,14 @@
 				send(request);
 			},
 
-			sendBye: function (targetUserId, targetConnectionId, byeOptions) {
+			sendBye: function (targetUserId, targetConnectionId, connectionId, byeOptions) {
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveBye,
 					targetUserId: targetUserId,
-					data: { connectionId: targetConnectionId }
+					data: {
+						targetConnectionId: targetConnectionId,
+						connectionId: connectionId
+					}
 				};
 
 				if (byeOptions) {

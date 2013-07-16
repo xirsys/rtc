@@ -69,6 +69,12 @@
 		function handleTokenRequest(response, userData, callback) {
 			try {
 				logger.debug('getToken', response);
+
+				if (response === "") {
+					logger.error('getToken', 'Server returned an empty response.');
+					this.trigger(xrtc.AuthManager.events.serverError, 'Server returned an empty response.');
+				}
+
 				response = JSON.parse(response);
 				logger.debug('getToken', response);
 
@@ -83,11 +89,6 @@
 					if (!token) {
 						logger.error('getToken', response.d);
 						this.trigger(xrtc.AuthManager.events.serverError, response.d);
-					}
-					// todo: need to discuss it with the team
-					else if (token == '') {
-						logger.error('getToken', 'Server returned an empty token.');
-						this.trigger(xrtc.AuthManager.events.serverError, 'Server returned an empty token.');
 					}
 					else {
 						logger.info('getToken', token);
@@ -105,7 +106,7 @@
 		}
 
 		function handleIceServersRequest(response, token, userData, callback) {
-			logger.info("handleIceServersRequest CALLBACK IS ", callback);
+			logger.info("handleIceServersRequest callback is ", callback);
 			try {
 				response = JSON.parse(response);
 				logger.debug('getIceServers', response);

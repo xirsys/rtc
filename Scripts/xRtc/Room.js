@@ -130,7 +130,8 @@
 
 						this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
 					}))
-					.on(scEvents.receiveOffer, proxy(onIncomingConnection));
+					.on(scEvents.receiveOffer, proxy(onIncomingConnection))
+					.on(scEvents.receiveBye, proxy(onCloseConnection));
 
 				isServerConnectorSubscribed = true;
 			}
@@ -189,7 +190,6 @@
 				createConnection.call(self, currentUserData, data.senderId, function (connectionData) {
 					//todo: need to think about offer data format
 					var offerData = data.offer;
-					offerData.senderId = data.senderId;
 					offerData.connectionId = data.connectionId;
 
 					connectionData.handshakeController.trigger(hcEvents.receiveOffer, offerData);
@@ -198,9 +198,18 @@
 
 			function onDeclineCall() {
 				//todo: need to think about 'bye' options definition and about senderId property name
-				serverConnector.sendBye(data.senderId, data.connectionId, { type: 'decline' });
+				serverConnector.sendBye(data.senderId, data.connectionId, null, { type: 'decline' });
+			}
+		}
 
-				self.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
+		function onCloseConnection(data) {
+			if (data.options && data.options.type === 'decline') {
+				this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
+			}
+
+			var targetHc = handshakeControllers[data.targetConnectionId];
+			if (targetHc) {
+				targetHc.trigger(hcEvents.receiveBye, data);
 			}
 		}
 
@@ -214,7 +223,6 @@
 			handshakeControllers[connectionId] = hc;
 
 			var eventsMapping = {};
-			eventsMapping[scEvents.receiveOffer] = hcEvents.receiveOffer; // ?
 			eventsMapping[scEvents.receiveAnswer] = hcEvents.receiveAnswer;
 			eventsMapping[scEvents.receiveIce] = hcEvents.receiveIce;
 			eventsMapping[scEvents.receiveBye] = hcEvents.receiveBye;
@@ -222,8 +230,8 @@
 				if (eventsMapping.hasOwnProperty(event)) {
 					(function (eventName) {
 						serverConnector.on(eventName, function (data) {
-							if (data.connectionId) {
-								var targetHc = handshakeControllers[data.connectionId];
+							if (data.targetConnectionId) {
+								var targetHc = handshakeControllers[data.targetConnectionId];
 								if (targetHc) {
 									targetHc.trigger(eventsMapping[eventName], data);
 								}
@@ -233,20 +241,18 @@
 				}
 			}
 
-			hc.on(hcEvents.sendOffer, proxy(function (userId, connId, offer) {
-				serverConnector.sendOffer(userId, connId, offer);
+			hc.on(hcEvents.sendOffer, proxy(function (tUserId, tConnId, connId, sd) {
+				serverConnector.sendOffer(tUserId, tConnId, connId, sd);
 			}))
-			.on(hcEvents.sendAnswer, proxy(function (userId, connId, answer) {
-				serverConnector.sendAnswer(userId, connId, answer);
+			.on(hcEvents.sendAnswer, proxy(function (tUserId, tConnId, connId, sd) {
+				serverConnector.sendAnswer(tUserId, tConnId, connId, sd);
 			}))
-			.on(hcEvents.sendIce, proxy(function (userId, connId, ice) {
-				serverConnector.sendIce(userId, connId, ice);
+			.on(hcEvents.sendIce, proxy(function (tUserId, tConnId, connId, sd) {
+				serverConnector.sendIce(tUserId, tConnId, connId, sd);
 			}))
-			.on(hcEvents.sendBye, proxy(function (userId, connId) {
-				serverConnector.sendBye(userId, connId);
+			.on(hcEvents.sendBye, proxy(function (tUserId, tConnId, connId) {
+				serverConnector.sendBye(tUserId, tConnId, connId);
 			}));
-
-			self.trigger(xrtc.Room.events.connectionCreated, { userId: targetUserId, connection: connection });
 
 			connection.on(xrtc.Connection.events.connectionClosed, function () {
 				connections.splice(getConnectionIndexById(connections, connectionId), 1);
@@ -255,6 +261,8 @@
 			});
 
 			connections.push(connection);
+
+			self.trigger(xrtc.Room.events.connectionCreated, { userId: targetUserId, connection: connection });
 
 			if (typeof connectionCreated === 'function') {
 				connectionCreated({ connection: connection, handshakeController: hc });

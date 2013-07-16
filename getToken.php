@@ -22,17 +22,14 @@ $ch = curl_init();
 //set the url, number of POST vars, POST data
 curl_setopt($ch,CURLOPT_URL, $url);
 curl_setopt($ch,CURLOPT_POST, count($fields));
-//curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+curl_setopt($ch,CURLOPT_TIMEOUT, 0);
+curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 0);
 
 //execute post
 $result = curl_exec($ch);
 
 //close connection
 curl_close($ch);
-
-//$data = json_decode($result);
-
-//header("location: http://localhost/rtc_client/?token=" . $data->d->token );
 
 ?>

@@ -1,5 +1,4 @@
-﻿
-body {
+﻿body {
 	font-size:18px;
 	line-height:1.5em;
 	font-family: "proxima-nova", helvetica, arial, sans-serif;
@@ -7,18 +6,14 @@ body {
 	color:#4F6367;
 }
 
-
-
 h1, h2, h3, h4, h5, h6{
 	color:#1C2224;
 }
-
 
 .clear {
 	clear: both;
 	height: 0;
 }
-
 
 .button {
 	background:#86CE11;
@@ -203,7 +198,9 @@ table.form .button-block {
 .person .buttons .mute-audio {
 }
 
-.person.my .name {}
+.person.my .name {
+	color: #F00;
+}
 
 /* Contacts */
 #contacts-block {

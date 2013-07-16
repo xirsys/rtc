@@ -1,17 +1,15 @@
 <html>
 	<head>
-
 	</head>
-
 	<body>
-		<form method="POST" action="http://devoffice.influxis.com:41245/public/jerry/xirsys/getIceServers.php">
+		<form method="POST" action="http://localhost/rtc_client/getIceServers.php">
 			<table>
 				<tr>
 					<td>
 						Domain
 					</td>
 					<td>
-						<input type="text" name="domain" />
+						<input type="text" name="domain" value="xirsys.com" />
 					</td>
 				</tr>
 				<tr>
@@ -19,7 +17,7 @@
 						Application
 					</td>
 					<td>
-						<input type="text" name="application" />
+						<input type="text" name="application" value="default" />
 					</td>
 				</tr>
 				<tr>
@@ -43,7 +41,7 @@
 						Username
 					</td>
 					<td>
-						<input type="text" name="username" />
+						<input type="text" name="username" value="test" />
 					</td>
 				</tr>
 				<tr>
