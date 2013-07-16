@@ -170,7 +170,7 @@ var chat = {};
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantConnected, function (data) {
-					chat.addSystemMessage(data.participantId + ' entered the room.');
+					chat.addSystemMessage("'" + data.participantId + "' entered the room.");
 
 					chat.contactsList.refreshParticipants();
 				})
@@ -220,10 +220,10 @@ var chat = {};
 							});
 						})
 						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {
-							chat.addSystemMessage('Failed to create data channel ' + data.channelName + '. You need Chrome M25 or later with --enable-data-channels flag.');
+							chat.addSystemMessage('Failed to create data channel ' + data.channelName + '. Make sure that your Chrome M25 or later with --enable-data-channels flag.');
 						})
 						.on(xrtc.Connection.events.connectionOpening, function (data) {
-							connection.createDataChannel('textChat');
+							//connection.createDataChannel('textChat');
 						})
 						.on(xrtc.Connection.events.connectionEstablished, function (data) {
 							console.log('Connection is established.');
@@ -232,7 +232,7 @@ var chat = {};
 						.on(xrtc.Connection.events.connectionClosed, function (data) {
 							chat.contactsList.refreshParticipants();
 							chat.removeVideo(participantId);
-							chat.addSystemMessage('p2p connection with ' + data.userId + ' has been closed.');
+							chat.addSystemMessage("p2p connection with '" + data.userId + "' has been closed.");
 							connection = null;
 							remoteParticipantId = null;
 						})
@@ -247,7 +247,7 @@ var chat = {};
 				})
 				.on(xrtc.Room.events.connectionDeclined, function (data) {
 					chat.contactsList.refreshParticipants();
-					chat.addSystemMessage(data.userId + ' has declined your call.');
+					chat.addSystemMessage("'" + data.userId +  "' has declined your call.");
 					connection = null;
 					remoteParticipantId = null;
 				});
@@ -265,12 +265,11 @@ var chat = {};
 		},*/
 
 		acceptCall: function (incomingConnectionData) {
-			/*
 			//todo: possible to decline call if any connection already is established
-			if (connection.getState() === 'connected') {
-				incomingCall.decline();
+			if (connection && connection.getState() === 'connected') {
+				incomingConnectionData.decline();
 				return;
-			}*/
+			}
 
 			//todo: need to think about senderId property name
 			if (confirm('User "' + incomingConnectionData.senderId + '" is calling to you. Would you like to answer?')) {
@@ -309,6 +308,7 @@ var chat = {};
 			console.log('Connecting to participant...', contact);
 
 			var options = $('#connection-form').serializeObject();
+			options.createDataChannel = 'auto';
 			room.connect(contact, options);
 		},
 

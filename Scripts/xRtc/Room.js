@@ -46,9 +46,7 @@
 				};
 
 				authManager.getToken(currentUserData, function (token) {
-					// todo: think about best place of this initialization
 					roomInfo.user = userName;
-
 					serverConnector.connect(token);
 				});
 			},
@@ -73,18 +71,12 @@
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
 				}
 
-				// todo: get userdata or something like this
-
 				createConnection.call(this, currentUserData, participantId, function (connectionData) {
 					var connection = connectionData.connection;
-					// todo: need to prepare valid media content options
-					/*if (mediaContentOptions) {
-						// todo: if neccessary, appropriate data channels should be created here. Pseudo code was added for now.
-						var channels = getChannels(mediaContentOptions);
-						for (var i = 0, len = channels.length; i < len; i++) {
-							connection.createDataChannel(channels[i].name);
-						}
-					}*/
+
+					if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
+						connection.createDataChannel('autoDataChannel');
+					}
 
 					connection.open(participantId, connectionOptions);
 				});
