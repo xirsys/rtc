@@ -66,19 +66,19 @@
 				handshakeControllers = {};
 			},
 
-			connect: function (participantId, connectionOptions) {
+			connect: function (userId, connectionOptions) {
 				if (!roomInfo.user) {
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
 				}
 
-				createConnection.call(this, currentUserData, participantId, function (connectionData) {
+				createConnection.call(this, currentUserData, userId, function (connectionData) {
 					var connection = connectionData.connection;
 
 					if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
 						connection.createDataChannel('autoDataChannel');
 					}
 
-					connection.open(participantId, connectionOptions);
+					connection.open(connectionOptions);
 				});
 			},
 
@@ -167,12 +167,16 @@
 
 			var self = this;
 
+			var incomingConnectionData = {
+				userId: data.senderId
+			};
+
 			if (!roomOptions.autoReply) {
-				data.accept = proxy(onAcceptCall);
-				data.decline = proxy(onDeclineCall);
+				incomingConnectionData.accept = proxy(onAcceptCall);
+				incomingConnectionData.decline = proxy(onDeclineCall);
 			}
 
-			this.trigger(xrtc.Room.events.incomingConnection, data);
+			this.trigger(xrtc.Room.events.incomingConnection, incomingConnectionData);
 
 			if (roomOptions.autoReply) {
 				onAcceptCall.call(self);
@@ -180,9 +184,12 @@
 
 			function onAcceptCall() {
 				createConnection.call(self, currentUserData, data.senderId, function (connectionData) {
-					//todo: need to think about offer data format
-					var offerData = data.offer;
-					offerData.connectionId = data.connectionId;
+					var offerData = {
+						offer: data.offer.offer,
+						iceServers: data.offer.iceServers,
+						connectionType: data.offer.connectionType,
+						connectionId: data.connectionId
+					};
 
 					connectionData.handshakeController.trigger(hcEvents.receiveOffer, offerData);
 				});
@@ -225,6 +232,7 @@
 							if (data.targetConnectionId) {
 								var targetHc = handshakeControllers[data.targetConnectionId];
 								if (targetHc) {
+									// todo: need to specify data structure
 									targetHc.trigger(eventsMapping[eventName], data);
 								}
 							}
@@ -270,11 +278,6 @@
 			incomingConnection: 'incomingconnection',
 			connectionCreated: 'connectioncreated',
 			connectionDeclined: 'connectiondeclined',
-
-			receiveIce: 'receiveice',
-			receiveOffer: 'receiveoffer',
-			receiveAnswer: 'receiveanswer',
-			receiveBye: 'receivebye',
 
 			participantsUpdated: 'participantsupdated',
 			participantConnected: 'participantconnected',

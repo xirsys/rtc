@@ -231,7 +231,7 @@ var chat = {};
 						})
 						.on(xrtc.Connection.events.connectionClosed, function (data) {
 							chat.contactsList.refreshParticipants();
-							chat.removeVideo(participantId);
+							chat.removeVideo(data.userId);
 							chat.addSystemMessage("p2p connection with '" + data.userId + "' has been closed.");
 							connection = null;
 							remoteParticipantId = null;
@@ -272,7 +272,7 @@ var chat = {};
 			}
 
 			//todo: need to think about senderId property name
-			if (confirm('User "' + incomingConnectionData.senderId + '" is calling to you. Would you like to answer?')) {
+			if (confirm('User "' + incomingConnectionData.userId + '" is calling to you. Would you like to answer?')) {
 				incomingConnectionData.accept();
 			} else {
 				incomingConnectionData.decline();

@@ -170,7 +170,7 @@
 
 						logger.debug('sendOffer', remoteUserId, offer);
 						handshakeController.sendOffer(remoteUserId, remoteConnectionId, connectionId, request);
-						self.trigger(xrtc.Connection.events.offerSent, remoteUserId, request);
+						self.trigger(xrtc.Connection.events.offerSent, { userId: remoteUserId, offerData: request });
 					}
 
 					function onCreateOfferError(err) {
@@ -372,10 +372,10 @@
 
 		function sendIceCandidates() {
 			for (var i = 0; i < iceCandidates.length; i++) {
-				var ice = JSON.stringify(iceCandidates[i]);
+				var iceCandidate = iceCandidates[i];
 
-				handshakeController.sendIce(remoteUserId, remoteConnectionId, connectionId, ice);
-				this.trigger(xrtc.Connection.events.iceSent, ice);
+				handshakeController.sendIce(remoteUserId, remoteConnectionId, connectionId, JSON.stringify(iceCandidate));
+				this.trigger(xrtc.Connection.events.iceSent, { iceCandidate: iceCandidate });
 			}
 
 			iceCandidates = [];
@@ -384,7 +384,6 @@
 		function addRemoteStream(stream) {
 			var streamData = {
 				stream: new xrtc.Stream(stream),
-				//todo: need to think about think property name
 				userId: remoteUserId
 			};
 
@@ -412,7 +411,7 @@
 			var iceCandidate = new webrtc.RTCIceCandidate(JSON.parse(iceData.iceCandidate));
 			peerConnection.addIceCandidate(iceCandidate);
 
-			this.trigger(xrtc.Connection.events.iceAdded, iceData, iceCandidate);
+			this.trigger(xrtc.Connection.events.iceAdded, { iceCandidate: iceCandidate });
 		}
 
 		function onReceiveOffer(offerData) {
@@ -442,7 +441,7 @@
 					logger.debug('sendAnswer', offerData, answer);
 					handshakeController.sendAnswer(remoteUserId, remoteConnectionId, connectionId, request);
 
-					this.trigger(xrtc.Connection.events.answerSent, offerData, answer);
+					this.trigger(xrtc.Connection.events.answerSent, { userId: remoteUserId, answerData: request });
 
 					allowIceSending.call(this);
 				}
@@ -463,11 +462,10 @@
 
 			allowIceSending.call(this);
 
-			//todo: need to simplify structure of answer object
 			var sdp = JSON.parse(answerData.answer.answer);
 			var sessionDescription = new webrtc.RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);
-			this.trigger(xrtc.Connection.events.answerReceived, answerData, sessionDescription);
+			this.trigger(xrtc.Connection.events.answerReceived, { userId: remoteConnectionId, answerData: { answer: sessionDescription } });
 		}
 
 		function onReceiveBye() {

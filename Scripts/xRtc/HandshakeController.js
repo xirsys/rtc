@@ -10,16 +10,16 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			sendIce: function (targetUserId, targetConnectionId, connectionId, sessionDescriptionData) {
-				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, targetConnectionId, connectionId, sessionDescriptionData);
+			sendIce: function (targetUserId, targetConnectionId, connectionId, iceCandidateData) {
+				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, targetConnectionId, connectionId, iceCandidateData);
 			},
 
-			sendOffer: function (targetUserId, targetConnectionId, connectionId, sessionDescriptionData) {
-				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, targetConnectionId, connectionId, sessionDescriptionData);
+			sendOffer: function (targetUserId, targetConnectionId, connectionId, offerData) {
+				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, targetConnectionId, connectionId, offerData);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, connectionId, sessionDescriptionData) {
-				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, targetConnectionId, connectionId, sessionDescriptionData);
+			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answerData) {
+				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, targetConnectionId, connectionId, answerData);
 			},
 
 			sendBye: function (targetUserId, targetConnectionId, connectionId) {
