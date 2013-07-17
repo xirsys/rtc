@@ -158,7 +158,7 @@
 			return resultIndex;
 		}
 
-		function onIncomingConnection(data/* { connectionId, offer: { offer, iceServers, connectionType }, receiverId, senderId, targetConnectionId } */) {
+		function onIncomingConnection(data) {
 			// Skip 'offer' if it is not for me. It is temporary fix, because server shouldn't pass the 'offer' to wrong target.
 			// Sometimes it happened that the server had sent the 'offer' to all/wrong participants. So we decided not touch this check.
 			if (data.receiverId !== roomInfo.user) {
@@ -185,9 +185,9 @@
 			function onAcceptCall() {
 				createConnection.call(self, currentUserData, data.senderId, function (connectionData) {
 					var offerData = {
-						offer: data.offer.offer,
-						iceServers: data.offer.iceServers,
-						connectionType: data.offer.connectionType,
+						offer: data.offer,
+						iceServers: data.iceServers,
+						connectionType: data.connectionType,
 						connectionId: data.connectionId
 					};
 
@@ -201,9 +201,16 @@
 			}
 		}
 
-		function onCloseConnection(data/* { connectionId, options: { type }, receiverId, senderId, targetConnectionId } */) {
-			if (data.options && data.options.type === 'decline') {
-				this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
+		function onCloseConnection(data) {
+			if (data.targetConnectionId) {
+				var targetHc = handshakeControllers[data.targetConnectionId];
+				if (targetHc) {
+					if (data.options && data.options.type === 'decline') {
+						this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
+					}
+
+					targetHc.trigger(hcEvents.receiveBye);
+				}
 			}
 		}
 
@@ -216,29 +223,20 @@
 
 			handshakeControllers[connectionId] = hc;
 
-			serverConnector.on(scEvents.receiveAnswer, function (data/* { answer: { answer }, connectionId, receiverId, senderId, targetConnectionId } */) {
+			serverConnector.on(scEvents.receiveAnswer, function (data) {
 				if (data.targetConnectionId) {
 					var targetHc = handshakeControllers[data.targetConnectionId];
 					if (targetHc) {
-						targetHc.trigger(hcEvents.receiveAnswer, { connectionId: data.connectionId, answer: data.answer.answer });
+						targetHc.trigger(hcEvents.receiveAnswer, { connectionId: data.connectionId, answer: data.answer });
 					}
 				}
 			});
 
-			serverConnector.on(scEvents.receiveIce, function (data/*{ connectionId, iceCandidate, receiverId, senderId, targetConnectionId }*/) {
+			serverConnector.on(scEvents.receiveIce, function (data) {
 				if (data.targetConnectionId) {
 					var targetHc = handshakeControllers[data.targetConnectionId];
 					if (targetHc) {
 						targetHc.trigger(hcEvents.receiveIce, { iceCandidate: data.iceCandidate });
-					}
-				}
-			});
-
-			serverConnector.on(scEvents.receiveBye, function (data/* { connectionId, options: { type }, receiverId, senderId, targetConnectionId } */) {
-				if (data.targetConnectionId) {
-					var targetHc = handshakeControllers[data.targetConnectionId];
-					if (targetHc) {
-						targetHc.trigger(hcEvents.receiveBye);
 					}
 				}
 			});
