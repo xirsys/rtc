@@ -49,8 +49,7 @@
 				send(request);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answer)
-			{
+			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answer) {
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveAnswer,
 					targetUserId: targetUserId,
@@ -64,8 +63,7 @@
 				send(request);
 			},
 
-			sendIce: function (targetUserId, targetConnectionId, connectionId, iceCandidate)
-			{
+			sendIce: function (targetUserId, targetConnectionId, connectionId, iceCandidate) {
 				var request = {
 					eventName: xrtc.ServerConnector.events.receiveIce,
 					targetUserId: targetUserId,
@@ -180,71 +178,120 @@
 		}
 
 		function socketOnMessage(msg) {
-			var data = { event: msg };
+			var data = { message: msg };
 			logger.debug('message', data);
 			this.trigger(xrtc.ServerConnector.events.message, data);
 
-			var message = parseMessage.call(this, msg);
-			logger.info('message', msg, message);
-			if (message) {
-				this.trigger(message.eventName, message.data);
-			}
+			handleServerMessage.call(this, msg);
 		}
 
-		function parseMessage(msg) {
-			var json, result = null;
+		function validateServerMessage(msg) {
+			var validationResult = true;
 			if (msg.data === '"Token invalid"') {
-				result = {
-					//todo: will be better to rename this event to tokenInvalid
-					eventName: xrtc.ServerConnector.events.tokenInvalid,
-					data: {
-						token: currentToken
-					}
-				};
-			} else {
-				try {
-					json = JSON.parse(msg.data);
-					switch (json.type) {
-						case 'peers':
-							result = {
-								eventName: json.type,
-								data: {
-									senderId: json.userid,
-									room: json.room,
-									connections: json.message.users,
-								}
-							};
-							break;
-						case 'peer_connected':
-						case 'peer_removed':
-							result = {
-								eventName: json.type,
-								data: {
-									senderId: json.userid,
-									room: json.room,
-									participantId: json.message,
-								}
-							};
-							break;
-						default:
-							logger.debug('parseMessage', msg.data);
-							result = json.message;
-							if (!result.data) {
-								result.data = {};
-							}
-							result.data.senderId = json.userid;
-							result.data.receiverId = result.targetUserId;
-							break;
-					}
-				} catch (e) {
-					var error = new xrtc.CommonError('parseMessage', 'Message format error', e);
-					logger.error('parseMessage', error, msg);
-
-					this.trigger(xrtc.ServerConnector.events.messageFormatError, error);
-				}
+				validationResult = false;
+				this.trigger(xrtc.ServerConnector.events.tokenInvalid, { token: currentToken });
 			}
 
-			return result;
+			return validationResult;
+		}
+
+		function parseServerMessage(msg) {
+			var resultObject;
+
+			try {
+				resultObject = JSON.parse(msg.data);
+			} catch (e) {
+				resultObject = null;
+				var error = new xrtc.CommonError('parseServerMessage', 'Message format error', e);
+				logger.error('parseServerMessage', error, msg);
+
+				this.trigger(xrtc.ServerConnector.events.messageFormatError, error);
+			}
+
+			return resultObject;
+		}
+
+		function handleServerMessage(msg) {
+			if (validateServerMessage(msg)) {
+				var data = parseServerMessage(msg);
+				if (data.type == xrtc.ServerConnector.events.participantsUpdated) {
+					var participantsData = {
+						senderId: data.userid,
+						room: data.room,
+						connections: data.message.users,
+					};
+					this.trigger(xrtc.ServerConnector.events.participantsUpdated, participantsData);
+				}
+				else if (data.type == xrtc.ServerConnector.events.participantConnected) {
+					var connectedData = {
+						senderId: data.userid,
+						room: data.room,
+						participantId: data.message,
+					};
+					this.trigger(xrtc.ServerConnector.events.participantConnected, connectedData);
+				}
+				else if (data.type == xrtc.ServerConnector.events.participantDisconnected) {
+					var disconnectedData = {
+						senderId: data.userid,
+						room: data.room,
+						participantId: data.message,
+					};
+					this.trigger(xrtc.ServerConnector.events.participantDisconnected, disconnectedData);
+				}
+				else if (data.type == xrtc.ServerConnector.events.receiveOffer) {
+					var offerData = {
+						senderId: data.userid,
+						receiverId: data.message.targetUserId,
+						connectionId: data.message.data.connectionId,
+						offer: {
+							offer: data.message.data.offer.offer,
+							iceServers: data.message.data.offer.iceServers,
+							connectionType: data.message.data.offer.connectionType
+						},
+						targetConnectionId: data.message.data.targetConnectionId
+					};
+
+					this.trigger(xrtc.ServerConnector.events.receiveOffer, offerData);
+				}
+				else if (data.type == xrtc.ServerConnector.events.receiveAnswer) {
+					var answerData = {
+						senderId: data.userid,
+						receiverId: data.message.targetUserId,
+						connectionId: data.message.data.connectionId,
+						answer: {
+							answer: data.message.data.answer.answer
+						},
+						targetConnectionId: data.message.data.targetConnectionId
+					};
+
+					this.trigger(xrtc.ServerConnector.events.receiveAnswer, answerData);
+				}
+				else if (data.type == xrtc.ServerConnector.events.receiveIce) {
+					var iceData = {
+						senderId: data.userid,
+						receiverId: data.message.targetUserId,
+						connectionId: data.message.data.connectionId,
+						iceCandidate: data.message.data.iceCandidate,
+						targetConnectionId: data.message.data.targetConnectionId
+					};
+
+					this.trigger(xrtc.ServerConnector.events.receiveIce, iceData);
+				}
+				else if (data.type == xrtc.ServerConnector.events.receiveBye) {
+					var byeData = {
+						senderId: data.userid,
+						receiverId: data.message.targetUserId,
+						connectionId: data.message.data.connectionId,
+						targetConnectionId: data.message.data.targetConnectionId
+					};
+
+					if (data.message.data.options && data.message.data.options.type) {
+						byeData.options = { type: data.message.data.options.type };
+					}
+
+					this.trigger(xrtc.ServerConnector.events.receiveBye, byeData);
+				}
+			}
 		}
 
 		function formatRequest(request) {
@@ -266,10 +313,10 @@
 
 		function pingServer(interval) {
 			return exports.setInterval(function () {
-					// ping request is empty message
-					var pingRequest = {};
-					send.call(this, pingRequest);
-				},
+				// ping request is empty message
+				var pingRequest = {};
+				send.call(this, pingRequest);
+			},
 			interval);
 		}
 	});
