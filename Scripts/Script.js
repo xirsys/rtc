@@ -142,15 +142,6 @@ var chat = {};
 			$('#step1, #step2').toggle();
 			userData = ud;
 
-			// heartbeat interval is 30sec
-			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
-
-			// heartbeat interval is not defined (infinite)
-			//serverConnector = new xRtc.ServerConnector({ pingInterval: null });
-
-			//heartbeat interval is 5sec (default value)
-			//serverConnector = new xRtc.ServerConnector();
-
 			xrtc.getUserMedia({ video: true, audio: true },
 				function (stream) {
 					chat.addVideo({ stream: stream, isLocalStream: true, userId: userData.name });
@@ -163,6 +154,15 @@ var chat = {};
 				});
 
 			authManager = new xrtc.AuthManager();
+
+			// heartbeat interval is 30sec
+			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
+
+			// heartbeat interval is not defined (infinite)
+			//serverConnector = new xRtc.ServerConnector({ pingInterval: null });
+
+			//heartbeat interval is 5sec (default value)
+			//serverConnector = new xRtc.ServerConnector();
 			serverConnector = new xrtc.ServerConnector();
 
 			room = new xRtc.Room(userData.room, authManager, serverConnector)
@@ -401,6 +401,11 @@ var chat = {};
 				.removeClass('hide')
 				.get(0);
 			stream.assignTo(video);
+
+			if (data.isLocalStream) {
+				// automatically setiing volume to zero, so that no echoing / feedback occurs
+				video.volume = 0;
+			}
 
 			participantItem.data('stream', stream);
 		},
