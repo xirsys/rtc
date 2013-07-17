@@ -315,7 +315,7 @@
 				function onIceStateChange(evt) {
 					var state = getIceState.call(this);
 
-					// remove hardcoded value
+					// remove hardcoded value. There is a bug!
 					if (state === 'connected') {
 						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
 					}
@@ -462,7 +462,7 @@
 
 			allowIceSending.call(this);
 
-			var sdp = JSON.parse(answerData.answer.answer);
+			var sdp = JSON.parse(answerData.answer);
 			var sessionDescription = new webrtc.RTCSessionDescription(sdp);
 			peerConnection.setRemoteDescription(sessionDescription);
 			this.trigger(xrtc.Connection.events.answerReceived, { userId: remoteConnectionId, answerData: { answer: sessionDescription } });

@@ -403,7 +403,7 @@ var chat = {};
 			stream.assignTo(video);
 
 			if (data.isLocalStream) {
-				// automatically setiing volume to zero, so that no echoing / feedback occurs
+				// automatically setting volume to zero, so that no echoing / feedback occurs
 				video.volume = 0;
 			}
 

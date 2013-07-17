@@ -205,11 +205,6 @@
 			if (data.options && data.options.type === 'decline') {
 				this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
 			}
-
-			var targetHc = handshakeControllers[data.targetConnectionId];
-			if (targetHc) {
-				targetHc.trigger(hcEvents.receiveBye, data);
-			}
 		}
 
 		function createConnection(userData, targetUserId, connectionCreated) {
@@ -221,25 +216,35 @@
 
 			handshakeControllers[connectionId] = hc;
 
-			var eventsMapping = {};
-			eventsMapping[scEvents.receiveAnswer] = hcEvents.receiveAnswer;
-			eventsMapping[scEvents.receiveIce] = hcEvents.receiveIce;
-			eventsMapping[scEvents.receiveBye] = hcEvents.receiveBye;
-			for (var event in eventsMapping) {
-				if (eventsMapping.hasOwnProperty(event)) {
-					(function (eventName) {
-						serverConnector.on(eventName, function (data) {
-							if (data.targetConnectionId) {
-								var targetHc = handshakeControllers[data.targetConnectionId];
-								if (targetHc) {
-									// todo: need to specify data structure
-									targetHc.trigger(eventsMapping[eventName], data);
-								}
-							}
-						});
-					})(event);
+			serverConnector.on(scEvents.receiveAnswer, function(data) {
+				if (data.targetConnectionId) {
+					var targetHc = handshakeControllers[data.targetConnectionId];
+					if (targetHc) {
+						//data: { answer: { answer }, connectionId, receiverId, senderId, targetConnectionId }
+						targetHc.trigger(hcEvents.receiveAnswer, { connectionId: data.connectionId, answer: data.answer.answer });
+					}
 				}
-			}
+			});
+
+			serverConnector.on(scEvents.receiveIce, function (data) {
+				if (data.targetConnectionId) {
+					var targetHc = handshakeControllers[data.targetConnectionId];
+					if (targetHc) {
+						//data: { connectionId, iceCandidate, receiverId, senderId, targetConnectionId }
+						targetHc.trigger(hcEvents.receiveIce, { iceCandidate: data.iceCandidate });
+					}
+				}
+			});
+
+			serverConnector.on(scEvents.receiveBye, function (data) {
+				if (data.targetConnectionId) {
+					var targetHc = handshakeControllers[data.targetConnectionId];
+					if (targetHc) {
+						//data: { connectionId, options: { type }, receiverId, senderId, targetConnectionId }
+						targetHc.trigger(hcEvents.receiveBye);
+					}
+				}
+			});
 
 			hc.on(hcEvents.sendOffer, proxy(function (tUserId, tConnId, connId, sd) {
 				serverConnector.sendOffer(tUserId, tConnId, connId, sd);
