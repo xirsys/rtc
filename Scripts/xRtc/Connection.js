@@ -315,8 +315,8 @@
 				function onIceStateChange(evt) {
 					var state = getIceState.call(this);
 
-					// remove hardcoded value. There is a bug!
 					if (state === 'connected') {
+						// todo: Need to think about name of this event
 						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
 					}
 				}
@@ -325,10 +325,12 @@
 					addRemoteStream.call(this, evt.stream);
 				}
 
+				// add streams to native webrtc peerConnection which were added before
 				for (var i = 0, len = localStreams.length; i < len; i++) {
 					peerConnection.addStream(localStreams[i]);
 				}
 
+				// create data channnels which were created(registered for creation) before
 				for (var i = 0, len = dataChannels.length; i < len; i++) {
 					createDataChannel.call(this, dataChannels[i]);
 				}
