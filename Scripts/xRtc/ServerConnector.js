@@ -217,7 +217,7 @@
 				var participantsData = {
 					senderId: data.userid,
 					room: data.room,
-					connections: data.message.users,
+					participants: data.message.users,
 				};
 				this.trigger(scEvents.participantsUpdated, participantsData);
 			}
@@ -280,7 +280,7 @@
 					senderId: data.userid,
 					//receiverId: data.message.targetUserId,
 					connectionId: data.message.data.connectionId,
-					targetConnectionId: data.message.data.targetConnectionId/////////////////
+					targetConnectionId: data.message.data.targetConnectionId
 				};
 
 				if (data.message.data.options && data.message.data.options.type) {

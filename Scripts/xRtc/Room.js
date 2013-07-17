@@ -105,7 +105,7 @@
 					.on(scEvents.connectionClose, proxy(function (event) { this.trigger(xrtc.Room.events.leave); }))
 					.on(scEvents.tokenInvalid, proxy(function (event) { this.trigger(xrtc.Room.events.tokenInvalid); }))
 					.on(scEvents.participantsUpdated, proxy(function (data) {
-						participants = data.connections;
+						participants = data.participants;
 						sortParticipants();
 
 						this.trigger(xrtc.Room.events.participantsUpdated, { participants: this.getParticipants() });
