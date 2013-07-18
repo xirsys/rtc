@@ -99,7 +99,8 @@
 		};
 	});
 
-	xrtc.Class(xrtc, 'Connection', function Connection(ud, targetId, hc, am) {
+	// todo: need to optimize the constructor sugnature of Connection object
+	xrtc.Class(xrtc, 'Connection', function Connection(ud, targetId, hc, am, data) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			// need to think about necessity of this property. Maybe will be better to store function which returns this data.
@@ -124,7 +125,9 @@
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
 			iceCandidates = [],
-			connectionId = generateGuid();
+			connectionId = generateGuid(),
+			// any user defined data. The data helps to identify the connection and differ the connection from other connections
+			connectionData = data;
 
 		subscribeToHandshakeControllerEvents.call(this);
 
@@ -207,6 +210,11 @@
 
 			createDataChannel: function (name) {
 				dataChannels.push(name);
+			},
+
+			getData: function () {
+				/// <summary>Data is initialized during the opening of the connection. The data helps to identify the connection and differ the connection from other connections</summary>
+				return connectionData;
 			},
 
 			getState: function () {

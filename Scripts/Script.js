@@ -204,6 +204,9 @@ var chat = {};
 
 					chat.subscribe(connection, xrtc.Connection.events);
 
+					// user specific data which was used in room.connect method
+					var data = connection.getData();
+
 					connection
 						.on(xrtc.Connection.events.localStreamAdded, function (data) { })
 						.on(xrtc.Connection.events.remoteStreamAdded, function (data) {
@@ -309,6 +312,10 @@ var chat = {};
 
 			var options = $('#connection-form').serializeObject();
 			options.createDataChannel = 'auto';
+
+			// any user data object
+			options.data = { roomConnection: true, myMessage: "hello world" };
+
 			room.connect(contact, options);
 		},
 

@@ -76,7 +76,9 @@
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
 				}
 
-				createConnection.call(this, currentUserData, userId, function (connectionData) {
+				var connectionData = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
+
+				createConnection.call(this, currentUserData, userId, connectionData, function (connectionData) {
 					var connection = connectionData.connection;
 
 					if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
@@ -191,7 +193,8 @@
 			}
 
 			function onAcceptCall() {
-				createConnection.call(self, currentUserData, data.senderId, function (connectionData) {
+				// todo: need to transfer remote connection data here
+				createConnection.call(self, currentUserData, data.senderId, null, function (connectionData) {
 					var offerData = {
 						offer: data.offer,
 						iceServers: data.iceServers,
@@ -222,11 +225,11 @@
 			}
 		}
 
-		function createConnection(userData, targetUserId, connectionCreated) {
+		function createConnection(userData, targetUserId, connectionData, connectionCreated) {
 			var self = this;
 			var hc = new xrtc.HandshakeController();
 
-			var connection = new xRtc.Connection(userData, targetUserId, hc, authManager);
+			var connection = new xRtc.Connection(userData, targetUserId, hc, authManager, connectionData);
 			var connectionId = connection.getId();
 
 			handshakeControllers[connectionId] = hc;
