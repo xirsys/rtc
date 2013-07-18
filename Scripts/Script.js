@@ -94,7 +94,8 @@ var chat = {};
 		serverConnector = null,
 		room = null,
 		textChannel = null,
-		userData = null,
+		userName = null,
+		roomInfo = null,
 		systemName = 'APP',
 		logger = false,
 		settings = {
@@ -140,11 +141,16 @@ var chat = {};
 
 		joinRoom: function (ud) {
 			$('#step1, #step2').toggle();
-			userData = ud;
+			userName = ud.name;
+			roomInfo = {
+				domain: ud.domain,
+				application: ud.application,
+				name: ud.room
+			};
 
 			xrtc.getUserMedia({ video: true, audio: true },
 				function (stream) {
-					chat.addVideo({ stream: stream, isLocalStream: true, userId: userData.name });
+					chat.addVideo({ stream: stream, isLocalStream: true, userId: userName });
 					localMediaStreamObtained = true;
 					localMediaStream = stream;
 					chat.contactsList.updateState();
@@ -156,16 +162,16 @@ var chat = {};
 			authManager = new xrtc.AuthManager();
 
 			// heartbeat interval is 30sec
-			//serverConnector = new xRtc.ServerConnector({ pingInterval: 30000 });
+			//serverConnector = new xrtc.ServerConnector({ pingInterval: 30000 });
 
 			// heartbeat interval is not defined (infinite)
-			//serverConnector = new xRtc.ServerConnector({ pingInterval: null });
+			//serverConnector = new xrtc.ServerConnector({ pingInterval: null });
 
 			//heartbeat interval is 5sec (default value)
-			//serverConnector = new xRtc.ServerConnector();
+			//serverConnector = new xrtc.ServerConnector();
 			serverConnector = new xrtc.ServerConnector();
 
-			room = new xRtc.Room(userData.room, authManager, serverConnector)
+			room = new xrtc.Room(roomInfo, authManager, serverConnector)
 				.on(xrtc.Room.events.participantsUpdated, function (data) {
 					chat.contactsList.refreshParticipants();
 				})
@@ -180,20 +186,14 @@ var chat = {};
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.enter, function () {
-					var roomInfo = room.getInfo();
-					userData = {
-						domain: roomInfo.domain,
-						application: roomInfo.application,
-						room: roomInfo.name,
-						name: roomInfo.user
-					};
+					roomInfo = room.getInfo();
 					chat.addSystemMessage('You have connected to the server.');
 				})
 				.on(xrtc.Room.events.leave, function () {
 					chat.addSystemMessage('You have been disconnectod by the server.');
 
 					chat.addSystemMessage('Trying reconnect with the server.');
-					room.enter(userData.name, { autoReply: settings.autoAcceptCall });
+					room.enter(userName, { autoReply: settings.autoAcceptCall });
 				})
 				.on(xrtc.Room.events.tokenInvalid, function (data) {
 					chat.addSystemMessage('Your token is invalid. Maybe the token is expired.');
@@ -256,7 +256,7 @@ var chat = {};
 			chat.subscribe(serverConnector, xrtc.ServerConnector.events);
 			chat.subscribe(room, xrtc.Room.events);
 
-			room.enter(userData.name, { autoReply: settings.autoAcceptCall });
+			room.enter(userName, { autoReply: settings.autoAcceptCall });
 		},
 
 		/*leaveRoom: function () {
@@ -283,7 +283,7 @@ var chat = {};
 			console.log('Sending message...', message);
 			if (textChannel) {
 				textChannel.send(message);
-				chat.addMessage(userData.name, message, true);
+				chat.addMessage(userName, message, true);
 			} else {
 				chat.addSystemMessage('DataChannel is not created. Please, see log.');
 			}
@@ -328,7 +328,7 @@ var chat = {};
 			},
 
 			refreshParticipants: function () {
-				var roomInfo = room.getInfo();
+				roomInfo = room.getInfo();
 				var contactsData = {
 					roomName: roomInfo.name
 				};
@@ -344,14 +344,13 @@ var chat = {};
 			},
 
 			convertContacts: function (participants) {
-				var contacts = [],
-					currentName = userData.name;
+				var contacts = [];
 
 				for (var i = 0, len = participants.length; i < len; i++) {
 					var name = participants[i];
 					contacts[i] = {
 						name: name,
-						isMe: name === currentName
+						isMe: name === userName
 					};
 				}
 

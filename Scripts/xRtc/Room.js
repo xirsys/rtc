@@ -30,14 +30,19 @@
 			_logger: logger,
 
 			enter: function (userName, options) {
+				if (!userName) {
+					throw new xrtc.CommonError('enter', 'User name should be specified.');
+				}
+
 				subscribeToServerEvents.call(this);
 
 				// roomOptions initialization
-				xrtc.Class.extend(roomOptions, xrtc.Connection.settings.options);
+				xrtc.Class.extend(roomOptions, xrtc.Room.settings.options);
 				if (options) {
 					xrtc.Class.extend(roomOptions, options);
 				};
 
+				// userData initialization
 				currentUserData = {
 					domain: roomInfo.domain,
 					application: roomInfo.application,
@@ -287,7 +292,7 @@
 
 		settings: {
 			info: {
-				domain: 'xirsys.com', //exports.document.domain,
+				domain: exports.document.domain,
 				application: 'default',
 				name: 'default'
 			},
