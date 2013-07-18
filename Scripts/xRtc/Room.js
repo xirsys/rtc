@@ -92,7 +92,10 @@
 			},
 
 			getConnections: function () {
-				return connections;
+				//return the copy of array
+				return connections.map(function (connection) {
+					return connection;
+				});
 			},
 
 			getParticipants: function () {

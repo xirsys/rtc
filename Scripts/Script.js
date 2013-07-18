@@ -181,7 +181,7 @@ var chat = {};
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantDisconnected, function (data) {
-					chat.addSystemMessage(data.participantId + ' left the room.');
+					chat.addSystemMessage("'" + data.participantId + ' left the room.');
 
 					chat.contactsList.refreshParticipants();
 				})
@@ -399,10 +399,38 @@ var chat = {};
 			var video = participantItem.find('video')
 				.removeClass('hide')
 				.get(0);
+
+			/*
+			if (xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.chrome) {
+				if (!data.isLocalStream) {
+					window.setInterval(function() {
+						chat.addSystemMessage(
+							"Frames='" + video.webkitDecodedFrameCount +
+								//"', AudioBytes='" + video.webkitAudioDecodedByteCount +
+								//"', VideoBytes='" + video.webkitVideoDecodedByteCount +
+								"', DroppedFrames='" + video.webkitDroppedFrameCount + "'.");
+					}, 3000);
+				}
+			} else if (xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox) {
+				if (!data.isLocalStream) {
+					window.setInterval(function () {
+						chat.addSystemMessage(
+							"PaintedFrames='" + video.mozPaintedFrames +
+								//"', Frames='" + video.mozDecodedFrames +
+								//"', FrameDelay='" + video.mozFrameDelay + 
+								//"', ParsedFrames='" + video.mozParsedFrames +
+								//"', PresentedFrames='" + video.mozPresentedFrames + "'.");
+								"'.");
+					}, 3000);
+				}
+			}
+			*/
+
 			stream.assignTo(video);
 
 			if (data.isLocalStream) {
 				// automatically setting volume to zero, so that no echoing / feedback occurs
+				// volume == 1 if enabled, volume == 0 if disabled
 				video.volume = 0;
 			}
 

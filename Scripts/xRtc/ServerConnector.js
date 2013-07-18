@@ -351,7 +351,7 @@
 			receiveIce: 'receiveice',
 			receiveBye: 'receivebye',
 
-			/* Server events */
+			/* Server generated events */
 			participantsUpdated: 'peers',
 			participantConnected: 'peer_connected',
 			participantDisconnected: 'peer_removed'
