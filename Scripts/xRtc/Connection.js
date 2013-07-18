@@ -126,7 +126,7 @@
 			// because the remote peerConnection still not created.
 			iceCandidates = [],
 			connectionId = generateGuid(),
-			// any user defined data. The data helps to identify the connection and differ the connection from other connections
+			// User data conainer. The data helps to identify the connection and differ the connection from other connections
 			connectionData = data;
 
 		subscribeToHandshakeControllerEvents.call(this);
@@ -167,6 +167,7 @@
 
 						var request = {
 							offer: JSON.stringify(offer),
+							connectionData: connectionData,
 							connectionType: iceFilter.getType(),
 							iceServers: iceServers
 						};

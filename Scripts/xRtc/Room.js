@@ -76,9 +76,9 @@
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
 				}
 
-				var connectionData = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
+				var connectionDataContainer = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
 
-				createConnection.call(this, currentUserData, userId, connectionData, function (connectionData) {
+				createConnection.call(this, currentUserData, userId, connectionDataContainer, function (connectionData) {
 					var connection = connectionData.connection;
 
 					if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
@@ -182,6 +182,7 @@
 			};
 
 			if (!roomOptions.autoReply) {
+				incomingConnectionData.data = data.connectionData;
 				incomingConnectionData.accept = proxy(onAcceptCall);
 				incomingConnectionData.decline = proxy(onDeclineCall);
 			}
@@ -194,12 +195,13 @@
 
 			function onAcceptCall() {
 				// todo: need to transfer remote connection data here
-				createConnection.call(self, currentUserData, data.senderId, null, function (connectionData) {
+				createConnection.call(self, currentUserData, data.senderId, data.connectionData, function (connectionData) {
 					var offerData = {
 						offer: data.offer,
 						iceServers: data.iceServers,
 						connectionType: data.connectionType,
-						connectionId: data.connectionId
+						connectionId: data.connectionId,
+						connectionData: data.connectionData
 					};
 
 					connectionData.handshakeController.trigger(hcEvents.receiveOffer, offerData);
@@ -208,7 +210,7 @@
 
 			function onDeclineCall() {
 				//todo: need to think about 'bye' options definition and about senderId property name
-				serverConnector.sendBye(data.senderId, data.connectionId, null, { type: 'decline' });
+				serverConnector.sendBye(data.senderId, data.connectionId, data.connectionData, { type: 'decline' });
 			}
 		}
 

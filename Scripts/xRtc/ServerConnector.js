@@ -36,28 +36,28 @@
 				}
 			},
 
-			sendOffer: function (targetUserId, targetConnectionId, connectionId, offer) {
+			sendOffer: function (targetUserId, targetConnectionId, connectionId, offerData) {
 				var request = {
 					eventName: scEvents.receiveOffer,
 					targetUserId: targetUserId,
 					data: {
 						targetConnectionId: targetConnectionId,
 						connectionId: connectionId,
-						offer: offer
+						offer: offerData
 					}
 				};
 
 				send(request);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answer) {
+			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answerData) {
 				var request = {
 					eventName: scEvents.receiveAnswer,
 					targetUserId: targetUserId,
 					data: {
 						targetConnectionId: targetConnectionId,
 						connectionId: connectionId,
-						answer: answer
+						answer: answerData
 					}
 				};
 
@@ -248,6 +248,7 @@
 					offer: data.message.data.offer.offer,
 					iceServers: data.message.data.offer.iceServers,
 					connectionType: data.message.data.offer.connectionType,
+					connectionData: data.message.data.offer.connectionData,
 					//targetConnectionId: data.message.data.targetConnectionId
 				};
 
