@@ -1,7 +1,7 @@
 <?php
 
 //set POST variables
-$url = 'http://beta.xirsys.com/getToken';
+$url = 'https://beta.xirsys.com/getToken';
 $fields_string = '';
 $fields = array(
 	'domain' => $_POST["domain"],

@@ -157,9 +157,9 @@
 		},
 
 		settings: {
-			URL: 'http://beta.xirsys.com/',
-			tokenHandler: 'http://beta.xirsys.com/getToken',
-			iceHandler: 'http://beta.xirsys.com/getIceServers',
+			URL: 'https://beta.xirsys.com/',
+			tokenHandler: 'https://beta.xirsys.com/getToken',
+			iceHandler: 'https://beta.xirsys.com/getIceServers',
 
 			tokenParams: {
 				type: 'token_request',

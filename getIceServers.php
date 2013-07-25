@@ -1,7 +1,7 @@
 <?php
 
 //set POST variables
-$url = 'http://beta.xirsys.com/getIceServers';
+$url = 'https://beta.xirsys.com/getIceServers';
 $fields_string = '';
 $fields = array(
 	'domain' => $_POST["domain"],
