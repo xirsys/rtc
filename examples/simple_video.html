@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>WebRTC Simple Video example</title>
+	<script src="../Scripts/xRtc/Common.js"></script>
+	<script src="../Scripts/xRtc/Class.js"></script>
+	<script src="../Scripts/xRtc/CommonError.js"></script>
+	<script src="../Scripts/xRtc/Logger.js"></script>
+	<script src="../Scripts/xRtc/EventDispatcher.js"></script>
+	<script src="../Scripts/xRtc/Ajax.js"></script>
+	<script src="../Scripts/xRtc/ServerConnector.js"></script>
+	<script src="../Scripts/xRtc/AuthManager.js"></script>
+	<script src="../Scripts/xRtc/DataChannel.js"></script>
+	<script src="../Scripts/xRtc/HandshakeController.js"></script>
+	<script src="../Scripts/xRtc/UserMedia.js"></script>
+	<script src="../Scripts/xRtc/Connection.js"></script>
+	<script src="../Scripts/xRtc/Stream.js"></script>
+	<script src="../Scripts/xRtc/Room.js"></script>
+
+	<script src="../Scripts/jquery-2.0.2.min.js"></script>
+
+	<script type="text/javascript">
+		<!--
+
+		/**************************************************
+		 * This is the first function called which kicks
+		 * off our simple application.
+		 **************************************************/
+		function onload() {
+			// set middle tier service proxies (on server).
+			// this is the server pages which handle the calls 
+			// to the xirsys services.
+			xRtc.AuthManager.settings.tokenHandler = "getToken.php";
+			xRtc.AuthManager.settings.iceHandler = "getIceServers.php";
+
+			// now, initilize our application
+			init();
+		};
+
+		/**************************************************
+		 * Here, we register all of our events and handlers
+		 **************************************************/
+		function init() {
+			$('#join').on('click', function (e) {
+				e.preventDefault();
+
+				xRtc.getUserMedia(
+					{ video: true, audio: true },
+					function (stream) {
+						addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
+					},
+					function (err) {
+						chat.addSystemMessage('Get media stream error. ' + err);
+					}
+				);
+
+				var roomInfo = {
+					domain: $('#domain').val(),
+					application: $('#application').val(),
+					name: $('#room').val()
+				};
+
+				authManager = new xRtc.AuthManager();
+				serverConnector = new xRtc.ServerConnector();
+				room = new xRtc.Room(roomInfo, authManager, serverConnector);
+			});
+		}
+
+		function addVideo(data) {
+			var stream = data.stream;
+			var userId = data.userId;
+
+			var video = (data.isLocalStream) ? $('#vid1') : $('#vid2');
+
+			stream.assignTo(video);
+
+			if ( data.isLocalStream ) {
+				video.volume = 0;
+			}
+		}
+
+		//-->
+	</script>
+</head>
+<body onload="onload();">
+
+	<div>
+		<h3>Room</h3>
+		<div>
+			<div>
+				<label>Users: </label>
+				<select id="userlist"></select>
+				<input type="button" id="join" value="Connect" />
+			</div>
+		</div>
+	</div>
+
+	<div>
+		<div>
+			<video id="vid1"></video>
+		</div>
+
+		<div>
+			<video id="vid2"></video>
+		</div>
+	</div>
+
+	<div>
+		<h3>Credentials</h3>
+		<div>
+			<div>
+				<label>Domain: </label>
+				<input type="text" id="domain" />
+			</div>
+		</div>
+		<div>
+			<div>
+				<label>Application: </label>
+				<input type="text" id="application" />
+			</div>
+		</div>
+		<div>
+			<div>
+				<label>Room: </label>
+				<input type="text" id="room" />
+			</div>
+		</div>
+		<div>
+			<div>
+				<label>Username: </label>
+				<input type="text" id="username" />
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>
