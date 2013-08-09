@@ -20,31 +20,33 @@
 	<script src="../Scripts/jquery-2.0.2.min.js"></script>
 
 	<script src="utils.js"></script>
+
+	<link href="styles.css" rel="stylesheet" />
 </head>
 <body>
 
-	<div>
+	<div class="panel">
 		<h3>Room</h3>
 		<div>
 			<div>
 				<label>Users: </label>
 				<select id="userlist"></select>
-				<input type="button" id="connect" value="Connect" />
+			</div>
+			<div>
+				<label></label>
+				<button id="connect">Connect</button>
 			</div>
 		</div>
 	</div>
 
-	<div>
+	<div class="panel">
 		<div>
-			<video id="vid1" width="160" height="120"></video>
-		</div>
-
-		<div>
-			<video id="vid2" width="160" height="120"></video>
+			<video id="vid1"></video>
+			<video id="vid2"></video>
 		</div>
 	</div>
 
-	<div>
+	<div class="panel">
 		<h3>Credentials</h3>
 		<div>
 			<div>
