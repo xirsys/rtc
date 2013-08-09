@@ -18,6 +18,8 @@
 	<script src="../Scripts/xRtc/Room.js"></script>
 
 	<script src="../Scripts/jquery-2.0.2.min.js"></script>
+
+	<script src="utils.js"></script>
 </head>
 <body>
 
@@ -86,25 +88,13 @@
 		 * off our simple application.
 		 **************************************************/
 		$(document).ready(function() {
-			// set middle tier service proxies (on server).
-			// this is the server pages which handle the calls 
-			// to the xirsys services.
-			xRtc.AuthManager.settings.tokenHandler = "/getToken.php";
-			xRtc.AuthManager.settings.iceHandler = "/getIceServers.php";
-
-			xRtc.Logger.enable({ debug: true, warning: true, error: true, test: true });
-
-			var room,
-				connection,
-				localMediaStream,
-				remoteParticipantId;
 
 			$("#join").click(function(e) {
 				e.preventDefault();
 
 				var getMediaSuccess = function (stream) {
-					addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
-					localMediaStream = stream;
+					utils.addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
+					utils.localMediaStream( stream );
 				};
 				var getMediaFailed = function (err) {
 					console.log('Get media stream error. ', err);
@@ -124,125 +114,32 @@
 
 				authManager = new xRtc.AuthManager();
 				serverConnector = new xRtc.ServerConnector();
-				room = new xRtc.Room(roomInfo, authManager, serverConnector);
+				utils.room( new xRtc.Room(roomInfo, authManager, serverConnector) );
 
 				// assign events that require updating the rooms user list
-				room.on( xRtc.Room.events.participantsUpdated, refreshRoom )
-					.on( xRtc.Room.events.participantConnected, refreshRoom )
-					.on( xRtc.Room.events.participantDisconnected, refreshRoom )
-					.on( xRtc.Room.events.connectionCreated, connectionCreated )
-					.on( xRtc.Room.events.connectionDeclined, refreshRoom )
-					.on( xRtc.Room.events.incomingConnection, acceptCall );
+				utils.room().on( xRtc.Room.events.participantsUpdated, utils.refreshRoom )
+							.on( xRtc.Room.events.participantConnected, utils.refreshRoom )
+							.on( xRtc.Room.events.participantDisconnected, utils.refreshRoom )
+							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated )
+							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
+							.on( xRtc.Room.events.incomingConnection, utils.acceptCall );
 
 
-				subscribe( authManager, xRtc.AuthManager.events );
-				subscribe( serverConnector, xRtc.ServerConnector.events );
-				subscribe( room, xRtc.Room.events );
+				utils.subscribe( authManager, xRtc.AuthManager.events );
+				utils.subscribe( serverConnector, xRtc.ServerConnector.events );
+				utils.subscribe( utils.room(), xRtc.Room.events );
 
-				room.enter($("#username").val(), { autoReply: false });
+				utils.room().enter($("#username").val(), { autoReply: false });
 			});
 
 			$("#connect").click(function (e) {
 				e.preventDefault();
 				var contact = $("#userlist").val();
 				console.log('Connecting to participant...', contact);
-				room.connect(contact, {});
+				utils.room().connect(contact, {});
 			});
 
-			function connectionCreated(connectionData) {
-				connection = connectionData.connection;
-				remoteParticipantId = connectionData.userId;
-
-				subscribe( connection, xRtc.Connection.events );
-
-				var data = connection.getData();
-
-				connection
-					.on( xRtc.Connection.events.localStreamAdded, function (data) { })
-					.on( xRtc.Connection.events.remoteStreamAdded, function (data) {
-						data.isLocalStream = false;
-						console.log("adding remote stream");
-						addVideo(data);
-						refreshRoom();
-					})
-					.on( xRtc.Connection.events.connectionEstablished, function (data) {
-						console.log('Connection is established.');
-					})
-					.on( xRtc.Connection.events.connectionClosed, function (data) {
-						refreshRoom();
-						connection = null;
-						remoteParticipantId = null;
-					})
-					.on( xRtc.Connection.events.stateChanged, function (state) {
-						refreshRoom();
-					});
-
-				connection.addStream(localMediaStream);
-			}
-			
-			function addVideo(data) {
-				var stream = data.stream;
-				var userId = data.userId;
-
-				var video = (data.isLocalStream) ? $('#vid1').get(0) : $('#vid2').get(0);
-
-				stream.assignTo(video);
-
-				if ( data.isLocalStream ) {
-					video.volume = 0;
-				}
-			}
-
-			function refreshRoom() {
-				roomInfo = room.getInfo();
-
-				$('#userlist').empty();
-
-				console.log(room.getParticipants());
-
-				var contacts = convertContacts(room.getParticipants());
-				for (var index = 0, len = contacts.length; index < len; index++) {
-					addParticipant(contacts[index]);
-				}
-			}
-
-			function acceptCall(incomingConnectionData) {
-				incomingConnectionData.accept();
-			}
-
-			function convertContacts(participants) {
-				var contacts = [];
-
-				for (var i = 0, len = participants.length; i < len; i++) {
-					var name = participants[i];
-					if ( !!name && name != $("#username").val() )
-						contacts.push(name);
-				}
-
-				return contacts;
-			}
-
-			function addParticipant(participant) {
-				$('#userlist').append(
-					'<option value="' + participant + '">' + participant + '</option>'
-				);
-			}
-
-			function removeParticipant(participant) {
-				$('#userlist').find('.option[value="' + participant + '"]').remove();
-			}
-
-			function subscribe(eventDispatcher, events) {
-				if (typeof eventDispatcher.on === "function") {
-					for (var eventPropertyName in events) {
-						(function (eventName) {
-							eventDispatcher.on(eventName, function () {
-								console.log('CHAT', eventDispatcher.className, eventName, Array.prototype.slice.call(arguments));
-							});
-						})(events[eventPropertyName]);
-					}
-				}
-			}
+			utils.init();
 
 		});
 
