@@ -23,6 +23,7 @@ var utils = {};
 			xrtc.AuthManager.settings.tokenHandler = "/getToken.php";
 			xrtc.AuthManager.settings.iceHandler = "/getIceServers.php";
 
+			// enable logging, for sanities sake.
 			xrtc.Logger.enable({ debug: true, warning: true, error: true, test: true });
 		},
 

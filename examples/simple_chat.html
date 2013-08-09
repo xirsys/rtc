@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<title>XirSys Simple Video Example</title>
+	<title>XirSys Simple Chat Example</title>
 	<script src="../Scripts/xRtc/Common.js"></script>
 	<script src="../Scripts/xRtc/Class.js"></script>
 	<script src="../Scripts/xRtc/CommonError.js"></script>
@@ -41,8 +41,12 @@
 
 	<div class="panel">
 		<div>
-			<video id="vid1"></video>
-			<video id="vid2"></video>
+			<div id="chatwindow"></div>
+			<div>
+				<label>Enter message: </label>
+				<input type="text" id="message" value="" />
+				<button id="send">Send</button>
+			</div>
 		</div>
 	</div>
 
