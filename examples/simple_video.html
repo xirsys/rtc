@@ -83,17 +83,18 @@
 
 
 	<script type="text/javascript">
-		<!--
 
-		/**************************************************
-		 * This is the first function called which kicks
-		 * off our simple application.
-		 **************************************************/
 		$(document).ready(function() {
 
+			/**********************************
+			 *
+			 *   Handles join button click
+			 *
+			 **********************************/
 			$("#join").click(function(e) {
 				e.preventDefault();
 
+				// success and fail handlers for users local video/audio stream allocation
 				var getMediaSuccess = function (stream) {
 					utils.addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
 					utils.localMediaStream( stream );
@@ -102,50 +103,63 @@
 					console.log('Get media stream error. ', err);
 				};
 
+				// request the local video and audio stream
 				xRtc.getUserMedia(
 					{ video: true, audio: true },
 					getMediaSuccess,
 					getMediaFailed
 				);
 
+				// room information object / container
 				var roomInfo = {
 					domain: $('#domain').val(),
 					application: $('#application').val(),
 					name: $('#room').val()
 				};
 
+				// create XirSys objects needed to initialise a room
 				authManager = new xRtc.AuthManager();
 				serverConnector = new xRtc.ServerConnector();
 				utils.room( new xRtc.Room(roomInfo, authManager, serverConnector) );
 
-				// assign events that require updating the rooms user list
+				// assign events for updating the rooms user list
 				utils.room().on( xRtc.Room.events.participantsUpdated, utils.refreshRoom )
 							.on( xRtc.Room.events.participantConnected, utils.refreshRoom )
 							.on( xRtc.Room.events.participantDisconnected, utils.refreshRoom )
-							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated )
 							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
-							.on( xRtc.Room.events.incomingConnection, utils.acceptCall );
+							// more events for accepting a call and handling connection creation
+							.on( xRtc.Room.events.incomingConnection, utils.acceptCall )
+							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated );
 
-
+				// map all other default events
 				utils.subscribe( authManager, xRtc.AuthManager.events );
 				utils.subscribe( serverConnector, xRtc.ServerConnector.events );
 				utils.subscribe( utils.room(), xRtc.Room.events );
 
+				// enter / open room
 				utils.room().enter($("#username").val(), { autoReply: false });
 			});
 
+
+			/**********************************
+			 *
+			 *   Handles connect button click
+			 *
+			 **********************************/
 			$("#connect").click(function (e) {
 				e.preventDefault();
+				// get username of remote peer
 				var contact = $("#userlist").val();
 				console.log('Connecting to participant...', contact);
+				// connect to remote peer
 				utils.room().connect(contact, {});
 			});
 
+			// initialise utils object
 			utils.init();
 
 		});
 
-		//-->
 	</script>
 
 </body>

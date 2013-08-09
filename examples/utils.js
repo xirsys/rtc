@@ -1,4 +1,11 @@
-
+/**
+ * @author : Lee Sylvester
+ * @copyright : XirSys 2013
+ * 
+ * @desc this utilities file encapsulates the users list functionality. it is
+ * contained within this file so as to not clutter the important steps required
+ * to establish connections as detailed in the demo html files.
+ **/
 
 var utils = {};
 (function (utils, xrtc) {
@@ -19,7 +26,7 @@ var utils = {};
 			xrtc.Logger.enable({ debug: true, warning: true, error: true, test: true });
 		},
 
-		// accessors
+		// accessors / properties
 		room : function(r) {
 			if (!!r) _room = r;
 			return _room;
@@ -41,6 +48,8 @@ var utils = {};
 		},
 
 		// utility functions
+
+		// once connection created, assign necessary events
 		connectionCreated : function(connectionData) {
 			_connection = connectionData.connection;
 			_remoteParticipantId = connectionData.userId;
@@ -50,28 +59,26 @@ var utils = {};
 			var data = _connection.getData();
 
 			_connection
-				.on( xrtc.Connection.events.localStreamAdded, function (data) { })
+				// on remote stream, assign to video DOM object and refresh users list
 				.on( xrtc.Connection.events.remoteStreamAdded, function (data) {
 					data.isLocalStream = false;
 					console.log("adding remote stream");
 					utils.addVideo(data);
 					utils.refreshRoom();
 				})
-				.on( xrtc.Connection.events.connectionEstablished, function (data) {
-					console.log('Connection is established.');
-				})
-				.on( xrtc.Connection.events.connectionClosed, function (data) {
-					utils.refreshRoom();
-					_connection = null;
-					_remoteParticipantId = null;
-				})
+				// update users list on state change
 				.on( xrtc.Connection.events.stateChanged, function (state) {
 					utils.refreshRoom();
 				});
+				// assign empty handlers. you may wish to add real functionality, here.
+				.on( xrtc.Connection.events.localStreamAdded, function (data) { })
+				.on( xrtc.Connection.events.connectionEstablished, function (data) { })
+				.on( xrtc.Connection.events.connectionClosed, function (data) { })
 
 			_connection.addStream(_localMediaStream);
 		},
 		
+		// assign stream to a video DOM tag
 		addVideo : function(data) {
 			var stream = data.stream;
 			var userId = data.userId;
@@ -85,6 +92,7 @@ var utils = {};
 			}
 		},
 
+		// update drop down list of remote peers
 		refreshRoom : function() {
 			roomInfo = _room.getInfo();
 
@@ -96,10 +104,12 @@ var utils = {};
 			}
 		},
 
+		// call accept on incoming stream
 		acceptCall : function(incomingConnectionData) {
 			incomingConnectionData.accept();
 		},
 
+		// return a list of participants excluding local users name
 		convertContacts : function(participants) {
 			var contacts = [];
 
@@ -112,16 +122,19 @@ var utils = {};
 			return contacts;
 		},
 
+		// add remote peer name to contacts drop down list
 		addParticipant : function(participant) {
 			$('#userlist').append(
 				'<option value="' + participant + '">' + participant + '</option>'
 			);
 		},
 
+		// remove remote peer from contacts drop down list
 		removeParticipant : function(participant) {
 			$('#userlist').find('.option[value="' + participant + '"]').remove();
 		},
 
+		// subscribe to events on object eventDispatcher
 		subscribe : function(eventDispatcher, events) {
 			if (typeof eventDispatcher.on === "function") {
 				for (var eventPropertyName in events) {
