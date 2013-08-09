@@ -10,6 +10,8 @@
 var utils = {};
 (function (utils, xrtc) {
 	var _room = null,
+		_av = true,
+		_textChannel = null,
 		_connection = null,
 		_localMediaStream = null,
 		_remoteParticipantId = null;
@@ -48,6 +50,10 @@ var utils = {};
 			return _remoteParticipantId;
 		},
 
+		setChatOnly : function() {
+			_av = false;
+		},
+
 		// utility functions
 
 		// once connection created, assign necessary events
@@ -64,17 +70,31 @@ var utils = {};
 				.on( xrtc.Connection.events.remoteStreamAdded, function (data) {
 					data.isLocalStream = false;
 					console.log("adding remote stream");
-					utils.addVideo(data);
+					// if _av is true, then attach to video tag, else
+					// request data channel
+					if (_av)
+						utils.addVideo(data);
+					else
+						_connection.createDataChannel('simpleChat');
 					utils.refreshRoom();
 				})
 				// update users list on state change
 				.on( xrtc.Connection.events.stateChanged, function (state) {
 					utils.refreshRoom();
-				});
+				})
+				// handler for simple chat demo's data channel
+				.on( xrtc.Connection.events.dataChannelCreated, function (data) {
+					_textChannel = data.channel;
+					utils.subscribe( _textChannel, xrtc.DataChannel.events );
+
+					_textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+						utils.addMessage( msgData.userId, msgData.message );
+					});
+				})
 				// assign empty handlers. you may wish to add real functionality, here.
 				.on( xrtc.Connection.events.localStreamAdded, function (data) { })
 				.on( xrtc.Connection.events.connectionEstablished, function (data) { })
-				.on( xrtc.Connection.events.connectionClosed, function (data) { })
+				.on( xrtc.Connection.events.connectionClosed, function (data) { });
 
 			_connection.addStream(_localMediaStream);
 		},
@@ -91,6 +111,25 @@ var utils = {};
 			if ( data.isLocalStream ) {
 				video.volume = 0;
 			}
+		},
+
+		sendMessage: function (message) {
+			console.log('Sending message...', message);
+			if (_textChannel) {
+				_textChannel.send(message);
+				utils.addMessage( userName, message, true );
+			} else {
+				utils.addSystemMessage('DataChannel is not created. Please, see log.');
+			}
+		},
+
+		addMessage: function (name, message, isMy) {
+			var $chat = $('#chatwindow');
+
+			//todo: need to fix chat scrolling behavior
+			$chat
+				.append("<div><span>" + name + " : </span>" + message + "</div>")
+				.scrollTop($chat.children().last().position().top + $chat.children().last().height());
 		},
 
 		// update drop down list of remote peers

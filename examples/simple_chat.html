@@ -44,7 +44,7 @@
 			<div id="chatwindow"></div>
 			<div>
 				<label>Enter message: </label>
-				<input type="text" id="message" value="" />
+				<input type="text" id="message" />
 				<button id="send">Send</button>
 			</div>
 		</div>
@@ -100,7 +100,7 @@
 
 				// success and fail handlers for users local video/audio stream allocation
 				var getMediaSuccess = function (stream) {
-					utils.addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
+					//utils.addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
 					utils.localMediaStream( stream );
 				};
 				var getMediaFailed = function (err) {
@@ -109,7 +109,7 @@
 
 				// request the local video and audio stream
 				xRtc.getUserMedia(
-					{ video: true, audio: true },
+					{ video: false, audio: false },
 					getMediaSuccess,
 					getMediaFailed
 				);
@@ -143,7 +143,6 @@
 				// enter / open room
 				utils.room().enter($("#username").val(), { autoReply: false });
 			});
-
 
 			/**********************************
 			 *

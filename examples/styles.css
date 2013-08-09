@@ -8,7 +8,7 @@ body {
 }
 
 .panel {
-	display: inline-block;
+	display: block;
 	width: 650px;
 	background: #f0f0f0;
 	padding: 10px;
@@ -73,6 +73,10 @@ video {
 	display: inline-block;
 	width: 320px;
 	height: 240px;
+}
+
+#message {
+	width: 400px;
 }
 
 #chatwindow {
