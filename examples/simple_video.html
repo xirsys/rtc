@@ -129,7 +129,7 @@
 							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
 							// more events for accepting a call and handling connection creation
 							.on( xRtc.Room.events.incomingConnection, utils.acceptCall )
-							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated );
+							.on( xRtc.Room.events.connectionCreated, utils.videoConnectionCreated );
 
 				// map all other default events
 				utils.subscribe( authManager, xRtc.AuthManager.events );

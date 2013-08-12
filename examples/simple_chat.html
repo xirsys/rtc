@@ -98,22 +98,6 @@
 			$("#join").click(function(e) {
 				e.preventDefault();
 
-				// success and fail handlers for users local video/audio stream allocation
-				var getMediaSuccess = function (stream) {
-					//utils.addVideo({ stream: stream, isLocalStream: true, userId: $('#username').val() });
-					utils.localMediaStream( stream );
-				};
-				var getMediaFailed = function (err) {
-					console.log('Get media stream error. ', err);
-				};
-
-				// request the local video and audio stream
-				xRtc.getUserMedia(
-					{ video: false, audio: false },
-					getMediaSuccess,
-					getMediaFailed
-				);
-
 				// room information object / container
 				var roomInfo = {
 					domain: $('#domain').val(),
@@ -122,9 +106,7 @@
 				};
 
 				// create XirSys objects needed to initialise a room
-				authManager = new xRtc.AuthManager();
-				serverConnector = new xRtc.ServerConnector();
-				utils.room( new xRtc.Room(roomInfo, authManager, serverConnector) );
+				utils.room( new xRtc.Room(roomInfo) );
 
 				// assign events for updating the rooms user list
 				utils.room().on( xRtc.Room.events.participantsUpdated, utils.refreshRoom )
@@ -133,11 +115,9 @@
 							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
 							// more events for accepting a call and handling connection creation
 							.on( xRtc.Room.events.incomingConnection, utils.acceptCall )
-							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated );
+							.on( xRtc.Room.events.connectionCreated, utils.dataConnectionCreated );
 
 				// map all other default events
-				utils.subscribe( authManager, xRtc.AuthManager.events );
-				utils.subscribe( serverConnector, xRtc.ServerConnector.events );
 				utils.subscribe( utils.room(), xRtc.Room.events );
 
 				// enter / open room
@@ -155,7 +135,7 @@
 				var contact = $("#userlist").val();
 				console.log('Connecting to participant...', contact);
 				// connect to remote peer
-				utils.room().connect(contact, {});
+				utils.room().connect(contact, { createDataChannel: 'auto' });
 			});
 
 			// initialise utils object

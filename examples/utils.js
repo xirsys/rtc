@@ -10,7 +10,6 @@
 var utils = {};
 (function (utils, xrtc) {
 	var _room = null,
-		_av = true,
 		_textChannel = null,
 		_connection = null,
 		_localMediaStream = null,
@@ -18,7 +17,7 @@ var utils = {};
 
 	xrtc.Class.extend(utils, {
 
-		init : function() {
+		init: function() {
 			// set middle tier service proxies (on server).
 			// this is the server pages which handle the calls 
 			// to the xirsys services.
@@ -30,34 +29,30 @@ var utils = {};
 		},
 
 		// accessors / properties
-		room : function(r) {
+		room: function(r) {
 			if (!!r) _room = r;
 			return _room;
 		},
 
-		connection : function(c) {
+		connection: function(c) {
 			if (!!c) _connection = c;
 			return _connection;
 		},
 
-		localMediaStream : function(l) {
+		localMediaStream: function(l) {
 			if (!!l) _localMediaStream = l;
 			return _localMediaStream;
 		},
 
-		remoteParticipantId : function(r) {
+		remoteParticipantId: function(r) {
 			if (!!r) _remoteParticipantId = r;
 			return _remoteParticipantId;
-		},
-
-		setChatOnly : function() {
-			_av = false;
 		},
 
 		// utility functions
 
 		// once connection created, assign necessary events
-		connectionCreated : function(connectionData) {
+		videoConnectionCreated: function(connectionData) {
 			_connection = connectionData.connection;
 			_remoteParticipantId = connectionData.userId;
 
@@ -70,12 +65,7 @@ var utils = {};
 				.on( xrtc.Connection.events.remoteStreamAdded, function (data) {
 					data.isLocalStream = false;
 					console.log("adding remote stream");
-					// if _av is true, then attach to video tag, else
-					// request data channel
-					if (_av)
-						utils.addVideo(data);
-					else
-						_connection.createDataChannel('simpleChat');
+					utils.addVideo(data);
 					utils.refreshRoom();
 				})
 				// update users list on state change
@@ -98,9 +88,25 @@ var utils = {};
 
 			_connection.addStream(_localMediaStream);
 		},
+
+		dataConnectionCreated: function(connectionData) {
+			var connection = connectionData.connection;
+
+			connection.on( xrtc.Connection.events.dataChannelCreated, function (data) {
+				var textChannel = data.channel;
+				textChannel.on( xrtc.DataChannel.events.message, function(msgData) {
+					utils.addMessage(msgData.userId, msgData.message);
+				});
+
+				// sending 'Hello world' message
+				//textChannel.send('Hello world');
+			}).on(xrtc.Connection.events.dataChannelCreationError, function(data) {
+				console.log('Failed to create data channel ' + data.channelName + '. Make sure that your Chrome M25 or later with --enable-data-channels flag.');
+			});
+		},
 		
 		// assign stream to a video DOM tag
-		addVideo : function(data) {
+		addVideo: function(data) {
 			var stream = data.stream;
 			var userId = data.userId;
 
@@ -133,7 +139,7 @@ var utils = {};
 		},
 
 		// update drop down list of remote peers
-		refreshRoom : function() {
+		refreshRoom: function() {
 			roomInfo = _room.getInfo();
 
 			$('#userlist').empty();
@@ -145,12 +151,12 @@ var utils = {};
 		},
 
 		// call accept on incoming stream
-		acceptCall : function(incomingConnectionData) {
+		acceptCall: function(incomingConnectionData) {
 			incomingConnectionData.accept();
 		},
 
 		// return a list of participants excluding local users name
-		convertContacts : function(participants) {
+		convertContacts: function(participants) {
 			var contacts = [];
 
 			for (var i = 0, len = participants.length; i < len; i++) {
@@ -163,19 +169,19 @@ var utils = {};
 		},
 
 		// add remote peer name to contacts drop down list
-		addParticipant : function(participant) {
+		addParticipant: function(participant) {
 			$('#userlist').append(
 				'<option value="' + participant + '">' + participant + '</option>'
 			);
 		},
 
 		// remove remote peer from contacts drop down list
-		removeParticipant : function(participant) {
+		removeParticipant: function(participant) {
 			$('#userlist').find('.option[value="' + participant + '"]').remove();
 		},
 
 		// subscribe to events on object eventDispatcher
-		subscribe : function(eventDispatcher, events) {
+		subscribe: function(eventDispatcher, events) {
 			if (typeof eventDispatcher.on === "function") {
 				for (var eventPropertyName in events) {
 					(function (eventName) {
