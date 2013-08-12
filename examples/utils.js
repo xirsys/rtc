@@ -9,7 +9,9 @@
 
 var utils = {};
 (function (utils, xrtc) {
-	var _room = null,
+	var _av = false,
+		_room = null,
+		_userName = null,
 		_textChannel = null,
 		_connection = null,
 		_localMediaStream = null,
@@ -34,6 +36,11 @@ var utils = {};
 			return _room;
 		},
 
+		username: function(u) {
+			if (!!u) _userName = u;
+			return _userName;
+		},
+
 		connection: function(c) {
 			if (!!c) _connection = c;
 			return _connection;
@@ -51,8 +58,18 @@ var utils = {};
 
 		// utility functions
 
+		// proxy getUserMedia, so we can log if video/audio is being requested
+		getUserMedia: function(data, success, fail) {
+			xrtc.getUserMedia(
+				data,
+				success,
+				fail
+			);
+			_av = true;
+		},
+
 		// once connection created, assign necessary events
-		videoConnectionCreated: function(connectionData) {
+		connectionCreated: function(connectionData) {
 			_connection = connectionData.connection;
 			_remoteParticipantId = connectionData.userId;
 
@@ -75,34 +92,24 @@ var utils = {};
 				// handler for simple chat demo's data channel
 				.on( xrtc.Connection.events.dataChannelCreated, function (data) {
 					_textChannel = data.channel;
-					utils.subscribe( _textChannel, xrtc.DataChannel.events );
-
-					_textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
-						utils.addMessage( msgData.userId, msgData.message );
+					utils.subscribe(_textChannel, xrtc.DataChannel.events);
+					_textChannel.on( xrtc.DataChannel.events.message, function(msgData) {
+						utils.addMessage(msgData.userId, msgData.message);
 					});
+					utils.addMessage("SYSTEM", "You are now connected.");
+
+					// sending 'Hello world' message
+					//textChannel.send('Hello world');
+				}).on(xrtc.Connection.events.dataChannelCreationError, function(data) {
+					console.log('Failed to create data channel ' + data.channelName + '. Make sure that your Chrome M25 or later with --enable-data-channels flag.');
 				})
 				// assign empty handlers. you may wish to add real functionality, here.
 				.on( xrtc.Connection.events.localStreamAdded, function (data) { })
 				.on( xrtc.Connection.events.connectionEstablished, function (data) { })
 				.on( xrtc.Connection.events.connectionClosed, function (data) { });
 
-			_connection.addStream(_localMediaStream);
-		},
-
-		dataConnectionCreated: function(connectionData) {
-			var connection = connectionData.connection;
-
-			connection.on( xrtc.Connection.events.dataChannelCreated, function (data) {
-				var textChannel = data.channel;
-				textChannel.on( xrtc.DataChannel.events.message, function(msgData) {
-					utils.addMessage(msgData.userId, msgData.message);
-				});
-
-				// sending 'Hello world' message
-				//textChannel.send('Hello world');
-			}).on(xrtc.Connection.events.dataChannelCreationError, function(data) {
-				console.log('Failed to create data channel ' + data.channelName + '. Make sure that your Chrome M25 or later with --enable-data-channels flag.');
-			});
+			if (_av)
+				_connection.addStream(_localMediaStream);
 		},
 		
 		// assign stream to a video DOM tag
@@ -123,9 +130,9 @@ var utils = {};
 			console.log('Sending message...', message);
 			if (_textChannel) {
 				_textChannel.send(message);
-				utils.addMessage( userName, message, true );
+				utils.addMessage( _userName, message, true );
 			} else {
-				utils.addSystemMessage('DataChannel is not created. Please, see log.');
+				console.log('DataChannel is not created. Please, see log.');
 			}
 		},
 

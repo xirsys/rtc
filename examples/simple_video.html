@@ -104,7 +104,7 @@
 				};
 
 				// request the local video and audio stream
-				xRtc.getUserMedia(
+				utils.getUserMedia(
 					{ video: true, audio: true },
 					getMediaSuccess,
 					getMediaFailed
@@ -129,7 +129,7 @@
 							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
 							// more events for accepting a call and handling connection creation
 							.on( xRtc.Room.events.incomingConnection, utils.acceptCall )
-							.on( xRtc.Room.events.connectionCreated, utils.videoConnectionCreated );
+							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated );
 
 				// map all other default events
 				utils.subscribe( authManager, xRtc.AuthManager.events );

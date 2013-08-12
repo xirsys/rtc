@@ -106,7 +106,9 @@
 				};
 
 				// create XirSys objects needed to initialise a room
-				utils.room( new xRtc.Room(roomInfo) );
+				authManager = new xRtc.AuthManager();
+				serverConnector = new xRtc.ServerConnector();
+				utils.room( new xRtc.Room(roomInfo, authManager, serverConnector) );
 
 				// assign events for updating the rooms user list
 				utils.room().on( xRtc.Room.events.participantsUpdated, utils.refreshRoom )
@@ -115,13 +117,16 @@
 							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
 							// more events for accepting a call and handling connection creation
 							.on( xRtc.Room.events.incomingConnection, utils.acceptCall )
-							.on( xRtc.Room.events.connectionCreated, utils.dataConnectionCreated );
+							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated );
 
 				// map all other default events
+				utils.subscribe( authManager, xRtc.AuthManager.events );
+				utils.subscribe( serverConnector, xRtc.ServerConnector.events );
 				utils.subscribe( utils.room(), xRtc.Room.events );
 
 				// enter / open room
 				utils.room().enter($("#username").val(), { autoReply: false });
+				utils.username($("#username").val());
 			});
 
 			/**********************************
@@ -136,6 +141,13 @@
 				console.log('Connecting to participant...', contact);
 				// connect to remote peer
 				utils.room().connect(contact, { createDataChannel: 'auto' });
+			});
+
+			$("#send").click(function (e) {
+				e.preventDefault();
+
+				var text = $("#message").val();
+				utils.sendMessage(text);
 			});
 
 			// initialise utils object
