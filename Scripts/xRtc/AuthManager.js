@@ -46,7 +46,8 @@
 					"domain=" + userData.domain,
 					"application=" + userData.application,
 					"room=" + userData.room,
-					"username=" + userData.name
+					"username=" + userData.name,
+					"password=" + userData.password
 				];
 
 			logger.info('getTokenRequestParams', result);
@@ -58,7 +59,8 @@
 			var result = [
 					"domain=" + userData.domain,
 					"application=" + userData.application,
-					"username=" + userData.name
+					"username=" + userData.name,
+					"password=" + userData.password
 				];
 
 			logger.info('getIceRequestParams', result);

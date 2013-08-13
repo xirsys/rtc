@@ -29,9 +29,18 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			enter: function (userName, options) {
-				if (!userName) {
-					throw new xrtc.CommonError('enter', 'User name should be specified.');
+			enter: function (credentials, options) {
+				var user = "", pass = "";
+
+				if (!credentials) {
+					throw new xrtc.CommonError('enter', 'User credentials should be specified.');
+				}
+
+				if (typeof credentials === 'string') {
+					user = credentials;
+				} else {
+					user = credentials.username;
+					pass = credentials.password;
 				}
 
 				subscribeToServerEvents.call(this);
@@ -47,11 +56,12 @@
 					domain: roomInfo.domain,
 					application: roomInfo.application,
 					room: roomInfo.name,
-					name: userName
+					name: user,
+					password: pass
 				};
 
 				authManager.getToken(currentUserData, function (token) {
-					roomInfo.user = userName;
+					roomInfo.user = user;
 					serverConnector.connect(token);
 				});
 			},
