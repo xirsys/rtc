@@ -20,12 +20,16 @@ body {
 h3 {
 	margin: 0;
 	padding: 0 0 5px 0;
-	color: #666;
+	color: #999;
 	font-family:arial;
 	font-size:24px;
 	font-weight:bold;
 	text-decoration:none;
 	text-shadow:1px 1px 0px #999;
+}
+
+h3 span {
+	color: #666;
 }
 
 label {
