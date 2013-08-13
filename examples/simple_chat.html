@@ -106,9 +106,7 @@
 				};
 
 				// create XirSys objects needed to initialise a room
-				authManager = new xRtc.AuthManager();
-				serverConnector = new xRtc.ServerConnector();
-				utils.room( new xRtc.Room(roomInfo, authManager, serverConnector) );
+				utils.room( new xRtc.Room(roomInfo) );
 
 				// assign events for updating the rooms user list
 				utils.room().on( xRtc.Room.events.participantsUpdated, utils.refreshRoom )
@@ -120,8 +118,6 @@
 							.on( xRtc.Room.events.connectionCreated, utils.connectionCreated );
 
 				// map all other default events
-				utils.subscribe( authManager, xRtc.AuthManager.events );
-				utils.subscribe( serverConnector, xRtc.ServerConnector.events );
 				utils.subscribe( utils.room(), xRtc.Room.events );
 
 				// enter / open room
