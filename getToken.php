@@ -1,5 +1,4 @@
 <?php
-
 //set POST variables
 $url = 'https://beta.xirsys.com/getToken';
 $fields_string = '';
@@ -23,11 +22,17 @@ $ch = curl_init();
 curl_setopt($ch,CURLOPT_URL, $url);
 curl_setopt($ch,CURLOPT_POST, count($fields));
 curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 curl_setopt($ch,CURLOPT_TIMEOUT, 0);
 curl_setopt($ch,CURLOPT_CONNECTTIMEOUT, 0);
 
 //execute post
 $result = curl_exec($ch);
+
+// Check for errors
+if($result === FALSE){
+    die(curl_error($ch));
+}
 
 //close connection
 curl_close($ch);
