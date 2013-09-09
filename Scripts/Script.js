@@ -219,7 +219,7 @@ var chat = {};
 							chat.subscribe(textChannel, xrtc.DataChannel.events);
 
 							textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
-								chat.addMessage(msgData.userId, msgData.message);
+								chat.addMessage(textChannel.getUserId(), msgData.message);
 							});
 						})
 						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {

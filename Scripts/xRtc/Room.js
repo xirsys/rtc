@@ -219,7 +219,8 @@
 			}
 
 			function onDeclineCall() {
-				//todo: need to think about 'bye' options definition and about senderId property name
+				// note: need to think about declining reason
+				// todo: need to think about 'bye' options definition and about senderId property name
 				serverConnector.sendBye(data.senderId, data.connectionId, data.connectionData, { type: 'decline' });
 			}
 		}
@@ -229,6 +230,7 @@
 				var targetHc = handshakeControllers[data.targetConnectionId];
 				if (targetHc) {
 					if (data.options && data.options.type === 'decline') {
+						// todo: think about sending decline reason
 						this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
 					}
 

@@ -300,7 +300,7 @@
 					proxy(onIceStateChange);
 
 				peerConnection.ondatachannel = function (data) {
-					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(data.channel, userData.name) });
+					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(data.channel, remoteUserId) });
 				};
 
 				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
@@ -358,7 +358,7 @@
 				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
 				var dc = peerConnection.createDataChannel(name, { reliable: false });
 				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
-				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(dc, userData.name) });
+				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(dc, remoteUserId) });
 			} catch (ex) {
 				var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
 				logger.error('createDataChannel', error);
@@ -499,14 +499,14 @@
 				iceServers = null;
 				connectionEstablished = false;
 
-				var connectionData = {
+				var closeConnectionData = {
 					sender: self,
 					userId: remoteUserId
 				};
 
 				remoteUserId = null;
 
-				this.trigger(xrtc.Connection.events.connectionClosed, connectionData);
+				this.trigger(xrtc.Connection.events.connectionClosed, closeConnectionData);
 			}
 		}
 
@@ -574,7 +574,7 @@
 			answerReceived: 'answerreceived',
 			createAnswerError: 'createanswererror',
 
-			dataChannelCreated: 'datachanneladded',
+			dataChannelCreated: 'datachannelcreated',
 			dataChannelCreationError: 'datachannelcreationerror',
 
 			connectionOpening: 'connectionopening',

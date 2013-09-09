@@ -159,7 +159,6 @@
 		},
 
 		settings: {
-			URL: 'https://beta.xirsys.com/',
 			tokenHandler: 'https://beta.xirsys.com/getToken',
 			iceHandler: 'https://beta.xirsys.com/getIceServers',
 

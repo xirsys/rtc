@@ -23,13 +23,32 @@
 
 				logger.info('send', arguments);
 
-				var data = {
-					userId: userId,
-					message: message
-				};
+				if (this.getState() === xrtc.DataChannel.states.open) {
+					try {
+						var messageContainer = { message: message };
+						dataChannel.send(JSON.stringify(messageContainer));
+					} catch(ex) {
+						var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error.', ex);
+						logger.error('error', sendingError);
+						this.trigger(events.error, sendingError);
+					}
+				} else {
+					var error = new xrtc.CommonError('onerror', 'DataChannel should be opened before sending.');
+					logger.error('error', error);
+					this.trigger(events.error, error);
+				}
+			},
 
-				// todo: check data channel state before sending
-				dataChannel.send(JSON.stringify(data));
+			getUserId: function() {
+				return userId;
+			},
+
+			getName: function() {
+				return dataChannel.label;
+			},
+
+			getState: function () {
+				return dataChannel.readyState.toLowerCase();
 			}
 		});
 
@@ -40,10 +59,10 @@
 		};
 
 		function channelOnMessage(evt) {
-			var data = JSON.parse(evt.data);
+			var messageContainer = JSON.parse(evt.data);
 
-			logger.debug('message', data);
-			this.trigger(events.message, data);
+			logger.debug('message', messageContainer);
+			this.trigger(events.message, messageContainer);
 		}
 
 		function channelOnClose(evt) {
@@ -53,7 +72,7 @@
 		}
 
 		function channelOnError(evt) {
-			var error = new xrtc.CommonError('onerror', 'Error in DataChannel', evt);
+			var error = new xrtc.CommonError('onerror', 'DataChannel error.', evt);
 			logger.error('error', error);
 			this.trigger(events.error, error);
 		}
@@ -72,6 +91,13 @@
 			close: 'close',
 			error: 'error',
 			dataChannel: 'datachannel'
+		},
+
+		states: {
+			connecting: "connecting",
+			open: "open",
+			closing: "closing",
+			closed: "closed"
 		}
 	});
 })(window);
