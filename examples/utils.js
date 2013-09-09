@@ -23,8 +23,8 @@ var utils = {};
 			// set middle tier service proxies (on server).
 			// this is the server pages which handle the calls 
 			// to the xirsys services.
-			xrtc.AuthManager.settings.tokenHandler = "/getToken.php";
-			xrtc.AuthManager.settings.iceHandler = "/getIceServers.php";
+			xrtc.AuthManager.settings.tokenHandler = "../getToken.php";
+			xrtc.AuthManager.settings.iceHandler = "../getIceServers.php";
 
 			// enable logging, for sanities sake.
 			xrtc.Logger.enable({ debug: true, warning: true, error: true, test: true });
@@ -94,7 +94,7 @@ var utils = {};
 					_textChannel = data.channel;
 					utils.subscribe(_textChannel, xrtc.DataChannel.events);
 					_textChannel.on( xrtc.DataChannel.events.message, function(msgData) {
-						utils.addMessage(msgData.userId, msgData.message);
+						utils.addMessage(_textChannel.getUserId(), msgData.message);
 					});
 					utils.addMessage("SYSTEM", "You are now connected.");
 
