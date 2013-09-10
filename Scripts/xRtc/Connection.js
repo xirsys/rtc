@@ -356,7 +356,7 @@
 				// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
 				// reliable data channels currently supports only by FF. It is default value.
 				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
-				var dc = peerConnection.createDataChannel(name, { reliable: false });
+				var dc = peerConnection.createDataChannel(name, webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? { reliable: false } : {});
 				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
 				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(dc, remoteUserId) });
 			} catch (ex) {

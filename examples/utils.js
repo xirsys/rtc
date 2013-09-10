@@ -93,7 +93,9 @@ var utils = {};
 				.on( xrtc.Connection.events.dataChannelCreated, function (data) {
 					_textChannel = data.channel;
 					utils.subscribe(_textChannel, xrtc.DataChannel.events);
-					_textChannel.on( xrtc.DataChannel.events.message, function(msgData) {
+					_textChannel.on(xrtc.DataChannel.events.sentMessage, function (msgData) {
+						utils.addMessage(_userName, msgData.message, true);
+					}).on(xrtc.DataChannel.events.receivedMessage, function (msgData) {
 						utils.addMessage(_textChannel.getUserId(), msgData.message);
 					});
 					utils.addMessage("SYSTEM", "You are now connected.");
@@ -111,7 +113,7 @@ var utils = {};
 			if (_av)
 				_connection.addStream(_localMediaStream);
 		},
-		
+
 		// assign stream to a video DOM tag
 		addVideo: function(data) {
 			var stream = data.stream;
@@ -130,7 +132,6 @@ var utils = {};
 			console.log('Sending message...', message);
 			if (_textChannel) {
 				_textChannel.send(message);
-				utils.addMessage( _userName, message, true );
 			} else {
 				console.log('DataChannel is not created. Please, see log.');
 			}

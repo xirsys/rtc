@@ -27,6 +27,7 @@
 					try {
 						var messageContainer = { message: message };
 						dataChannel.send(JSON.stringify(messageContainer));
+						this.trigger(events.sentMessage, messageContainer);
 					} catch(ex) {
 						var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error.', ex);
 						logger.error('error', sendingError);
@@ -62,7 +63,7 @@
 			var messageContainer = JSON.parse(evt.data);
 
 			logger.debug('message', messageContainer);
-			this.trigger(events.message, messageContainer);
+			this.trigger(events.receivedMessage, messageContainer);
 		}
 
 		function channelOnClose(evt) {
@@ -87,7 +88,8 @@
 	xrtc.DataChannel.extend({
 		events: {
 			open: 'open',
-			message: 'message',
+			sentMessage: 'sentMessage',
+			receivedMessage: 'receivedMessage',
 			close: 'close',
 			error: 'error',
 			dataChannel: 'datachannel'

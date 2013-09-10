@@ -218,7 +218,11 @@ var chat = {};
 							textChannel = data.channel;
 							chat.subscribe(textChannel, xrtc.DataChannel.events);
 
-							textChannel.on(xrtc.DataChannel.events.message, function (msgData) {
+							textChannel.on(xrtc.DataChannel.events.error, function (error) {
+								chat.addSystemMessage(error.message + " Please, see log.");
+							}).on(xrtc.DataChannel.events.sentMessage, function (msgData) {
+								chat.addMessage(userName, msgData.message, true);
+							}).on(xrtc.DataChannel.events.receivedMessage, function (msgData) {
 								chat.addMessage(textChannel.getUserId(), msgData.message);
 							});
 						})
@@ -286,7 +290,6 @@ var chat = {};
 			console.log('Sending message...', message);
 			if (textChannel) {
 				textChannel.send(message);
-				chat.addMessage(userName, message, true);
 			} else {
 				chat.addSystemMessage('DataChannel is not created. Please, see log.');
 			}
