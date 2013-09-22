@@ -78,7 +78,6 @@
 		}
 
 		function channelOnClose(evt) {
-			logger.test('close', evt);
 			var data = { event: evt };
 			logger.debug('close', data);
 			this.trigger(events.close, data);
