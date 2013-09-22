@@ -514,6 +514,13 @@ $(document).ready(function () {
 	chat.setLogger(true);
 	//wsTest.init();
 
+	// This is a fix. This demo app are using one connection for media and text data transferring.
+	// Will be better to disable text chat for FF than to kill interoperability between Chrome and FF
+	if (xRtc.webrtc.detectedBrowser === xRtc.webrtc.supportedBrowsers.firefox) {
+		xRtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
+		xRtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
+	}
+
 	xRtc.AuthManager.settings.tokenHandler = "getToken.php";
 	xRtc.AuthManager.settings.iceHandler = "getIceServers.php";
 

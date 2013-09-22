@@ -717,9 +717,9 @@
 
 	// todo: no need to disable data channels in case of communication between FireFox and Firefox. These flags are necessary in case of interoperability between FireFox and Chrome only
 	// Data channels does't supported in case of interoperability of FireFox and Chrome
-	if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+	/*if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between FF and Chrome
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
-	}
+	}*/
 })(window);
