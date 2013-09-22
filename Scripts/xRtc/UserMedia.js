@@ -27,6 +27,7 @@
 		if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {
 			getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
 				if (mediaOptions.audio) {
+					/* FF 20.0.1: (not shure about other version, FF 21 works fine) reduces the overall sound of the computer (playing using Chrome and maybe another FF) after calling this functionality. */
 					getUserMedia.call(this, { audio: true }, function (audioStream) {
 						function addTracks(array, tracks) {
 							for (var i = 0; i < tracks.length; i++) {

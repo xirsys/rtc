@@ -10,6 +10,8 @@
 
 		dataChannel.onopen = proxy(channelOnOpen);
 		dataChannel.onmessage = proxy(channelOnMessage);
+		/* dataChannel.onclose tested in case of disconnect(close browser tab) of remote browser for Chrome M29 */
+		// todo: need to test onclose event in case of remote client disconnection for Chrome M25-28.
 		dataChannel.onclose = proxy(channelOnClose);
 		dataChannel.onerror = proxy(channelOnError);
 		dataChannel.ondatachannel = proxy(channelOnDatachannel);
@@ -49,6 +51,15 @@
 			},
 
 			getState: function () {
+				/* W3C Editor's Draft 30 August 2013:
+				enum RTCDataChannelState {
+					"connecting",
+					"open",
+					"closing",
+					"closed"
+				};
+				*/
+
 				return dataChannel.readyState.toLowerCase();
 			}
 		});
@@ -67,6 +78,7 @@
 		}
 
 		function channelOnClose(evt) {
+			logger.test('close', evt);
 			var data = { event: evt };
 			logger.debug('close', data);
 			this.trigger(events.close, data);

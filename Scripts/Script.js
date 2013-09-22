@@ -181,7 +181,7 @@ var chat = {};
 					chat.contactsList.refreshParticipants();
 				})
 				.on(xrtc.Room.events.participantDisconnected, function (data) {
-					chat.addSystemMessage("'" + data.participantId + ' left the room.');
+					chat.addSystemMessage("'" + data.participantId + "' left the room.");
 
 					chat.contactsList.refreshParticipants();
 				})

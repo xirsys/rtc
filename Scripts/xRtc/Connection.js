@@ -162,7 +162,7 @@
 						// Interoperability support of FF21 and Chrome
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
 							var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
-							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? sdp.replace(/c=IN/g, inline) : offer.sdp;
+							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? offer.sdp.replace(/c=IN/g, inline) : offer.sdp;
 						}
 
 						var request = {
@@ -264,7 +264,11 @@
 					browserCompatibleIceServers = { iceServers: [] };
 					for (var i = 0, len = iceServersData.iceServers.length; i < len; i++) {
 						var iceServer = iceServersData.iceServers[i];
-						// TURN doesn't supported by FireFox yet
+						// FF 18-22: TURN doesn't supported.
+						// FF 23: TURN supported!
+						// todo: Need to reflect TURN support for FF 23+ in this library
+						// todo: Need to check possibility of resolving DNS addresses in case of STUN/TURN connection by FF 23+
+						// todo: For Chrome M28+ & maybe FF 23+ new turn format should be used. Old format still supported by Chrome. Possibly FF 23+ works only with new TURN format.
 						if (iceServer.url.indexOf("turn:") === -1) {
 							browserCompatibleIceServers.iceServers.push(iceServer);
 						}
@@ -279,7 +283,9 @@
 				peerConnection.onicecandidate = proxy(onIceCandidate);
 
 				peerConnection.onstatechange = // M25-M26
-					peerConnection.onsignalingstatechange = // M27+
+					/*FF 20.0.1 (FF 21+ works fine): during assigning peerConnection.onsignalingstatechange field FF throw following error:
+					NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative*/
+					peerConnection.onsignalingstatechange = // M27+, FF24+
 					proxy(onConnectionStateChange);
 
 				// in FireFox onstatechange or alternative event does not fire properly
@@ -296,15 +302,37 @@
 
 				// todo: need to think about the necessity of this handlers
 				peerConnection.onicechange = // M25-M26
-					peerConnection.oniceconnectionstatechange = // M27+
+					/*FF 20.0.1 (FF 21+ works fine): during assigning peerConnection.oniceconnectionstatechange field FF throw following error:
+					NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative*/
+					peerConnection.oniceconnectionstatechange = // M27+, FF24+
 					proxy(onIceStateChange);
 
-				peerConnection.ondatachannel = function (data) {
-					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(data.channel, remoteUserId) });
+				peerConnection.ondatachannel = function (channelData) {
+					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(channelData.channel, remoteUserId) });
 				};
 
+				/* FF 19-20.0.1 (maybe earlier, FF21 works fine): fire this event twice, for video stream and for audio stream despite the fact that one stream was added by remote side */
 				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
 				peerConnection.onaddstream = proxy(onAddStream);
+
+				// for FF only (Doesn't work for for FF 24. Other version was not tested.)
+				peerConnection.onclosedconnection = function (closeData) {
+					//logger.test('onclosedconnection', closeData);
+					// todo: maybe will be better to wrap the closeData or some fields of the closeData to new object
+					self.trigger(xrtc.Connection.events.connectionClosed, closeData);
+				};
+
+				// todo: need to fire close connection event for Chrome M26. The logic should be based on peerConnection.iceConnectionState field and window.setInterval
+				// todo: need to fire close connection event for Chrome M25. The logic should be based on peerConnection.iceState field and window.setInterval
+
+				/* peerConnection.iceGatheringState
+				W3C Editor's Draft 30 August 2013:
+				enum RTCIceGatheringState {
+					"new",
+					"gathering",
+					"complete"
+				};
+				*/
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
@@ -327,6 +355,10 @@
 					if (state === 'connected') {
 						// todo: Need to think about name of this event
 						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
+					} else if (state === 'disconnected') {
+						// todo: The event should't be repeated for FF 24+, because FF 18+ has peerConnection.onclosedconnection and FF 24+ has peerConnection.oniceconnectionstatechange
+						//logger.test('onIceStateChange, state == disconnected');
+						closePeerConnection.call(this);
 					}
 				}
 
@@ -353,6 +385,18 @@
 			/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
 			var self = this;
 			try {
+				/* FF 19-21(and 18 maybe): Data channels should be created after connection establishment.
+				Connection should be established usually with audio and/or video.  For the time being,
+				always at least include a 'fake' audio stream - this will be fixed soon.
+				After connection establishment need to call pc.connectDataConnection(5001, 5000); on th each side.
+				For the two sides need to use inverted copies of the two numbers (eg. 5000, 5001 on one side, 5001, 5000 on the other).
+				connectDataConnection is a temporary function that will soon disappear.
+				For more information see https://hacks.mozilla.org/2012/11/progress-update-on-webrtc-for-firefox-on-desktop/
+
+				As a result current library approach of data channels creation works only for FF 22+.
+				for earlier versions exception will be thrown: Component returned failure code:
+				0x80004005 (NS_ERROR_FAILURE) [IPeerConnection.createDataChannel]" nsresult: "0x80004005 (NS_ERROR_FAILURE)" */
+
 				// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
 				// reliable data channels currently supports only by FF. It is default value.
 				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
@@ -360,7 +404,7 @@
 				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
 				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(dc, remoteUserId) });
 			} catch (ex) {
-				var error = new xrtc.CommonError('createDataChannel', "Cannot create DataChannel", ex);
+				var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel.", ex);
 				logger.error('createDataChannel', error);
 				self.trigger(xrtc.Connection.events.dataChannelCreationError, { channelName: name, error: error });
 			}
@@ -511,6 +555,18 @@
 		}
 
 		function getIceState() {
+			/* W3C Editor's Draft 30 August 2013:
+			enum RTCIceConnectionState {
+				"new",
+				"checking",
+				"connected",
+				"completed",
+				"failed",
+				"disconnected",
+				"closed"
+			};
+			*/
+
 			var state = peerConnection
 							&& (peerConnection.iceConnectionState // M26+
 							|| peerConnection.iceState) // M25
@@ -521,6 +577,17 @@
 
 		// todo: need to think about available states
 		function getSignalingState() {
+			/* W3C Editor's Draft 30 August 2013:
+			enum RTCSignalingState {
+				"stable",
+				"have-local-offer",
+				"have-remote-offer",
+				"have-local-pranswer",
+				"have-remote-pranswer",
+				"closed"
+			};
+			*/
+
 			// it can change from version to version
 			var isLocalStreamAdded = localStreams.length > 0,
 				states = {
