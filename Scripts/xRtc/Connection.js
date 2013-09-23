@@ -109,6 +109,7 @@
 			remoteUserId = targetId,
 			remoteConnectionId = null,
 			localStreams = [],
+			remoteStreams = [],
 			dataChannels = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
@@ -223,6 +224,14 @@
 
 				return getSignalingState.call(this);
 			},
+
+			getLocalStreams: function () {
+				return localStreams;
+			},
+
+			getRemoteStreams: function () {
+				return remoteStreams;
+			}
 		});
 
 		function subscribeToHandshakeControllerEvents() {
@@ -437,12 +446,16 @@
 		}
 
 		function addRemoteStream(stream) {
+			var newXrtcStream = new xrtc.Stream(stream);
+			remoteStreams.push(newXrtcStream);
+
 			var streamData = {
-				stream: new xrtc.Stream(stream),
+				stream: newXrtcStream,
 				userId: remoteUserId
 			};
 
 			logger.debug('addRemoteStream', streamData);
+
 			this.trigger(xrtc.Connection.events.remoteStreamAdded, streamData);
 		}
 
