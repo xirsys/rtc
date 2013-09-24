@@ -256,7 +256,7 @@
 			}
 			else if (eventName == scEvents.receiveAnswer) {
 				var answerData = {
-					//senderId: data.userid,
+					senderId: data.userid,
 					//receiverId: data.message.targetUserId,
 					connectionId: data.message.data.connectionId,
 					answer: data.message.data.answer.answer,

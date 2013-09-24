@@ -221,7 +221,7 @@
 			function onDeclineCall() {
 				// note: need to think about declining reason
 				// todo: need to think about 'bye' options definition and about senderId property name
-				serverConnector.sendBye(data.senderId, data.connectionId, data.connectionData, { type: 'decline' });
+				serverConnector.sendBye(data.senderId, data.connectionId, null, { type: 'decline' });
 			}
 		}
 
@@ -234,8 +234,18 @@
 						this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
 					}
 
+					// bug: this actin should be executed only in case when 'bye' was send from target user (userid === connection.targetUser). As a result near handshake controller need to store userId also.
 					targetHc.trigger(hcEvents.receiveBye);
 				}
+
+				// bug: close the connection in case when close command was received from target user of this connection
+				// steps for reproduce:
+				// 1) Call to user;
+				// 2) Close created connection which was created for the user;
+				// 3) User accept incomin connection -> answer will be sent to me
+				// 4) I received answer and send bye to the user, becuase my connection was closed already
+				// 5) User receiving 'bye' and doing nothing, but the connection should be closed
+				// Note: do not forget about filtering close command by terget user id.
 			}
 		}
 
@@ -253,6 +263,8 @@
 					var targetHc = handshakeControllers[data.targetConnectionId];
 					if (targetHc) {
 						targetHc.trigger(hcEvents.receiveAnswer, { connectionId: data.connectionId, answer: data.answer });
+					} else {
+						serverConnector.sendBye(data.senderId, data.connectionId, data.targetConnectionId);
 					}
 				}
 			});
