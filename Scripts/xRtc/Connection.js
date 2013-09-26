@@ -325,10 +325,16 @@
 				peerConnection.onaddstream = proxy(onAddStream);
 
 				// for FF only (Doesn't work for for FF 24. Other version was not tested.)
-				peerConnection.onclosedconnection = function (closeData) {
+				peerConnection.onclosedconnection = function (closeData/*temporary ignores*/) {
 					//logger.test('onclosedconnection', closeData);
+
+					var closeConnectionData = {
+						sender: self,
+						userId: remoteUserId
+					};
+
 					// todo: maybe will be better to wrap the closeData or some fields of the closeData to new object
-					self.trigger(xrtc.Connection.events.connectionClosed, closeData);
+					self.trigger(xrtc.Connection.events.connectionClosed, closeConnectionData);
 				};
 
 				// todo: need to fire close connection event for Chrome M26. The logic should be based on peerConnection.iceConnectionState field and window.setInterval
