@@ -111,6 +111,7 @@
 			localStreams = [],
 			remoteStreams = [],
 			dataChannels = [],
+			dataChannelNames = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
 			handshakeController = hc,
@@ -211,7 +212,7 @@
 			},
 
 			createDataChannel: function (name) {
-				dataChannels.push(name);
+				dataChannelNames.push(name);
 			},
 
 			getData: function () {
@@ -231,7 +232,14 @@
 
 			getRemoteStreams: function () {
 				return remoteStreams;
-			}
+			},
+
+			getDataChannels: function () {
+				//return the copy of array
+				return dataChannels.map(function (channel) {
+					return channel;
+				});
+			},
 		});
 
 		function subscribeToHandshakeControllerEvents() {
@@ -317,7 +325,9 @@
 					proxy(onIceStateChange);
 
 				peerConnection.ondatachannel = function (channelData) {
-					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(channelData.channel, remoteUserId) });
+					var newDataChannel = new xrtc.DataChannel(channelData.channel, remoteUserId);
+					dataChannels.push(newDataChannel);
+					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: newDataChannel });
 				};
 
 				/* FF 19-20.0.1 (maybe earlier, FF21 works fine): fire this event twice, for video stream and for audio stream despite the fact that one stream was added by remote side */
@@ -387,8 +397,8 @@
 				}
 
 				// create data channnels which were created(registered for creation) before
-				for (var i = 0, len = dataChannels.length; i < len; i++) {
-					createDataChannel.call(this, dataChannels[i]);
+				for (var i = 0, len = dataChannelNames.length; i < len; i++) {
+					createDataChannel.call(this, dataChannelNames[i]);
 				}
 
 				callCallback();
@@ -417,7 +427,9 @@
 				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
 				var dc = peerConnection.createDataChannel(name, webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? { reliable: false } : {});
 				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
-				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: new xrtc.DataChannel(dc, remoteUserId) });
+				var newDataChannel = new xrtc.DataChannel(dc, remoteUserId);
+				dataChannels.push(newDataChannel);
+				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: newDataChannel });
 			} catch (ex) {
 				var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel.", ex);
 				logger.error('createDataChannel', error);
