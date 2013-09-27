@@ -199,8 +199,7 @@
 			},
 
 			addStream: function (xrtcStream) {
-				var stream = xrtcStream.getStream();
-				localStreams.push(stream);
+				localStreams.push(xrtcStream);
 
 				var streamData = {
 					stream: xrtcStream,
@@ -227,11 +226,17 @@
 			},
 
 			getLocalStreams: function () {
-				return localStreams;
+				//return the copy of array
+				return localStreams.map(function (stream) {
+					return stream;
+				});
 			},
 
 			getRemoteStreams: function () {
-				return remoteStreams;
+				//return the copy of array
+				return remoteStreams.map(function (stream) {
+					return stream;
+				});
 			},
 
 			getDataChannels: function () {
@@ -393,7 +398,7 @@
 
 				// add streams to native webrtc peerConnection which were added before
 				for (var i = 0, len = localStreams.length; i < len; i++) {
-					peerConnection.addStream(localStreams[i]);
+					peerConnection.addStream(localStreams[i].getStream());
 				}
 
 				// create data channnels which were created(registered for creation) before
