@@ -23,7 +23,13 @@
 				return stream;
 			},
 
+			stop: function() {
+				stream.stop();
+			},
+
 			getId: function () {
+				// note: id property is actual only for Chrome M26+
+				// todo: need to delete this property or generate own id in case of FF or Chrome M25
 				return stream.id;
 			},
 
