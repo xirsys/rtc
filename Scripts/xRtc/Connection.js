@@ -279,6 +279,7 @@
 			}
 
 			function createBrowserCompatibleIceServers(iceServersArray) {
+				var browserCompatibleIceServers = [];
 				//note: The code regarding creation ice servers in appropriate format was copied from https://apprtc.appspot.com/js/adapter.js (official demo of the Google)
 
 				// note: FF can't resolve IP by URL. As a result IP addresses should be used for ice servers.
@@ -331,27 +332,38 @@
 					return iceServer;
 				};
 
-				return iceServersArray.map(function(iceServer) {
+				var createBrowserCompatibleServer = function (iceServerData) {
 					var resultIceServer;
-					if (iceServer.url.indexOf("turn:") === -1) {
-						resultIceServer = iceServer;
+					if (iceServerData.url.indexOf("turn:") === -1) {
+						resultIceServer = iceServerData;
 					} else {
 						if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
-							resultIceServer = createCromeTurnServer(iceServer.url, iceServer.username, iceServer.credential);
+							resultIceServer = createCromeTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 						} else {
-							resultIceServer = createFireFoxTurnIceServer(iceServer.url, iceServer.username, iceServer.credential);
+							resultIceServer = createFireFoxTurnIceServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 						}
 					}
 
 					return resultIceServer;
-				});
+				};
+
+				for (var i = 0, l = iceServersArray.length; i < l; i++) {
+					var browserCompatibleServer = createBrowserCompatibleServer(iceServersArray[i]);
+					if (browserCompatibleServer) {
+						browserCompatibleIceServers.push(browserCompatibleServer);
+					}
+				}
+
+				return browserCompatibleIceServers;
 			}
 
 			function onIceServersGot(iceServersArray) {
 				var self = this;
 
+				var browserCompatibleIceServers = createBrowserCompatibleIceServers(iceServersArray);
+
 				peerConnection = new webrtc.RTCPeerConnection(
-					{ iceServers: createBrowserCompatibleIceServers( iceServersArray) },
+					browserCompatibleIceServers && browserCompatibleIceServers.length > 0 ? { iceServers: browserCompatibleIceServers } : null,
 					xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
