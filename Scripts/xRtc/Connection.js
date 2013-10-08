@@ -278,30 +278,89 @@
 				}
 			}
 
-			function onIceServersGot(iceServersData) {
-				var self = this;
+			function createBrowserCompatibleIceServers(iceServersArray) {
+				//note: The code regarding creation ice servers in appropriate format was copied from https://apprtc.appspot.com/js/adapter.js (official demo of the Google)
 
-				var browserCompatibleIceServers;
-				if (webrtc.detectedBrowser == webrtc.supportedBrowsers.firefox) {
-					browserCompatibleIceServers = { iceServers: [] };
-					for (var i = 0, len = iceServersData.iceServers.length; i < len; i++) {
-						var iceServer = iceServersData.iceServers[i];
-						// FF 18-22: TURN doesn't supported.
-						// FF 23: TURN supported!
-						// todo: Need to reflect TURN support for FF 23+ in this library
-						// todo: Need to check possibility of resolving DNS addresses in case of STUN/TURN connection by FF 23+
-						// todo: For Chrome M28+ & maybe FF 23+ new turn format should be used. Old format still supported by Chrome. Possibly FF 23+ works only with new TURN format.
-						if (iceServer.url.indexOf("turn:") === -1) {
-							browserCompatibleIceServers.iceServers.push(iceServer);
+				// note: FF can't resolve IP by URL. As a result IP addresses should be used for ice servers.
+				// Creates iceServer from the url for FF.
+				var createFireFoxTurnIceServer = function (url, username, password) {
+					var iceServer = null;
+					var url_parts = url.split(':');
+					if (url_parts[0].indexOf('stun') === 0) {
+						// Create iceServer with stun url.
+						iceServer = { 'url': url };
+					} else if (url_parts[0].indexOf('turn') === 0 &&
+							   (url.indexOf('transport=udp') !== -1 ||
+								url.indexOf('?transport') === -1)) {
+						// Create iceServer with turn url.
+						// Ignore the transport parameter from TURN url.
+						var turn_url_parts = url.split("?");
+						iceServer = {
+							'url': turn_url_parts[0],
+							'credential': password,
+							'username': username
+						};
+					}
+					return iceServer;
+				};
+
+				// Creates iceServer from the url for Chrome.
+				var createCromeTurnServer = function (url, username, password) {
+					var iceServer = null;
+					var url_parts = url.split(':');
+					if (url_parts[0].indexOf('stun') === 0) {
+						// Create iceServer with stun url.
+						iceServer = { 'url': url };
+					} else if (url_parts[0].indexOf('turn') === 0) {
+						if (webrtc.detectedBrowserVersion < 28) {
+							// For pre-M28 chrome versions use old TURN format.
+							var url_turn_parts = url.split("turn:");
+							iceServer = {
+								'url': 'turn:' + username + '@' + url_turn_parts[1],
+								'credential': password
+							};
+						} else {
+							// For Chrome M28 & above use new TURN format.
+							iceServer = {
+								'url': url,
+								'credential': password,
+								'username': username
+							};
 						}
 					}
-				} else {
-					browserCompatibleIceServers = iceServersData;
-				}
+					return iceServer;
+				};
 
-				peerConnection = new webrtc.RTCPeerConnection(browserCompatibleIceServers, xrtc.Connection.settings.peerConnectionOptions);
+				return iceServersArray.map(function(iceServer) {
+					var resultIceServer;
+					if (iceServer.url.indexOf("turn:") === -1) {
+						resultIceServer = iceServer;
+					} else {
+						if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
+							resultIceServer = createCromeTurnServer(iceServer.url, iceServer.username, iceServer.credential);
+						} else {
+							resultIceServer = createFireFoxTurnIceServer(iceServer.url, iceServer.username, iceServer.credential);
+						}
+					}
+
+					return resultIceServer;
+				});
+			}
+
+			function onIceServersGot(iceServersArray) {
+				var self = this;
+
+				peerConnection = new webrtc.RTCPeerConnection(
+					{ iceServers: createBrowserCompatibleIceServers( iceServersArray) },
+					xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
+				/*	Note: Firefox (FF 24 at least) does not currently generate 'trickle candidates'. This means that it will include its
+					candidate addresses as 'c' lines in the offer/answer, and the onicecandidate callback will never be called.
+					The downside to this approach is that Firefox must wait for all of its candidates to be gathered before creating its offer/answer
+					(a process which can involve contacting STUN and TURN servers and waiting for either the responses or for the requests timeout).
+					http://stackoverflow.com/questions/15484729/why-doesnt-onicecandidate-work
+				*/
 				peerConnection.onicecandidate = proxy(onIceCandidate);
 
 				peerConnection.onstatechange = // M25-M26

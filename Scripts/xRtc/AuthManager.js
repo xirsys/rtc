@@ -18,6 +18,8 @@
 			},
 
 			getIceServers: function (token, userData, callback) {
+				/// <summary> Callback function receive array of ice servers as parameter.
+				/// Each ice server has following format: { url, credential, username } in case of TURN and { url } in case of STUN</summary>
 				var iceServers = iceServersCache[token];
 				if (iceServers) {
 					logger.info('getIceServers', iceServers, typeof(callback));
@@ -118,11 +120,22 @@
 					logger.error('getIceServers', error);
 					this.trigger(xrtc.AuthManager.events.serverError, error);
 				} else {
-					var iceServers = response.d;
+					var iceServers = response.d.iceServers
+						? response.d.iceServers.map(function(iceServer) {
+							var resultIceServer = {};
+							if (iceServer.url) {
+								resultIceServer.url = iceServer.url;
+							}
+							if (iceServer.credential) {
+								resultIceServer.credential = iceServer.credential;
+							}
+							if (iceServer.username) {
+								resultIceServer.username = iceServer.username;
+							}
 
-					// todo: remove it in next version of Firefox
-					convertIceServerDNStoIP(iceServers.iceServers);
-					// todo: remove it in next version of Firefox
+							return resultIceServer;
+						})
+						: [];
 
 					//save servers in cache with token key
 					iceServersCache[token] = iceServers;
@@ -134,23 +147,6 @@
 			//call this method again to get it from cache or if error occures
 			this.getIceServers(token, userData, callback);
 		}
-
-		// todo: remove it in next version of Firefox
-		function convertIceServerDNStoIP(iceServers) {
-			var addresses = {
-				'localhost': '127.0.0.1',
-				'beta.xirsys.com': '75.126.93.106'
-			};
-
-			for (var i = 0; i < iceServers.length; i++) {
-				var server = iceServers[i];
-
-				for (var dns in addresses) {
-					server.url = server.url.replace(dns, addresses[dns]);
-				}
-			}
-		}
-		// todo: remove it in next version of Firefox
 	});
 
 	xrtc.AuthManager.extend({
