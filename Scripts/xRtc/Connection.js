@@ -399,10 +399,11 @@
 					checkConnectionStateIntervalId = exports.setInterval(function () {
 						var currentConnectionState = self.getState();
 						if (currentConnectionState != connectionState) {
+							logger.debug('setInterval -> xrtc.Connection.events.stateChanged', currentConnectionState);
 							connectionState = currentConnectionState;
 							self.trigger(xrtc.Connection.events.stateChanged, connectionState);
 						}
-					}, 100);
+					}, 500);
 				}
 
 				// todo: need to think about the necessity of this handlers
@@ -424,6 +425,7 @@
 
 				// for FF only (Tested for FF24)
 				peerConnection.onclosedconnection = function (closeData/*temporary ignores*/) {
+					logger.debug('peerConnection.onclosedconnection', closeData);
 					closePeerConnection.call(self);
 				};
 
@@ -451,6 +453,7 @@
 				}
 
 				function onConnectionStateChange(evt) {
+					logger.debug('onConnectionStateChange', evt);
 					this.trigger(xrtc.Connection.events.stateChanged, this.getState());
 				}
 
