@@ -129,7 +129,8 @@
 			iceCandidates = [],
 			connectionId = generateGuid(),
 			// User data conainer. The data helps to identify the connection and differ the connection from other connections
-			connectionData = data;
+			connectionData = data,
+			connectionIsOpened = false;
 
 		subscribeToHandshakeControllerEvents.call(this);
 
@@ -140,7 +141,10 @@
 				return connectionId;
 			},
 
-			open: function (options) {
+			_open: function (options) {
+				/// <summary>It is internal method. It should not be used manually.</summary>
+				connectionIsOpened = true;
+
 				var self = this,
 					offerOptions = {};
 
@@ -206,6 +210,10 @@
 			},
 
 			addStream: function (xrtcStream) {
+				if (connectionIsOpened) {
+					throwExceptionOfWrongmethodCall('addStream');
+				}
+
 				localStreams.push(xrtcStream);
 
 				var streamData = {
@@ -218,6 +226,10 @@
 			},
 
 			createDataChannel: function (name) {
+				if (connectionIsOpened) {
+					throwExceptionOfWrongmethodCall('createDataChannel');
+				}
+
 				dataChannelNames.push(name);
 			},
 
@@ -253,6 +265,13 @@
 				});
 			},
 		});
+		
+		function throwExceptionOfWrongmethodCall(methodName) {
+			var error = new xrtc.CommonError(methodName, "The method can be called on '" +
+				xrtc.Room.events.connectionCreated +
+				"' event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.");
+			logger.error(methodName, error);
+		}
 
 		function removeHostAndStunIceCandidates(sdp) {
 			//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type = 'server'
@@ -663,6 +682,7 @@
 				iceCandidates = [];
 				iceServers = null;
 				connectionEstablished = false;
+				connectionIsOpened = false;
 
 				var closeConnectionData = {
 					sender: self,

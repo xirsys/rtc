@@ -95,7 +95,7 @@
 						connection.createDataChannel('autoDataChannel');
 					}
 
-					connection.open(connectionOptions);
+					connection._open(connectionOptions);
 				});
 			},
 
