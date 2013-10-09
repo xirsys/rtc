@@ -143,6 +143,8 @@
 						this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
 					}))
 					.on(scEvents.receiveOffer, proxy(onIncomingConnection))
+					// note: everything works fine without sendbye functionality in case when connection was closed manually.
+					// This functionality helps to detect 'close' action more quickly for Chrome because xRtc.Connection fires close event not immediately
 					.on(scEvents.receiveBye, proxy(onCloseConnection));
 
 				isServerConnectorSubscribed = true;

@@ -71,28 +71,34 @@
 		}
 
 		function handleTokenRequest(response, userData, callback) {
+			var self = this;
 			try {
 				logger.debug('getToken', response);
 
 				if (response === "") {
 					logger.error('getToken', 'Server returned an empty response.');
-					this.trigger(xrtc.AuthManager.events.serverError, 'Server returned an empty response.');
+					self.trigger(xrtc.AuthManager.events.serverError, 'Server returned an empty response.');
 				}
 
-				response = JSON.parse(response);
-				logger.debug('getToken', response);
+				try {
+					response = JSON.parse(response);
+					logger.debug('getToken', response);
+				} catch(ex) {
+					logger.error('getToken', response);
+					throw ex;
+				}
 
 				if (!!response && !!response.e && response.e != '') {
 					var error = new xrtc.CommonError('getToken', response.e);
 					logger.error('getToken', error);
-					this.trigger(xrtc.AuthManager.events.serverError, error);
+					self.trigger(xrtc.AuthManager.events.serverError, error);
 				} else {
 					var token = response.d.token;
 
 					// todo: need to discuss it with the team
 					if (!token) {
 						logger.error('getToken', response.d);
-						this.trigger(xrtc.AuthManager.events.serverError, response.d);
+						self.trigger(xrtc.AuthManager.events.serverError, response.d);
 					}
 					else {
 						logger.info('getToken', token);
@@ -103,9 +109,10 @@
 					}
 				}
 			} catch (ex) {
-				logger.error('getToken', ex);
-				//call this method again if error occures
-				this.getToken(userData, callback);
+				var repeatTimeout = 5000;
+				logger.error('getToken. The request will be repeated after ' + repeatTimeout/1000 + " sec.", ex);
+				// call this method again if error occures
+				setTimeout(function () { self.getToken(userData, callback); }, repeatTimeout);
 			}
 		}
 

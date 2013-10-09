@@ -154,10 +154,17 @@
 
 				initPeerConnection.call(self, remoteUserId, function () {
 					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
+					var connectionType = iceFilter.getType();
 
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
+
+						// todo: move 'server' to common property of iceFilter
+						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && connectionType === 'server') {
+							offer.sdp = removeHostAndStunIceCandidates(offer.sdp);
+						}
+
 						logger.debug('onCreateOfferSuccess', offer);
 						peerConnection.setLocalDescription(offer);
 
@@ -170,7 +177,7 @@
 						var request = {
 							offer: JSON.stringify(offer),
 							connectionData: connectionData,
-							connectionType: iceFilter.getType(),
+							connectionType: connectionType,
 							iceServers: iceServers
 						};
 
@@ -247,6 +254,11 @@
 			},
 		});
 
+		function removeHostAndStunIceCandidates(sdp) {
+			//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type = 'server'
+			return sdp.replace(/a=candidate:.*((typ host)|(srflx raddr)).*\r\n/g, "");
+		}
+
 		function subscribeToHandshakeControllerEvents() {
 			var hcEvents = xrtc.HandshakeController.events;
 			handshakeController
@@ -282,7 +294,7 @@
 				var browserCompatibleIceServers = [];
 				//note: The code regarding creation ice servers in appropriate format was copied from https://apprtc.appspot.com/js/adapter.js (official demo of the Google)
 
-				// note: FF can't resolve IP by URL. As a result IP addresses should be used for ice servers.
+				// note: FF < 23 (maybe < 24, need to check it) can't resolve IP by URL. As a result IP addresses should be used for ice servers. FF 24 doesn't have this problem. Checked.
 				// Creates iceServer from the url for FF.
 				var createFireFoxTurnIceServer = function (url, username, password) {
 					var iceServer = null;
@@ -410,17 +422,9 @@
 				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
 				peerConnection.onaddstream = proxy(onAddStream);
 
-				// for FF only (Doesn't work for for FF 24. Other version was not tested.)
+				// for FF only (Tested for FF24)
 				peerConnection.onclosedconnection = function (closeData/*temporary ignores*/) {
-					//logger.test('onclosedconnection', closeData);
-
-					var closeConnectionData = {
-						sender: self,
-						userId: remoteUserId
-					};
-
-					// todo: maybe will be better to wrap the closeData or some fields of the closeData to new object
-					self.trigger(xrtc.Connection.events.connectionClosed, closeConnectionData);
+					closePeerConnection.call(self);
 				};
 
 				// todo: need to fire close connection event for Chrome M26. The logic should be based on peerConnection.iceConnectionState field and window.setInterval
@@ -586,6 +590,8 @@
 				logger.debug('receiveOffer', offerData);
 				iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
 
+				var connectionType = iceFilter.getType();
+
 				var sdp = JSON.parse(offerData.offer);
 
 				var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
@@ -594,6 +600,11 @@
 				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
 				function onCreateAnswerSuccess(answer) {
+					// todo: move 'server' to common property of iceFilter
+					if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && connectionType === 'server') {
+						answer.sdp = removeHostAndStunIceCandidates(answer.sdp);
+					}
+
 					peerConnection.setLocalDescription(answer);
 
 					var request = {
