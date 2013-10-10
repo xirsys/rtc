@@ -3,6 +3,7 @@
 (function (exports) {
 	var xrtc = exports.xRtc,
 		webrtc = xrtc.webrtc,
+		logger = new xrtc.Logger("UserMedia"),
 		getUserMedia = function(options, successCallback, errorCallback) {
 			webrtc.getUserMedia(options, onGetUserMediaSuccess, onGetUserMediaError);
 
@@ -22,6 +23,11 @@
 	xrtc.getUserMedia = function (options, successCallback, errorCallback) {
 		/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
 		/// <param name="options" type="object">Optional param. Local media options</param>
+
+		if (options && !options.video && !options.audio) {
+			var error = new xrtc.CommonError('getUserMedia', "video or audio property of the options parameter should be specified. No sense to create media stream without video and audio components.");
+			logger.error('onCreateOfferError', error);
+		}
 
 		var mediaOptions = options || { video: true, audio: true };
 		if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {

@@ -8,7 +8,7 @@
 	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, is) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			connectionType = type || 'default',
+			connectionType = type || xrtc.Connection.connectionTypes.default,
 			iceServers = is && is.iceServers || null,
 			ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
 
@@ -21,10 +21,10 @@
 				var result = true;
 
 				switch (connectionType) {
-					case 'direct':
+					case xrtc.Connection.connectionTypes.direct:
 						result = iceCandidatesFilters.local(ice) || iceCandidatesFilters.stun(ice);
 						break;
-					case 'server':
+					case xrtc.Connection.connectionTypes.server:
 						if (iceCandidatesFilters.stun(ice)) {
 							iceCandidateConverters.stun2turn(ice);
 						} else if (iceCandidatesFilters.turn(ice)) {
@@ -158,15 +158,14 @@
 
 				initPeerConnection.call(self, remoteUserId, function () {
 					iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
-					var connectionType = iceFilter.getType();
 
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
+						var connectionType = iceFilter.getType();
 
-						// todo: move 'server' to common property of iceFilter
-						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && connectionType === 'server') {
-							offer.sdp = removeHostAndStunIceCandidates(offer.sdp);
+						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+							offer.sdp = prepareFireFoxSessionDescription(offer.sdp, connectionType);
 						}
 
 						logger.debug('onCreateOfferSuccess', offer);
@@ -273,9 +272,16 @@
 			logger.error(methodName, error);
 		}
 
-		function removeHostAndStunIceCandidates(sdp) {
-			//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type = 'server'
-			return sdp.replace(/a=candidate:.*((typ host)|(srflx raddr)).*\r\n/g, "");
+		function prepareFireFoxSessionDescription(sdp, connectionType) {
+			//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type === xrtc.Connection.connectionTypes.server
+			var preparedSdp = sdp;
+			if (connectionType === xrtc.Connection.connectionTypes.server) {
+				preparedSdp = sdp.replace(/a=candidate:.*((typ host)|(srflx raddr)).*\r\n/g, "");
+			} else if (connectionType === xrtc.Connection.connectionTypes.direct) {
+				preparedSdp = sdp.replace(/a=candidate:.*typ relay raddr.*\r\n/g, "");
+			}
+
+			return preparedSdp;
 		}
 
 		function subscribeToHandshakeControllerEvents() {
@@ -412,8 +418,8 @@
 					peerConnection.onsignalingstatechange = // M27+, FF24+
 					proxy(onConnectionStateChange);
 
-				// in FireFox onstatechange or alternative event does not fire properly
-				if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+				// in FireFox < 24 onstatechange or alternative event does not fire properly
+				if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion < 24) {
 					var connectionState = this.getState();
 					checkConnectionStateIntervalId = exports.setInterval(function () {
 						var currentConnectionState = self.getState();
@@ -442,7 +448,7 @@
 				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
 				peerConnection.onaddstream = proxy(onAddStream);
 
-				// for FF only (Tested for FF24)
+				// for FF only (Tested for FF24 & Win7. Magic, sometimes works and sometimes not.)
 				peerConnection.onclosedconnection = function (closeData/*temporary ignores*/) {
 					logger.debug('peerConnection.onclosedconnection', closeData);
 					closePeerConnection.call(self);
@@ -612,8 +618,6 @@
 				logger.debug('receiveOffer', offerData);
 				iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
 
-				var connectionType = iceFilter.getType();
-
 				var sdp = JSON.parse(offerData.offer);
 
 				var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
@@ -622,9 +626,8 @@
 				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
 				function onCreateAnswerSuccess(answer) {
-					// todo: move 'server' to common property of iceFilter
-					if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && connectionType === 'server') {
-						answer.sdp = removeHostAndStunIceCandidates(answer.sdp);
+					if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+						answer.sdp = prepareFireFoxSessionDescription(answer.sdp, iceFilter.getType());
 					}
 
 					peerConnection.setLocalDescription(answer);
@@ -790,6 +793,12 @@
 			connectionClosed: 'connectionclosed',
 
 			stateChanged: 'statechanged'
+		},
+
+		connectionTypes: {
+			default: 'default',
+			direct: 'direct',
+			server: 'server'
 		},
 
 		settings: {
