@@ -38,6 +38,18 @@
 				}
 
 				return result;
+			},
+
+			filterSDP: function (sdp) {
+				//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type === xrtc.Connection.connectionTypes.server
+				var changedSdp = sdp;
+				if (connectionType === xrtc.Connection.connectionTypes.server) {
+					changedSdp = sdp.replace(/a=candidate:.*((typ host)|(typ srflx)).*\r\n/g, "");
+				} else if (connectionType === xrtc.Connection.connectionTypes.direct) {
+					changedSdp = sdp.replace(/a=candidate:.*typ relay.*\r\n/g, "");
+				}
+
+				return changedSdp;
 			}
 		});
 
@@ -162,10 +174,8 @@
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
-						var connectionType = iceFilter.getType();
-
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-							offer.sdp = prepareFireFoxSessionDescription(offer.sdp, connectionType);
+							offer.sdp = iceFilter.filterSDP(offer.sdp);
 						}
 
 						logger.debug('onCreateOfferSuccess', offer);
@@ -180,7 +190,7 @@
 						var request = {
 							offer: JSON.stringify(offer),
 							connectionData: connectionData,
-							connectionType: connectionType,
+							connectionType: iceFilter.getType(),
 							iceServers: iceServers
 						};
 
@@ -264,24 +274,12 @@
 				});
 			},
 		});
-		
+
 		function throwExceptionOfWrongmethodCall(methodName) {
 			var error = new xrtc.CommonError(methodName, "The method can be called on '" +
 				xrtc.Room.events.connectionCreated +
 				"' event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.");
 			logger.error(methodName, error);
-		}
-
-		function prepareFireFoxSessionDescription(sdp, connectionType) {
-			//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type === xrtc.Connection.connectionTypes.server
-			var preparedSdp = sdp;
-			if (connectionType === xrtc.Connection.connectionTypes.server) {
-				preparedSdp = sdp.replace(/a=candidate:.*((typ host)|(srflx raddr)).*\r\n/g, "");
-			} else if (connectionType === xrtc.Connection.connectionTypes.direct) {
-				preparedSdp = sdp.replace(/a=candidate:.*typ relay raddr.*\r\n/g, "");
-			}
-
-			return preparedSdp;
 		}
 
 		function subscribeToHandshakeControllerEvents() {
@@ -321,7 +319,7 @@
 
 				// note: FF < 23 (maybe < 24, need to check it) can't resolve IP by URL. As a result IP addresses should be used for ice servers. FF 24 doesn't have this problem. Checked.
 				// Creates iceServer from the url for FF.
-				var createFireFoxTurnIceServer = function (url, username, password) {
+				var createFireFoxTurnServer = function (url, username, password) {
 					var iceServer = null;
 					var url_parts = url.split(':');
 					if (url_parts[0].indexOf('stun') === 0) {
@@ -377,7 +375,7 @@
 						if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
 							resultIceServer = createCromeTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 						} else {
-							resultIceServer = createFireFoxTurnIceServer(iceServerData.url, iceServerData.username, iceServerData.credential);
+							resultIceServer = createFireFoxTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 						}
 					}
 
@@ -627,7 +625,7 @@
 
 				function onCreateAnswerSuccess(answer) {
 					if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-						answer.sdp = prepareFireFoxSessionDescription(answer.sdp, iceFilter.getType());
+						answer.sdp = iceFilter.filterSDP(answer.sdp);
 					}
 
 					peerConnection.setLocalDescription(answer);
