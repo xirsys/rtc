@@ -1,4 +1,8 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+// `xRtc.getUserMedia` is the special functions for accessing media (audio, video, screen) information.
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc,
@@ -20,10 +24,8 @@
 			}
 		};
 
+	// **[Public API]:** Asks user to allow use local devices, e.g. camera and microphone.
 	xrtc.getUserMedia = function (options, successCallback, errorCallback) {
-		/// <summary>Asks user to allow use local devices, e.g. camera and microphone</summary>
-		/// <param name="options" type="object">Optional param. Local media options</param>
-
 		if (options && !options.video && !options.audio) {
 			var error = new xrtc.CommonError('getUserMedia', "video or audio property of the options parameter should be specified. No sense to create media stream without video and audio components.");
 			logger.error('onCreateOfferError', error);
@@ -33,7 +35,7 @@
 		if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {
 			getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
 				if (mediaOptions.audio) {
-					/* FF 20.0.1: (not shure about other version, FF 21 works fine) reduces the overall sound of the computer (playing using Chrome and maybe another FF) after calling this functionality. */
+					// *FF 20.0.1: (Not shure about other version, FF 21 works fine)* reduces the overall sound of the computer (playing using *Chrome* and maybe another *FF*) after calling this functionality.
 					getUserMedia.call(this, { audio: true }, function (audioStream) {
 						function addTracks(array, tracks) {
 							for (var i = 0; i < tracks.length; i++) {
@@ -41,7 +43,7 @@
 							}
 						}
 
-						// Combine audio and video components of different streams in one stream
+						// Combine audio and video components of different streams in one stream.
 						var mediaStreamTracks = [];
 						addTracks(mediaStreamTracks, audioStream.getAudioTracks());
 						addTracks(mediaStreamTracks, screenSharingStream.getVideoTracks());

@@ -1,9 +1,13 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+// `xRtc.Stream` is one of the main objects of **xRtc** library.
+
+'use strict';
 
 (function (exports, xrtc) {
 	var webrtc = xrtc.webrtc;
 
-	//todo: possible we should wrap Video and Audio Tracks
+	// **Todo:** Possible we should wrap Video and Audio Tracks.
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
@@ -19,24 +23,29 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
+			// **[Public API]**
 			getStream: function () {
 				return stream;
 			},
 
+			// **[Public API]**
 			stop: function() {
 				stream.stop();
 			},
 
+			// **[Public API]**
 			getId: function () {
-				// note: id property is actual only for Chrome M26+
-				// todo: need to delete this property or generate own id in case of FF or Chrome M25
+				// **Note:** `id` property is actual only for *Chrome M26+*.
+				// **Todo:** need to delete this property or generate own id in case of *FF* or *Chrome M25*.
 				return stream.id;
 			},
 
+			// **[Public API]**
 			getURL: function () {
 				return webrtc.URL.createObjectURL(stream);
 			},
 
+			// **[Public API]**
 			assignTo: function (videoDomElement) {
 				// stream could not be started if it has not been downloaded yet
 				if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
@@ -49,7 +58,7 @@
 		});
 
 		function assignTo(videoDomElement) {
-			// currently for firefox 'src' does not work, in future it can be removed
+			// Currently for *FireFox* `src` does not work, in future it can be removed.
 			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 				videoDomElement.mozSrcObject = stream;
 			} else {
@@ -108,6 +117,7 @@
 		}
 	});
 
+	// **Note:** Full list of events for the `xRtc.Stream` object.
 	xrtc.Stream.extend({
 		events: {
 			ended: 'ended'

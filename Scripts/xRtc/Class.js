@@ -1,9 +1,10 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+'use strict';
 
 (function (exports) {
+	// The base type of all classes.
 	exports.xRtc.Class = function (namespace, className, constructor) {
-		/// <summary>The base type of all classes</summary>
-
 		namespace[className] = constructor;
 
 		var klass = namespace[className];
@@ -11,9 +12,8 @@
 		klass.fn = klass.prototype;
 		klass.fn.className = className;
 
+		// **[Public API]:** Extends the instance of concrete object.
 		klass.extend = function (obj) {
-			/// <summary>Extends the instance of concrete object</summary>
-
 			var extended = obj.extended;
 
 			exports.xRtc.Class.extend(klass, obj);
@@ -24,10 +24,8 @@
 		};
 	};
 
+	// **[Public API]:** Extends "destinationObj" by another objects.
 	exports.xRtc.Class.extend = function (destinationObj) {
-		/// <summary>Extends "destinationObj" by another objects</summary>
-		/// <param name="destinationObj" type="object">Object to expand</param>
-		
 		var sourceObjects = Array.prototype.slice.call(arguments, 1);
 
 		for (var index = 0, len = sourceObjects.length; index < len; index++) {
@@ -39,13 +37,9 @@
 		}
 	};
 
+	// **[Public API]:** Adds to `obj` getter or/and setter. Where `obj` is object to add property,
+	// `propertyName` is property name, `getter` is getter to define, can be `null`, `setter` is setter to define, can be `null`.
 	exports.xRtc.Class.property = function (obj, propertyName, getter, setter) {
-		/// <summary>Adds to "obj" getter or/and setter</summary>
-		/// <param name="obj" type="object">Object to add property</param>
-		/// <param name="propertyName" type="string">Property name</param>
-		/// <param name="getter" type="function">Getter to define, can be null</param>
-		/// <param name="setter" type="function">Setter to define, can be null</param>
-
 		if(typeof getter === "function"){
 			obj.__defineGetter__(propertyName, getter);
 		}
@@ -55,9 +49,8 @@
 		}
 	};
 
+	// **[Public API]:** Creates new function, which will wrap another and will replace it's `context`.
 	exports.xRtc.Class.proxy = function (context) {
-		/// <summary>Creates new function, which will wrap another and will replace it's "context"</summary>
-		
 		return function (func) {
 			var baseArgs = [];
 			if (arguments.length > 1) {

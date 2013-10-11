@@ -1,4 +1,6 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc,

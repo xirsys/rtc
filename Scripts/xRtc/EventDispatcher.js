@@ -1,14 +1,13 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
 
 	xrtc.EventDispatcher = {
+		// **[Public API]:** Subscribes on event where `eventName` is the name of event and `callback` is callback function.
 		on: function (eventName, callback) {
-			/// <summary>Subscribes on event</summary>
-			/// <param name="eventName" type="string">The name of event</param>
-			/// <param name="callback" type="function">Callback function</param>
-			
 			if (this._logger) {
 				this._logger.info('on', arguments);
 			}
@@ -19,11 +18,9 @@
 
 			return this;
 		},
-		
-		off: function (eventName) {
-			/// <summary>Unsubscribes from event</summary>
-			/// <param name="eventName" type="string">The name of event</param>
 
+		// **[Public API]:** Unsubscribes from event where `eventName` is the name of event.
+		off: function (eventName) {
 			if (this._logger) {
 				this._logger.info('off', arguments);
 			}
@@ -35,11 +32,8 @@
 			return this;
 		},
 
+		// **[Public API]:** Triggers event where `eventName` is the name of event and `arguments` is parameters of event (Can be absent).
 		trigger: function (eventName) {
-			/// <summary>Triggers event</summary>
-			/// <param name="eventName" type="string">The name of event</param>
-			/// <param name="arguments" type="array">Parameters of event. Can be absent</param>
-			
 			if (this._logger) {
 				this._logger.info('trigger', arguments);
 			}

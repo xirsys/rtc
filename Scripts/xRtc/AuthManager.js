@@ -1,4 +1,6 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -17,9 +19,8 @@
 				this.ajax(url, 'POST', data, proxy(handleTokenRequest, userData, callback));
 			},
 
+			// `callback` function receive array of ice servers as parameter. Each ice server has following format: `{ url, credential, username }` in case of TURN and `{ url }` in case of STUN.
 			getIceServers: function (token, userData, callback) {
-				/// <summary> Callback function receive array of ice servers as parameter.
-				/// Each ice server has following format: { url, credential, username } in case of TURN and { url } in case of STUN</summary>
 				var iceServers = iceServersCache[token];
 				if (iceServers) {
 					logger.info('getIceServers', iceServers, typeof(callback));
@@ -95,7 +96,7 @@
 				} else {
 					var token = response.d.token;
 
-					// todo: need to discuss it with the team
+					// **Todo:** Need to discuss it with the team.
 					if (!token) {
 						logger.error('getToken', response.d);
 						self.trigger(xrtc.AuthManager.events.serverError, response.d);
@@ -111,7 +112,7 @@
 			} catch (ex) {
 				var repeatTimeout = 5000;
 				logger.error('getToken. The request will be repeated after ' + repeatTimeout/1000 + " sec.", ex);
-				// call this method again if error occures
+				// Call this method again if error occures.
 				setTimeout(function () { self.getToken(userData, callback); }, repeatTimeout);
 			}
 		}
@@ -144,19 +145,20 @@
 						})
 						: [];
 
-					//save servers in cache with token key
+					// Save servers in cache with token key.
 					iceServersCache[token] = iceServers;
 				}
 			} catch (ex) {
 				logger.error('getIceServers', ex);
 			}
 
-			//call this method again to get it from cache or if error occures
+			// Call this method again to get it from cache or if error occures.
 			this.getIceServers(token, userData, callback);
 		}
 	});
 
 	xrtc.AuthManager.extend({
+		// **Note:** Full list of events for the `xRtc.AuthManager` object.
 		events: {
 			serverError: 'servererror'
 		},

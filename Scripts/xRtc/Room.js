@@ -1,4 +1,8 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+// `xRtc.Room` is one of the main objects of **xRtc** library.
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -18,7 +22,7 @@
 			connections = [],
 			handshakeControllers = {};
 
-		// roomInfo initialization
+		// `roomInfo` initialization.
 		xrtc.Class.extend(roomInfo, xrtc.Room.settings.info);
 		if (typeof info === 'string') {
 			roomInfo.name = info;
@@ -29,6 +33,7 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
+			// **[Public API]:** It is public method of `room` object. This method should be used for entering the room.
 			enter: function (credentials, options) {
 				var user = "", pass = "";
 
@@ -45,13 +50,13 @@
 
 				subscribeToServerEvents.call(this);
 
-				// roomOptions initialization
+				// `roomOptions` initialization.
 				xrtc.Class.extend(roomOptions, xrtc.Room.settings.options);
 				if (options) {
 					xrtc.Class.extend(roomOptions, options);
 				};
 
-				// userData initialization
+				// `userData` initialization.
 				currentUserData = {
 					domain: roomInfo.domain,
 					application: roomInfo.application,
@@ -66,6 +71,7 @@
 				});
 			},
 
+			// **[Public API]:** It is public method of `room` object. This method should be used for leaving the room.
 			leave: function () {
 				serverConnector.disconnect();
 
@@ -76,11 +82,12 @@
 				roomInfo.user = null;
 				participants = [];
 
-				//todo: maybe will be good to close all room connections. Need to discuss it with the team.
+				// **Todo:** Maybe will be good to close all room connections. Need to discuss it with the team.
 				connections = [],
 				handshakeControllers = {};
 			},
 
+			// **[Public API]:** It is public method of `room` object. This method should be used for connection to someone from the current room.
 			connect: function (userId, connectionOptions) {
 				if (!roomInfo.user) {
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
@@ -99,17 +106,20 @@
 				});
 			},
 
+			// **[Public API]:** It is public method of `room` object. This method should be used for access room information.
 			getInfo: function () {
 				return roomInfo;
 			},
 
+			// **[Public API]:** It is public method of `room` object. Returns existed connections (`xRtc.Connection[]`) of the room.
 			getConnections: function () {
-				//return the copy of array
+				// Return the copy of internal array.
 				return connections.map(function (connection) {
 					return connection;
 				});
 			},
 
+			// **[Public API]:** It is public method of `room` object. Returns array of participans from the current room.
 			getParticipants: function () {
 				//return the copy of array
 				return participants.map(function (participant) {
@@ -143,8 +153,8 @@
 						this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
 					}))
 					.on(scEvents.receiveOffer, proxy(onIncomingConnection))
-					// note: everything works fine without sendbye functionality in case when connection was closed manually.
-					// This functionality helps to detect 'close' action more quickly for Chrome because xRtc.Connection fires close event not immediately
+					// **Note:** everything works fine without sendbye functionality in case when connection was closed manually.
+					// This functionality helps to detect 'close' action more quickly for Chrome because xRtc.Connection fires close event not immediately.
 					.on(scEvents.receiveBye, proxy(onCloseConnection));
 
 				isServerConnectorSubscribed = true;
@@ -158,7 +168,7 @@
 					.off(scEvents.participantConnected)
 					.off(scEvents.participantDisconnected);
 
-				// todo: what about another events? (connectionOpen, connectionClose, tokenInvalid). Need to think about it later.
+				// **Todo:** What about another events? (`connectionOpen`, `connectionClose`, `tokenInvalid`). Need to think about it later.
 
 				isServerConnectorSubscribed = false;
 			}
@@ -181,8 +191,8 @@
 		}
 
 		function onIncomingConnection(data) {
-			// Skip 'offer' if it is not for me. It is temporary fix, because server shouldn't pass the 'offer' to wrong target.
-			// Sometimes it happened that the server had sent the 'offer' to all/wrong participants. So we decided not touch this check.
+			// Skip `offer` if it is not for me. It is temporary fix, because server shouldn't pass the `offer` to wrong target.
+			// Sometimes it happened that the server had sent the `offer` to all/wrong participants. So we decided not touch this check.
 			if (data.receiverId !== roomInfo.user) {
 				return;
 			}
@@ -206,7 +216,7 @@
 			}
 
 			function onAcceptCall() {
-				// todo: need to transfer remote connection data here
+				// **Todo:** Need to transfer remote connection data here.
 				createConnection.call(self, currentUserData, data.senderId, data.connectionData, function (connectionData) {
 					var offerData = {
 						offer: data.offer,
@@ -221,8 +231,8 @@
 			}
 
 			function onDeclineCall() {
-				// note: need to think about declining reason
-				// todo: need to think about 'bye' options definition and about senderId property name
+				// **Note:** Need to think about declining reason.
+				// **Todo:** Need to think about `bye` options definition and about senderId property name.
 				serverConnector.sendBye(data.senderId, data.connectionId, null, { type: 'decline' });
 			}
 		}
@@ -232,22 +242,23 @@
 				var targetHc = handshakeControllers[data.targetConnectionId];
 				if (targetHc) {
 					if (data.options && data.options.type === 'decline') {
-						// todo: think about sending decline reason
+						// **Todo:** Think about sending decline reason.
 						this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
 					}
 
-					// bug: this actin should be executed only in case when 'bye' was send from target user (userid === connection.targetUser). As a result near handshake controller need to store userId also.
+					// **Bug:** This actin should be executed only in case when `bye` was send from target user `(userid === connection.targetUser)`. As a result near handshake controller need to store userId also.
 					targetHc.trigger(hcEvents.receiveBye);
 				}
 
-				// bug: close the connection in case when close command was received from target user of this connection
-				// steps for reproduce:
-				// 1) Call to user;
-				// 2) Close created connection which was created for the user;
-				// 3) User accept incomin connection -> answer will be sent to me
-				// 4) I received answer and send bye to the user, becuase my connection was closed already
-				// 5) User receiving 'bye' and doing nothing, but the connection should be closed
-				// Note: do not forget about filtering close command by terget user id.
+				// **Bug:** Close the connection in case when close command was received from target user of this connection.
+				// Steps for reproduce:
+
+				// 1.   Call to user;
+				// 2.   Close created connection which was created for the user;
+				// 3.   User accept incomin connection -> answer will be sent to me;
+				// 4.   I received answer and send `bye` to the user, becuase my connection was closed already;
+				// 5.   User receiving `bye` and doing nothing, but the connection should be closed.
+				// **Note:** Do not forget about filtering close command by target user id.
 			}
 		}
 
@@ -309,6 +320,7 @@
 		}
 	});
 
+	// **Note:** Full list of events for the `xRtc.Room` object.
 	xrtc.Room.extend({
 		events: {
 			enter: 'enter',

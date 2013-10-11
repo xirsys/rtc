@@ -1,4 +1,6 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -8,7 +10,7 @@
 			logger = new xrtc.Logger(this.className),
 			socket = null,
 			currentToken = null,
-			//default ping interval is 5sec
+			// Default ping interval is 5sec.
 			pingInterval = options ? options.pingInterval : 5000,
 			pingIntervalId = null,
 			scEvents = xrtc.ServerConnector.events;
@@ -16,16 +18,14 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, xrtc.Ajax, {
 			_logger: logger,
 
+			// Connects to WebSocket server.
 			connect: function (token) {
-				/// <summary>Connects to WebSocket server</summary>
-
 				currentToken = token;
 				getWebSocketUrl.call(this, proxy(connect, token));
 			},
 
+			// Disconnects from server.
 			disconnect: function () {
-				/// <summary>Disconnects from server</summary>
-
 				if (socket) {
 					socket.close();
 					socket = null;
@@ -96,9 +96,8 @@
 			}
 		});
 
+		// Sends message to server.
 		function send(request) {
-			/// <summary>Sends message to server</summary>
-
 			if (!socket) {
 				var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
 				logger.error('send', error);
@@ -140,7 +139,7 @@
 		}
 
 		function connect(url, token) {
-			// todo: remove "/ws/"
+			// **Todo:** remove "/ws/"
 			socket = new WebSocket(url + '/ws/' + encodeURIComponent(token));
 			socket.onopen = proxy(socketOnOpen);
 			socket.onclose = proxy(socketOnClose);
@@ -249,7 +248,7 @@
 					iceServers: data.message.data.offer.iceServers,
 					connectionType: data.message.data.offer.connectionType,
 					connectionData: data.message.data.offer.connectionData,
-					//targetConnectionId: data.message.data.targetConnectionId
+					/*targetConnectionId: data.message.data.targetConnectionId*/
 				};
 
 				this.trigger(scEvents.receiveOffer, offerData);
@@ -257,7 +256,7 @@
 			else if (eventName == scEvents.receiveAnswer) {
 				var answerData = {
 					senderId: data.userid,
-					//receiverId: data.message.targetUserId,
+					/*receiverId: data.message.targetUserId,*/
 					connectionId: data.message.data.connectionId,
 					answer: data.message.data.answer.answer,
 					targetConnectionId: data.message.data.targetConnectionId
@@ -267,9 +266,9 @@
 			}
 			else if (eventName == scEvents.receiveIce) {
 				var iceData = {
-					//senderId: data.userid,
-					//receiverId: data.message.targetUserId,
-					//connectionId: data.message.data.connectionId,
+					/*senderId: data.userid,
+					receiverId: data.message.targetUserId,
+					connectionId: data.message.data.connectionId,*/
 					iceCandidate: data.message.data.iceCandidate,
 					targetConnectionId: data.message.data.targetConnectionId
 				};
@@ -279,7 +278,7 @@
 			else if (eventName == scEvents.receiveBye) {
 				var byeData = {
 					senderId: data.userid,
-					//receiverId: data.message.targetUserId,
+					/*receiverId: data.message.targetUserId,*/
 					connectionId: data.message.data.connectionId,
 					targetConnectionId: data.message.data.targetConnectionId
 				};
@@ -319,7 +318,7 @@
 			}
 
 			if (typeof request.targetUserId !== 'undefined') {
-				// we call 'toString' because 'targetUserId' can be a number, and server cannot resolve it
+				// We call `toString` because `targetUserId` can be a number, and server cannot resolve it.
 				result.targetUserId = request.targetUserId.toString();
 			}
 
@@ -328,7 +327,7 @@
 
 		function pingServer(interval) {
 			return exports.setInterval(function () {
-				// ping request is empty message
+				// Ping request is empty message.
 				var pingRequest = {};
 				send.call(this, pingRequest);
 			},

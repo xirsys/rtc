@@ -1,9 +1,11 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+// It is internal object of xRtc library.
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	/// <summary>HandshakeController is internal object of xirsys library</summary>
 	xrtc.Class(xrtc, 'HandshakeController', function HandshakeController() {
 		var logger = new xrtc.Logger(this.className);
 
@@ -35,7 +37,7 @@
 			sendAnswer: 'sendanswer',
 			sendBye: 'sendbye',
 
-			// note: these events of HandshakeController object can be initiated by another object
+			// **Note:** These events of HandshakeController object can be initiated by another object.
 			receiveIce: 'receiveice',
 			receiveOffer: 'receiveoffer',
 			receiveAnswer: 'receiveanswer',

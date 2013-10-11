@@ -1,4 +1,8 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+// `xRtc.DataChannel` is one of the main objects of **xRtc** library.
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc;
@@ -10,8 +14,8 @@
 
 		dataChannel.onopen = proxy(channelOnOpen);
 		dataChannel.onmessage = proxy(channelOnMessage);
-		/* dataChannel.onclose tested in case of disconnect(close browser tab) of remote browser for Chrome M29 */
-		// todo: need to test onclose event in case of remote client disconnection for Chrome M25-28.
+		// `dataChannel.onclose` tested in case of disconnect(close browser tab) of remote browser for *Chrome M29*
+		// **Todo:** Need to test onclose event in case of remote client disconnection for *Chrome M25-28*.
 		dataChannel.onclose = proxy(channelOnClose);
 		dataChannel.onerror = proxy(channelOnError);
 		dataChannel.ondatachannel = proxy(channelOnDatachannel);
@@ -19,10 +23,8 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
+			// **[Public API]:** Sends a message to remote user where `mesage` is message to send.
 			send: function (message) {
-				/// <summary>Sends a message to remote user</summary>
-				/// <param name="mesage" type="object">Message to send</param>
-
 				logger.info('send', arguments);
 
 				if (this.getState() === xrtc.DataChannel.states.open) {
@@ -42,14 +44,17 @@
 				}
 			},
 
+			// **[Public API]**
 			getUserId: function() {
 				return userId;
 			},
 
+			// **[Public API]**
 			getName: function() {
 				return dataChannel.label;
 			},
 
+			// **[Public API]**
 			getState: function () {
 				/* W3C Editor's Draft 30 August 2013:
 				enum RTCDataChannelState {
@@ -96,6 +101,7 @@
 		}
 	});
 
+	// **Note:** Full list of events for the `xRtc.DataChannel` object.
 	xrtc.DataChannel.extend({
 		events: {
 			open: 'open',
@@ -106,6 +112,7 @@
 			dataChannel: 'datachannel'
 		},
 
+		// **Note:** Full list of states of the `xRtc.DataChannel` object.
 		states: {
 			connecting: "connecting",
 			open: "open",

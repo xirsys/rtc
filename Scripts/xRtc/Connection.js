@@ -1,10 +1,15 @@
-﻿'use strict';
+﻿// #### Version 1.3.0 ####
+
+// `xRtc.Connection` is one of the main objects of **xRtc** library. This object can not be created manually. For the creation of connection need to use `xRtc.Room` object.
+
+'use strict';
 
 (function (exports) {
 	var xrtc = exports.xRtc,
 		internal = {},
 		webrtc = xrtc.webrtc;
 
+	// `IceCandidateFilter` is internal object of `xRtc.Connection`. The object contains functionality which helps to filter webrtc ice candidates in case if `server` or `direct` connection is required.
 	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, is) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
@@ -13,10 +18,12 @@
 			ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
 
 		xrtc.Class.extend(this, {
+			// Returns type of the current connection.
 			getType: function () {
 				return connectionType;
 			},
 
+			// Returns boolean value which means `ice` corresponds current connection type or not.
 			isAllowed: function (ice) {
 				var result = true;
 
@@ -40,12 +47,15 @@
 				return result;
 			},
 
+			// Returns `sdp` which corrected accordingly current connection type.
+			// **Note:** FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type is `server` (equals `xrtc.Connection.connectionTypes.server`).
 			filterSDP: function (sdp) {
-				//note: FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type === xrtc.Connection.connectionTypes.server
 				var changedSdp = sdp;
 				if (connectionType === xrtc.Connection.connectionTypes.server) {
+					// This regex removes from `sdp` all direct p2p `host` and STUN `srflx` ice candidates from the `sdp`.
 					changedSdp = sdp.replace(/a=candidate:.*((typ host)|(typ srflx)).*\r\n/g, "");
 				} else if (connectionType === xrtc.Connection.connectionTypes.direct) {
+					// This regex removes from `sdp` all TURN `relay` ice candidates from the `sdp`.
 					changedSdp = sdp.replace(/a=candidate:.*typ relay.*\r\n/g, "");
 				}
 
@@ -53,19 +63,23 @@
 			}
 		});
 
+		// Internal candidate filters.
 		var iceCandidatesFilters = {
+			// Returns function which filters direct p2p `host` ice candidates.
 			local: function (iceCandidate) {
 				var regexp = /typ host/;
 
 				return filterIceCandidate(iceCandidate, regexp);
 			},
 
+			// Returns function which filters STUN `srflx` ice candidates.
 			stun: function (iceCandidate) {
 				var regexp = /typ srflx/;
 
 				return filterIceCandidate(iceCandidate, regexp);
 			},
 
+			// Returns function which filters TURN `relay` ice candidates.
 			turn: function (iceCandidate) {
 				var regexp = /typ relay/;
 
@@ -77,6 +91,8 @@
 			return regexp.test(iceCandidate.candidate);
 		}
 
+		// **Todo:** My be bug. Need to fix it because at the current moment 2 types of presentation TURN server exists. One of them doesn't contain `@`.
+		// Returns IP address of the TURN server which stores in the local variable `iceServers`.
 		function getTurnIp() {
 			if (iceServers) {
 				for (var i = 0; i < iceServers.length; i++) {
@@ -90,32 +106,31 @@
 			return null;
 		}
 
+		// Internal ice candidate converters which can convert one ice candidates to another. Sometimes browser check connection with STUN and doesn't generate TURN ice candidates. In this case we create own TURN ice candidates using STUN ice candidates.
 		var iceCandidateConverters = {
+			// **Todo:** Need to clarify/test existence of this method.
 			turn2turn: function (iceCandidate) {
-				var candidate = iceCandidate.candidate;
-
-				var matches = candidate.match(ipRegexp);
-				iceCandidate.candidate = candidate.replace(ipRegexp, matches[0]);
+				iceCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, iceCandidate.candidate.match(ipRegexp)[0]);
 			},
 
+			// Creates TURN ice candidate using STUN ice candidate.
 			stun2turn: function (iceCandidate) {
 				var turnIp = getTurnIp();
 				if (turnIp) {
-					var candidate = iceCandidate.candidate;
-					iceCandidate.candidate = candidate.replace(ipRegexp, turnIp);
+					iceCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, turnIp);
 				} else {
-					//todo: is it right?
+					//**Todo:** Is it right?
 					iceCandidateConverters.turn2turn(iceCandidate);
 				}
 			}
 		};
 	});
 
-	// todo: need to optimize the constructor sugnature of Connection object
+	// **Todo:** Need to optimize the constructor sugnature of Connection object.
+	// It is internal constructor . The `xRtc.Room` object uses this constructor for creation connections objects.
 	xrtc.Class(xrtc, 'Connection', function Connection(ud, targetId, hc, am, data) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			// need to think about necessity of this property. Maybe will be better to store function which returns this data.
 			userData = ud,
 			authManager = am || new xRtc.AuthManager(),
 			remoteUserId = targetId,
@@ -129,18 +144,17 @@
 			handshakeController = hc,
 			iceFilter = null,
 			iceServers = null,
-			// 'answer' is received or 'offer' received and accepted flag.
-			// Is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
+			// This field is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
 			connectionEstablished = false,
 			// It is tempoprary storage of ice candidates.
-			// Ice candidates should be send to remote participant after receiving answer strictly.
-			// If the application will send ice candidates after 'offer' sending then it can be skipped by remote application
+			// Ice candidates should be send to remote participant after receiving `answer` strictly.
+			// If the application will send ice candidates after `offer` sending then it can be skipped by remote application
 			// because there is no guarantee of connection establishing and while the application/user will be thinking
 			// about accept/decline incoming connection these ice candidates reach it and will be skipped,
 			// because the remote peerConnection still not created.
 			iceCandidates = [],
 			connectionId = generateGuid(),
-			// User data conainer. The data helps to identify the connection and differ the connection from other connections
+			// Internal user data conainer. The data helps to identify the connection and differ the connection from other connections.
 			connectionData = data,
 			connectionIsOpened = false;
 
@@ -153,14 +167,14 @@
 				return connectionId;
 			},
 
+			// It is internal method. It should not be used manually.
 			_open: function (options) {
-				/// <summary>It is internal method. It should not be used manually.</summary>
 				connectionIsOpened = true;
 
 				var self = this,
 					offerOptions = {};
 
-				// offerOptions initialization
+				// offerOptions field initialization.
 				xrtc.Class.extend(offerOptions, xrtc.Connection.settings.offerOptions);
 				if (options && options.offer) {
 					xrtc.Class.extend(offerOptions, options.offer);
@@ -181,7 +195,7 @@
 						logger.debug('onCreateOfferSuccess', offer);
 						peerConnection.setLocalDescription(offer);
 
-						// Interoperability support of FF21 and Chrome
+						// This magis is required for interoperability support of FF21 and Chrome.
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
 							var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
 							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? offer.sdp.replace(/c=IN/g, inline) : offer.sdp;
@@ -208,9 +222,8 @@
 				});
 			},
 
+			// **[Public API]:** It is public method of `connection` object. This method should be used for closing the `connection`.
 			close: function () {
-				/// <summary>Ends p2p connection</summary>
-
 				if (handshakeController && remoteUserId && remoteConnectionId) {
 					handshakeController.sendBye(remoteUserId, remoteConnectionId, connectionId);
 				}
@@ -218,6 +231,10 @@
 				closePeerConnection.call(this);
 			},
 
+			// **[Public API]:** It is public method of `connection` object. This method should be used for adding `xRtc.Stream` to the `connection`.
+			// It is required if you want to transmit the `stream` to remote user. The `xRtc.Stream` can be obtained using `xRtc.getUserMedia` method.
+			// One `connection` can be used for transfering some streams to remote side.
+			// After execution this method `localstreamadded` (`xrtc.Connection.events.localStreamAdded`) event of connection object will be fired.
 			addStream: function (xrtcStream) {
 				if (connectionIsOpened) {
 					throwExceptionOfWrongmethodCall('addStream');
@@ -234,6 +251,9 @@
 				this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
 			},
 
+			// **[Public API]:** It is public method of `connection` object. This method should be used for creating `xRtc.DataChannel` for the `connection`.
+			// Names of the data channels should be unique in context of any `connection`.
+			// **Note: ** This method can be used only on `connectionCreated` (`xRtc.Room.events.connectionCreated`) event of the `xRtc.Room` object otherwise exception will be thrown.
 			createDataChannel: function (name) {
 				if (connectionIsOpened) {
 					throwExceptionOfWrongmethodCall('createDataChannel');
@@ -242,39 +262,56 @@
 				dataChannelNames.push(name);
 			},
 
+			// **[Public API]:** It is public method of `connection` object. This method should be used for accessing 'specific user data' of the connection.
+			// User/Developer can pass any data to the 'connection' in the `xRtc.Room.connect()' method. E.g. This functionality will be useful
+			// if need to differ one connection from another because 'xRtc.Room' creates connections asynchronously.
+			// Also it will be useful if you want to store some data which related with concrete 'connection' object.
 			getData: function () {
-				/// <summary>Data is initialized during the opening of the connection. The data helps to identify the connection and differ the connection from other connections</summary>
 				return connectionData;
 			},
 
-			getState: function () {
-				/// <summary>Returns the state of p2p connection</summary>
+			//**[Public API]:** It is public method of `connection` object. Returns state of the `connection`.
+			// List of possibly connection states:
 
+			//*   'ready'
+			//*   'not-ready'
+			//*   'connecting'
+			//*   'disconnecting'
+			//*   'connected'
+
+			//**Todo:** Need to revise all states.
+			getState: function () {
 				return getSignalingState.call(this);
 			},
 
+			//**[Public API]:** It is public method of `connection` object. Returns `xRtc.Stream[]` object where each stream is `stream` which was added by `addStream` public method. For the most cases this `array` will be contain only one stream.
 			getLocalStreams: function () {
-				//return the copy of array
+				// Return the copy of internal array.
 				return localStreams.map(function (stream) {
 					return stream;
 				});
 			},
 
+			//**[Public API]:** It is public method of `connection` object. Returns `xRtc.Stream[]` object where each stream is `stream` which tranferred from the remote side.
+			//**Note:** Each remote `xRtc.Stream` creates asynchronously on `remotestreamadded` (xrtc.Room.events.remoteStreamAdded) event and will be accessible in this array after mentioned event only.
 			getRemoteStreams: function () {
-				//return the copy of array
+				// Return the copy of internal array.
 				return remoteStreams.map(function (stream) {
 					return stream;
 				});
 			},
 
+			//**[Public API]:** It is public method of `connection` object. Returns `xRtc.DataChannel[]` object where each channel is `channel`which was created using `createDataChannel` public method.
+			//**Note:** Each `xRtc.DataChannel` creates asynchronously on `datachannelcreated` (`xrtc.Room.events.dataChannelCreated`) event and will be accessible in this array after mentioned event only.
 			getDataChannels: function () {
-				//return the copy of array
+				// Return the copy of internal array.
 				return dataChannels.map(function (channel) {
 					return channel;
 				});
 			},
 		});
 
+		// Internal helper method which throws appropriate exception in case when someone try to call `addStream` or `createDataChannel` methods at inappropriate time.
 		function throwExceptionOfWrongmethodCall(methodName) {
 			var error = new xrtc.CommonError(methodName, "The method can be called on '" +
 				xrtc.Room.events.connectionCreated +
@@ -282,6 +319,7 @@
 			logger.error(methodName, error);
 		}
 
+		// Internal method which helps to subscribe to all events of `handshakeController` object where `handshakeController` is internal object and bridge between `xRtc.Connection` and `xRtc.Room`.
 		function subscribeToHandshakeControllerEvents() {
 			var hcEvents = xrtc.HandshakeController.events;
 			handshakeController
@@ -291,6 +329,10 @@
 				.on(hcEvents.receiveBye, proxy(onReceiveBye));
 		}
 
+		// Internal method which used for initialization of internal `peerConnection`. During execution of this method following async request will be performed:
+
+		//*   Async ajax request to sever side for the `Token`.
+		//*   Async ajax request to the sever side for the ice severs collection.
 		function initPeerConnection(userId, callback) {
 			remoteUserId = userId;
 
@@ -300,25 +342,31 @@
 				callCallback();
 			}
 
-			//todo: need to think of this approach and refactor it
+			//**Todo:** Need to think of this approach and refactor it.
 			function callCallback() {
 				if (typeof callback === "function") {
 					try {
 						callback();
 					} catch (e) {
-						// todo: check or not check?
-						// here is a server problem, sometimes it doesn't work from first time
-						// error can occur 1-4 times in a row
+						// **Todo:** Check or not check?
 					}
 				}
 			}
 
+			// Internal helper method which used for creation browser compatible ice servers. ice server format depens on browser and browser version.
+			// *Chrome 24-27* uses follwing format (example):
+
+			// `[{"url":"stun:stun.l.google.com:19302"}, {url:"turn: userName@domain.com:3478",credential:"password"}]`
+
+			// *FireFox 23+* (in context of TURN server) and *Chrome 28+* uses following format (example):
+
+			// `[{"url":"stun:stun.l.google.com:19302"}, {"username":"user name","url":"turn:turn.domain.com","credential":"user password"}]`
 			function createBrowserCompatibleIceServers(iceServersArray) {
 				var browserCompatibleIceServers = [];
-				//note: The code regarding creation ice servers in appropriate format was copied from https://apprtc.appspot.com/js/adapter.js (official demo of the Google)
+				// **Note:** The code regarding creation ice servers in appropriate format was copied from <https://apprtc.appspot.com/js/adapter.js> (official demo of the Google).
 
-				// note: FF < 23 (maybe < 24, need to check it) can't resolve IP by URL. As a result IP addresses should be used for ice servers. FF 24 doesn't have this problem. Checked.
-				// Creates iceServer from the url for FF.
+				// **Note:** *FF* < 23 (maybe < 24, need to check it) can't resolve IP by URL. As a result IP addresses should be used for ice servers. *FF* 24 doesn't have this problem. Checked.
+				// Creates iceServer from the url for *FF*.
 				var createFireFoxTurnServer = function (url, username, password) {
 					var iceServer = null;
 					var url_parts = url.split(':');
@@ -349,14 +397,14 @@
 						iceServer = { 'url': url };
 					} else if (url_parts[0].indexOf('turn') === 0) {
 						if (webrtc.detectedBrowserVersion < 28) {
-							// For pre-M28 chrome versions use old TURN format.
+							// For *pre-M28 Chrome* versions use old TURN format.
 							var url_turn_parts = url.split("turn:");
 							iceServer = {
 								'url': 'turn:' + username + '@' + url_turn_parts[1],
 								'credential': password
 							};
 						} else {
-							// For Chrome M28 & above use new TURN format.
+							// For *Chrome M28* & above use new TURN format.
 							iceServer = {
 								'url': url,
 								'credential': password,
@@ -402,21 +450,20 @@
 					xrtc.Connection.settings.peerConnectionOptions);
 				logger.info('initPeerConnection', 'PeerConnection created.');
 
-				/*	Note: Firefox (FF 24 at least) does not currently generate 'trickle candidates'. This means that it will include its
-					candidate addresses as 'c' lines in the offer/answer, and the onicecandidate callback will never be called.
-					The downside to this approach is that Firefox must wait for all of its candidates to be gathered before creating its offer/answer
-					(a process which can involve contacting STUN and TURN servers and waiting for either the responses or for the requests timeout).
-					http://stackoverflow.com/questions/15484729/why-doesnt-onicecandidate-work
-				*/
+				// **Note:** *Firefox (FF 24 at least)* does not currently generate 'trickle candidates'. This means that it will include its
+				// candidate addresses as 'c' lines in the `offer`/`answer`, and the onicecandidate callback will never be called.
+				// The downside to this approach is that Firefox must wait for all of its candidates to be gathered before creating its `offer`/`answer`
+				// (a process which can involve contacting STUN and TURN servers and waiting for either the responses or for the requests timeout).
+				// <http://stackoverflow.com/questions/15484729/why-doesnt-onicecandidate-work>.
 				peerConnection.onicecandidate = proxy(onIceCandidate);
 
 				peerConnection.onstatechange = // M25-M26
-					/*FF 20.0.1 (FF 21+ works fine): during assigning peerConnection.onsignalingstatechange field FF throw following error:
-					NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative*/
+					// *FF* 20.0.1 (*FF* 21+ works fine): during assigning `peerConnection.onsignalingstatechange` field *FF* throw following error:
+					// NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative
 					peerConnection.onsignalingstatechange = // M27+, FF24+
 					proxy(onConnectionStateChange);
 
-				// in FireFox < 24 onstatechange or alternative event does not fire properly
+				// In *FireFox* < 24 onstatechange or alternative event does not fire properly.
 				if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion < 24) {
 					var connectionState = this.getState();
 					checkConnectionStateIntervalId = exports.setInterval(function () {
@@ -429,10 +476,9 @@
 					}, 500);
 				}
 
-				// todo: need to think about the necessity of this handlers
+				// **Todo:** Need to think about the necessity of this handlers.
 				peerConnection.onicechange = // M25-M26
-					/*FF 20.0.1 (FF 21+ works fine): during assigning peerConnection.oniceconnectionstatechange field FF throw following error:
-					NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative*/
+					//*FF 20.0.1* (FF 21+ works fine): during assigning peerConnection.oniceconnectionstatechange field *FF* throw following error: NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative
 					peerConnection.oniceconnectionstatechange = // M27+, FF24+
 					proxy(onIceStateChange);
 
@@ -442,31 +488,30 @@
 					self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: newDataChannel });
 				};
 
-				/* FF 19-20.0.1 (maybe earlier, FF21 works fine): fire this event twice, for video stream and for audio stream despite the fact that one stream was added by remote side */
-				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of setRemoteDescription.
+				// *FF 19-20.0.1* (maybe earlier, *FF21* works fine): fire this event twice, for video stream and for audio stream despite the fact that one stream was added by remote side.
+				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of `setRemoteDescription`.
 				peerConnection.onaddstream = proxy(onAddStream);
 
-				// for FF only (Tested for FF24 & Win7. Magic, sometimes works and sometimes not.)
+				// For *FF* only (Tested for *FF24*. Magic, sometimes works and sometimes not.)
 				peerConnection.onclosedconnection = function (closeData/*temporary ignores*/) {
 					logger.debug('peerConnection.onclosedconnection', closeData);
 					closePeerConnection.call(self);
 				};
 
-				// todo: need to fire close connection event for Chrome M26. The logic should be based on peerConnection.iceConnectionState field and window.setInterval
-				// todo: need to fire close connection event for Chrome M25. The logic should be based on peerConnection.iceState field and window.setInterval
+				// **Todo:** Need to fire close connection event for *Chrome M26*. The logic should be based on `peerConnection.iceConnectionState` field and `window.setInterval`.
+				// **Todo:** Need to fire close connection event for *Chrome M25*. The logic should be based on `peerConnection.iceState` field and `window.setInterval`.
 
-				/* peerConnection.iceGatheringState
-				W3C Editor's Draft 30 August 2013:
-				enum RTCIceGatheringState {
-					"new",
-					"gathering",
-					"complete"
-				};
-				*/
+				// peerConnection.iceGatheringState
+				// W3C Editor's Draft 30 August 2013:
+				// enum RTCIceGatheringState {
+				//     "new",
+				//     "gathering",
+				//     "complete"
+				// };
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
-						// in the original RTCIceCandidate class 'candidate' property is immutable
+						// In the original `RTCIceCandidate` class `candidate` property is immutable.
 						var ice = JSON.parse(JSON.stringify(evt.candidate));
 
 						if (iceFilter.isAllowed(ice)) {
@@ -484,11 +529,10 @@
 					var state = getIceState.call(this);
 
 					if (state === 'connected') {
-						// todo: Need to think about name of this event
+						// **Todo:** Need to think about name of this event.
 						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
 					} else if (state === 'disconnected') {
-						// todo: The event should't be repeated for FF 24+, because FF 18+ has peerConnection.onclosedconnection and FF 24+ has peerConnection.oniceconnectionstatechange
-						//logger.test('onIceStateChange, state == disconnected');
+						// **Todo:** The event should't be repeated for *FF 24+*, because *FF 18+* has peerConnection.onclosedconnection and *FF 24+* has peerConnection.oniceconnectionstatechange.
 						closePeerConnection.call(this);
 					}
 				}
@@ -497,12 +541,12 @@
 					addRemoteStream.call(this, evt.stream);
 				}
 
-				// add streams to native webrtc peerConnection which were added before
+				// Add streams to native webrtc peerConnection which were added before.
 				for (var i = 0, len = localStreams.length; i < len; i++) {
 					peerConnection.addStream(localStreams[i].getStream());
 				}
 
-				// create data channnels which were created(registered for creation) before
+				// Create data channnels which were created(registered for creation) before.
 				for (var i = 0, len = dataChannelNames.length; i < len; i++) {
 					createDataChannel.call(this, dataChannelNames[i]);
 				}
@@ -511,28 +555,27 @@
 			}
 		}
 
+		// Internal helper method which creates new instance of DataChannel by channel name.
 		function createDataChannel(name) {
-			/// <summary>Creates new instance of DataChannel</summary>
-			/// <param name="name" type="string">Name for DataChannel. Must be unique</param>
 			var self = this;
 			try {
-				/* FF 19-21(and 18 maybe): Data channels should be created after connection establishment.
-				Connection should be established usually with audio and/or video.  For the time being,
-				always at least include a 'fake' audio stream - this will be fixed soon.
-				After connection establishment need to call pc.connectDataConnection(5001, 5000); on th each side.
-				For the two sides need to use inverted copies of the two numbers (eg. 5000, 5001 on one side, 5001, 5000 on the other).
-				connectDataConnection is a temporary function that will soon disappear.
-				For more information see https://hacks.mozilla.org/2012/11/progress-update-on-webrtc-for-firefox-on-desktop/
+				// *FF 19-21(and 18 maybe)*: Data channels should be created after connection establishment.
+				// Connection should be established usually with audio and/or video.  For the time being,
+				// always at least include a 'fake' audio stream - this will be fixed soon.
+				// After connection establishment need to call `pc.connectDataConnection(5001, 5000);` on th each side.
+				// For the two sides need to use inverted copies of the two numbers (e.g. `5000`, `5001` on one side, `5001`, `5000` on the other).
+				// connectDataConnection is a temporary function that will soon disappear.
+				// For more information see <https://hacks.mozilla.org/2012/11/progress-update-on-webrtc-for-firefox-on-desktop/>
 
-				As a result current library approach of data channels creation works only for FF 22+.
-				for earlier versions exception will be thrown: Component returned failure code:
-				0x80004005 (NS_ERROR_FAILURE) [IPeerConnection.createDataChannel]" nsresult: "0x80004005 (NS_ERROR_FAILURE)" */
+				// As a result current library approach of data channels creation works only for *FF 22+*.
+				// for earlier versions exception will be thrown: Component returned failure code:
+				// 0x80004005 (NS_ERROR_FAILURE) [IPeerConnection.createDataChannel]" nsresult: "0x80004005 (NS_ERROR_FAILURE)"
 
-				// reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
-				// reliable data channels currently supports only by FF. It is default value.
-				// in chrome reliable channels doesn't implemented yet: https://code.google.com/p/webrtc/issues/detail?id=1430
+				// Reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
+				// Reliable data channels currently supports only by *FF*. It is default value.
+				// In *Chrome* reliable channels doesn't implemented yet: <https://code.google.com/p/webrtc/issues/detail?id=1430>
 				var dc = peerConnection.createDataChannel(name, webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? { reliable: false } : {});
-				// todo: need to check, maybe peerConnection.ondatachannel fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
+				// **Todo:** Need to check, maybe `peerConnection.ondatachannel` fires not only for offer receiver but and for offer sender user. If so then firing of this event should be removed here.
 				var newDataChannel = new xrtc.DataChannel(dc, remoteUserId);
 				dataChannels.push(newDataChannel);
 				self.trigger(xrtc.Connection.events.dataChannelCreated, { channel: newDataChannel });
@@ -554,7 +597,7 @@
 		function allowIceSending() {
 			connectionEstablished = true;
 
-			// Send already generated ice candidates
+			// Send already generated ice candidates.
 			sendIceCandidates.call(this);
 		}
 
@@ -717,7 +760,7 @@
 			return state;
 		}
 
-		// todo: need to think about available states
+		// **Todo:** Need to think about available states.
 		function getSignalingState() {
 			/* W3C Editor's Draft 30 August 2013:
 			enum RTCSignalingState {
@@ -730,22 +773,22 @@
 			};
 			*/
 
-			// it can change from version to version
+			// **Warning:** It can change from version to version.
 			var isLocalStreamAdded = localStreams.length > 0,
 				states = {
-					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
+					// **Todo:** Why not-ready if local stream is not added? What about situation when only text chat will be used?
 					'notinitialized': isLocalStreamAdded ? 'ready' : 'not-ready',
 
-					// Chrome M25
-					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
+					// *Chrome M25*.
+					// **Todo:** Why not-ready if local stream is not added? What about situation when only text chat will be used?
 					'new': isLocalStreamAdded ? 'ready' : 'not-ready',
 					'opening': 'connecting',
 					'active': 'connected',
 					'closing': 'disconnecting',
-					//todo: why not-ready if local stream is not added? What about situation when only text chat will be used?
+					// **Todo:** Why not-ready if local stream is not added? What about situation when only text chat will be used?
 					'closed': isLocalStreamAdded ? 'ready' : 'not-ready',
 
-					// Chrome M26+
+					// *Chrome M26+*.
 					'stable': 'connected',
 					'have-local-offer': 'ready',
 					'have-remote-offer': 'connecting'
@@ -758,7 +801,7 @@
 			return states[state];
 		}
 
-		// todo: need to move this method to xrtc.utils
+		// *Todo:* Need to move this method to `xrtc.utils`.
 		function generateGuid() {
 			var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
 				var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -768,6 +811,7 @@
 		};
 	});
 
+	// **Note:** Full list of events for the `xRtc.Connection` object.
 	xrtc.Connection.extend({
 		events: {
 			localStreamAdded: 'localstreamadded',
@@ -793,6 +837,11 @@
 			stateChanged: 'statechanged'
 		},
 
+		// Following connection types are supported by `xRtc` library:
+
+		//*   `default`. It is mean standart mechanism of connection establishment. At first trying to establish direct p2p connection without STUN or TURN usage. If previous point is not possible then trying to establish STUN connection. If previous point is not possible then establish TURN connection.
+		//*   `direct`. It is mean direct p2p or STUN connection establishment.
+		//*   `server`. It is mean only TURN connection establishment.
 		connectionTypes: {
 			default: 'default',
 			direct: 'direct',
@@ -816,17 +865,18 @@
 				}
 			},
 
-			// Interop Notes between Chrome M25 and Firefox Nightly (version 21):
-			// Chrome does not yet do DTLS-SRTP by default whereas Firefox only does DTLS-SRTP. In order to get interop,
-			// you must supply Chrome with a PC constructor constraint to enable DTLS: { 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}
+			// Interop Notes between *Chrome M25 and Firefox Nightly (version 21)*:
+			// *Chrome* does not yet do DTLS-SRTP by default whereas *Firefox* only does DTLS-SRTP. In order to get interop,
+			// you must supply Chrome with a PC constructor constraint to enable DTLS: `{ 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}`
 			peerConnectionOptions: {
 				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 			}
 		}
 	});
 
-	// Cross-browser support: New syntax of getXXXStreams method in Chrome M26.
-	if (/* For FireFox 22 webrtc.RTCPeerConnection.prototype is undefined */webrtc.RTCPeerConnection.prototype && !webrtc.RTCPeerConnection.prototype.getLocalStreams) {
+	// Cross-browser support: New syntax of `getXXXStreams` method in *Chrome M26*.
+	// For *FireFox 22* `webrtc.RTCPeerConnection.prototype` is undefined.
+	if (webrtc.RTCPeerConnection.prototype && !webrtc.RTCPeerConnection.prototype.getLocalStreams) {
 		xrtc.Class.extend(webrtc.RTCPeerConnection.prototype, {
 			getLocalStreams: function () {
 				return this.localStreams;
@@ -838,7 +888,7 @@
 		});
 	}
 
-	//Cross-browser support: New syntax of getXXXTracks method in Chrome M26.
+	// Cross-browser support: New syntax of `getXXXTracks` method in *Chrome M26*.
 	if (!webrtc.MediaStream.prototype.getVideoTracks) {
 		if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 			xrtc.Class.extend(webrtc.MediaStream.prototype, {
@@ -863,10 +913,10 @@
 		}
 	}
 
-	// todo: no need to disable data channels in case of communication between FireFox and Firefox. These flags are necessary in case of interoperability between FireFox and Chrome only
-	// Data channels does't supported in case of interoperability of FireFox and Chrome
+	// **Todo:** No need to disable data channels in case of communication between *FireFox* and *Firefox*. These flags are necessary in case of interoperability between *FireFox* and *Chrome* only.
+	// Data channels does't supported in case of interoperability of *FireFox* and *Chrome*.
 	/*if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-		// Chrome M26b and Chrome Canary with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between FF and Chrome
+		// *Chrome M26b* and *Chrome Canary* with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between *FF* and *Chrome*.
 		xrtc.Connection.settings.offerOptions.mandatory.MozDontOfferDataChannel = true;
 		xrtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
 	}*/
