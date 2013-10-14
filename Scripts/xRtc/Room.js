@@ -7,6 +7,35 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
+	// **[Public API]:** `xRtc.Room` object has public constructor `xRtc.Room(info, am, sc)`. This constructor can take 3 parameters:
+
+	// 1. `info: object | string`. It is optional parameter.
+	// If parameter is `string` then it is name of a room that already exists on the server.
+	// If parameter is `object` then it should have following format `{ domain: string, application: string, name: string }` (all fields are optional),
+	// where `domain` is application domain, `application` is app name, `name` is room name.
+	// 2. `am: xRtc.AuthManager`. It is optional parameter.
+	// If this parameter is not specified, the default realization of `xrtc.AuthManager` will be used.
+	// You may need this option if you use own server side or you want to subscribe to some events of `xrtc.AuthManager`.
+	// 3. `sc: xrtc.ServerConnector`. It is optional parameter.
+	// If this parameter is not specified, the default realization of `xrtc.ServerConnector` will be used.
+	// You may need this option if you use own server side or you want to subscribe to some events of `xrtc.ServerConnector`.
+	
+	// If any of these cases, `domain, application, name` values are not specified then values will
+	// be initializaed using default values(these values can be overwritten):
+
+	// * `xRtc.Room.settings.info.domain`. It is domain which was returned by browser.
+	// * `xRtc.Room.settings.info.application`. It is "default".
+	// * `xRtc.Room.settings.info.name`. It is "default".
+
+	// **Note:** Mentioned values are accessible after room creation. You can get it using following code: `var roomInfo = room.getInfo();`.
+	// Additionaly `roomInfo` will be contain information about current user `roomInfo.user` (`string` for xRtc 1.3.0.0).
+
+	// **Simple examples of room creation:**
+
+	// * `var room = new xRtc.Room();`
+	// * `var room = new xRtc.Room("my test room");`
+	// * `var room = new xRtc.Room("my test room", new xRtc.AuthManager(), new xrtc.ServerConnector());`
+	// * `var room = new xRtc.Room("my test room", new customAuthManager(), new customServerConnector());`
 	xrtc.Class(xrtc, 'Room', function Room(info, am, sc) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
@@ -33,7 +62,30 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			// **[Public API]:** It is public method of `room` object. This method should be used for entering the room.
+			// **[Public API]:** `enter(credentials, options)` is public method of `room` object. This method should be used for entering the room.
+			// After entering the room, the connection to the server is established,
+			// the `room` object will be synchronized to the room on the server and all the events on the server
+			// will cause appropriate events for the `room`.
+			// This method has following arguments:
+
+			// 1. `credentials: object | string`. It is required parameter. If this parameter is `object` then it should have following format:
+			// `{ username : string, password: string }`, where `username` is the name of the current user(who entering the room),
+			// `password` is password of the current user.
+			// If this parameter is `string` then it is the name of the current user.
+			// 2. `options : object`. It is optional parameter. This parameter should have following format: `{ autoReply: bool }`
+			// (field is optional),
+			// where `autoReply` is flag which mean all incoming call will be accepted automatically or not. Default value can be overwritten here
+			// `xRtc.Room.settings.option.autoReply` and equals `true`.
+
+			// **Note:** After entering the room current user information will be accessible using following code:
+			// `var currentUser = room.getInfo().user;` (For xRtc 1.3.0 `currentUser` is `string`).
+
+			// **Simple examples:**
+
+			// * `room.enter("John Doe");`
+			// * `room.enter("John Doe", { autoReply: false });`
+			// * `room.enter({ username: "John Doe", password: "password" });`
+			// * `room.enter({ username: "John Doe", password: "password" }, { autoReply: false });`
 			enter: function (credentials, options) {
 				var user = "", pass = "";
 
@@ -71,7 +123,11 @@
 				});
 			},
 
-			// **[Public API]:** It is public method of `room` object. This method should be used for leaving the room.
+			// **[Public API]:** `leave()` is public method of `room` object. This method should be used for leaving the room.
+
+			// **Simple examples:**
+
+			// * `room.leave();`
 			leave: function () {
 				serverConnector.disconnect();
 
@@ -87,7 +143,33 @@
 				handshakeControllers = {};
 			},
 
-			// **[Public API]:** It is public method of `room` object. This method should be used for connection to someone from the current room.
+			// **[Public API]:** `connect(userId, connectionOptions)` is public method of `room` object. This method should be used for connection to someone from the current room
+			
+			// **Note:** After entering a room will be generated `participantsupdated` event which contains user ids (names for xRtc 1.3.0)
+			// which can be used for the method
+			
+			// **Note:** `getParticipants()` also returns array of users in the room (user ids | user names for the xRtc 1.3.0).
+
+			// The method takes following parameters:
+
+			// * `userId: string`. It is required parameter.
+			// This specified target user id (user name for xRtc 1.3.0.0) to which we want to connect (establish p2p connection).
+			// * `connectionOptions: object`. It is optional parameter. This parameter should have following format:
+			// `{ data: object, createDataChannel: string }`. Where `data` is any user data which should be associated with created `connection`.
+			// E.g. this `data` can be used for identifying the connection because there may be many connections and they are asynchronous.
+			// Beside this `data` can be used as storage for any informationhe which developer wants to keep it here. And where `createDataChannel`
+			// is special flag which should be used if you want to create `xRtc.DataChannel` with minimum code. If this flag equals `"auto"` then
+			// on `the xRtc.Connection` **one** data channel with name `"autoDataChannel"` will be created automatically.
+
+			// **Note:** For xRtc 1.3.0 `userId` and `userName` are identical.
+
+			// **Simple examples:**
+
+			// * `room.connect("My friend name");`
+			// * `room.connect("My friend name", { data: "Hello World!" });`
+			// * `room.connect("My friend name", { data: { customField: "Hello World!" } });`
+			// * `room.connect("My friend name", { data: "Hello World!", createDataChannel : "auto" });`
+			// * `room.connect("My friend name", { createDataChannel : "auto" });`
 			connect: function (userId, connectionOptions) {
 				if (!roomInfo.user) {
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
@@ -106,12 +188,27 @@
 				});
 			},
 
-			// **[Public API]:** It is public method of `room` object. This method should be used for access room information.
+			// **[Public API]:** `getInfo()` is public method of `room` object. This method should be used for access room information.
+			// The method returns information about room (domain, application, room name) and current user (name for xRtc 1.3.0).
+			// The returned object has following format: `{ domain: string, application: string, name: string, user: string }`, where:
+
+			// * `domain`. The value which was defined during room creation.
+			// * `application`. The value which was defined during room creation.
+			// * `name`. Name of the room which was defined during room creation.
+			// * `user`. Current user (`string` for xRtc 1.3.0) which was initialized after entering the room.
+			// This value will be cleared (`null`) after leaving the room.
+
+			// **Simple example:**
+
+			// * `var roomInfo = room.getInfo(); var domain = roomInfo.domain; var application = roomInfo.application;
+			// var roomName = roomInfo.name; var currentUser = roomInfo.user;`
+
 			getInfo: function () {
 				return roomInfo;
 			},
 
-			// **[Public API]:** It is public method of `room` object. Returns existed connections (`xRtc.Connection[]`) of the room.
+			// **[Public API]:** `getConnections()` is public method of `room` object. Returns existed connections (`xRtc.Connection[]`) of the room
+			// which have not been closed yet.
 			getConnections: function () {
 				// Return the copy of internal array.
 				return connections.map(function (connection) {
@@ -119,9 +216,11 @@
 				});
 			},
 
-			// **[Public API]:** It is public method of `room` object. Returns array of participans from the current room.
+			// **[Public API]:** `getParticipants()` is public method of `room` object. Returns array of participans from the current room.
+
+			// **Note:** array of strings for xRtc 1.3.0 where each `string` is `userId` (`userName`).
 			getParticipants: function () {
-				//return the copy of array
+				// Return the copy of internal array.
 				return participants.map(function (participant) {
 					return participant;
 				});
@@ -154,7 +253,7 @@
 					}))
 					.on(scEvents.receiveOffer, proxy(onIncomingConnection))
 					// **Note:** everything works fine without sendbye functionality in case when connection was closed manually.
-					// This functionality helps to detect 'close' action more quickly for Chrome because xRtc.Connection fires close event not immediately.
+					// This functionality helps to detect 'close' action more quickly for *Chrome* because 'xRtc.Connection' fires 'connectionclosed' event not immediately.
 					.on(scEvents.receiveBye, proxy(onCloseConnection));
 
 				isServerConnectorSubscribed = true;
@@ -306,7 +405,7 @@
 
 			connection.on(xrtc.Connection.events.connectionClosed, function () {
 				connections.splice(getConnectionIndexById(connections, connectionId), 1);
-				// todo: maybe need to unsubscribe this handshake controllers from all events
+				// **Todo:** Maybe need to unsubscribe this handshake controllers from all events.
 				delete handshakeControllers[connectionId];
 			});
 

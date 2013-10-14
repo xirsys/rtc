@@ -48,7 +48,7 @@
 			},
 
 			// Returns `sdp` which corrected accordingly current connection type.
-			// **Note:** FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type is `server` (equals `xrtc.Connection.connectionTypes.server`).
+			// **Note:** FireFox `offer` and `answer` contains all ice candidates which should be deleted if connection type is `server` (equals `xrtc.Connection.connectionTypes.server`).
 			filterSDP: function (sdp) {
 				var changedSdp = sdp;
 				if (connectionType === xrtc.Connection.connectionTypes.server) {
