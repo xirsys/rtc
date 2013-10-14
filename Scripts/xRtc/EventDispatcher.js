@@ -1,5 +1,7 @@
 ﻿// #### Version 1.3.0 ####
 
+// It is special class which used by xRtc for event dispatching.
+
 'use strict';
 
 (function (exports) {

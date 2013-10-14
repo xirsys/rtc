@@ -103,7 +103,7 @@
 				subscribeToServerEvents.call(this);
 
 				// `roomOptions` initialization.
-				xrtc.Class.extend(roomOptions, xrtc.Room.settings.options);
+				xrtc.Class.extend(roomOptions, xrtc.Room.settings.enterOptions);
 				if (options) {
 					xrtc.Class.extend(roomOptions, options);
 				};
@@ -157,8 +157,10 @@
 			// * `connectionOptions: object`. It is optional parameter. This parameter should have following format:
 			// `{ data: object, createDataChannel: string }`. Where `data` is any user data which should be associated with created `connection`.
 			// E.g. this `data` can be used for identifying the connection because there may be many connections and they are asynchronous.
-			// Beside this `data` can be used as storage for any informationhe which developer wants to keep it here. And where `createDataChannel`
-			// is special flag which should be used if you want to create `xRtc.DataChannel` with minimum code. If this flag equals `"auto"` then
+			// Beside this `data` can be used as storage for any informationhe which developer wants to keep it here and this object is accessible
+			// for the remote side on `incomingconnection` event (behind the scene object will be serialized
+			// to JSON and transferred to remote side using server connection).
+			// `createDataChannel` is special flag which should be used if you want to create `xRtc.DataChannel` with minimum code. If this flag equals `"auto"` then
 			// on `the xRtc.Connection` **one** data channel with name `"autoDataChannel"` will be created automatically.
 
 			// **Note:** For xRtc 1.3.0 `userId` and `userName` are identical.
@@ -419,8 +421,8 @@
 		}
 	});
 
-	// **Note:** Full list of events for the `xRtc.Room` object.
 	xrtc.Room.extend({
+		// **Note:** Full list of events for the `xRtc.Room` object.
 		events: {
 			enter: 'enter',
 			leave: 'leave',
@@ -436,13 +438,16 @@
 		},
 
 		settings: {
+			// **Note:** Default information values for the `xRtc.Room` object.
 			info: {
 				domain: exports.document.domain,
 				application: 'default',
 				name: 'default'
 			},
 
-			options: {
+			// **Note:** Default options which used for the `enter(credentials, options)`
+			// method of `xRtc.Room` object if some options not specified.
+			enterOptions: {
 				autoReply: true
 			}
 		}

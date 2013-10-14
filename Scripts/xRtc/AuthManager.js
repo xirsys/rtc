@@ -1,5 +1,12 @@
 ﻿// #### Version 1.3.0 ####
 
+// XirSys (default) realization of authentication manager.
+
+// **Responsibility of this manager:**
+
+// * get token
+// * get ice servers data
+
 'use strict';
 
 (function (exports) {

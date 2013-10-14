@@ -1,6 +1,8 @@
 ﻿// #### Version 1.3.0 ####
 
-// `xRtc.Connection` is one of the main objects of **xRtc** library. This object can not be created manually. For the creation of connection need to use `xRtc.Room` object.
+// `xRtc.Connection` is one of the main objects of **xRtc** library. This object can not be created manually.
+// For the creation of connection need to use `xRtc.Room` object.
+// The main goal of this object is handling real p2p connection.
 
 'use strict';
 
@@ -811,8 +813,8 @@
 		};
 	});
 
-	// **Note:** Full list of events for the `xRtc.Connection` object.
 	xrtc.Connection.extend({
+		// **Note:** Full list of events for the `xRtc.Connection` object.
 		events: {
 			localStreamAdded: 'localstreamadded',
 			remoteStreamAdded: 'remotestreamadded',

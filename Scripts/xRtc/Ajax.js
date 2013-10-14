@@ -1,5 +1,7 @@
 ﻿// #### Version 1.3.0 ####
 
+// xRtc library uses this functionality for  performing Ajax requets to the server.
+
 'use strict';
 
 (function (exports) {

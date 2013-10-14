@@ -1,5 +1,12 @@
 ﻿// #### Version 1.3.0 ####
 
+// Some common information. E.g. current browser, current browser version, etc.
+
+// **Simple examples:**
+
+// * `var currentBrowser = xRtc.webrtc.detectedBrowser;`
+// * `var currentBrowserVersion = xRtc.webrtc.detectedBrowserVersion;`
+
 'use strict';
 
 (function (exports) {

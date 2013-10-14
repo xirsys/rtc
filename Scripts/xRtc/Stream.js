@@ -1,6 +1,7 @@
 ﻿// #### Version 1.3.0 ####
 
-// `xRtc.Stream` is one of the main objects of **xRtc** library.
+// `xRtc.Stream` is one of the main objects of **xRtc** library. It is wrapper to native browser's `MediaStream`.
+// All instances of this object should be created by `xRtc.getUserMedia(options, successCallback, errorCallback)` method.
 
 'use strict';
 
@@ -23,35 +24,37 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			// **[Public API]**
+			// **[Public API]:** Returns native instanse of browser's `MediaStream`.
+			// It is will be helpful if `xRtc.Stream` doesn't provide some functionality but this functionality exists in `MediaStream`.
 			getStream: function () {
 				return stream;
 			},
 
-			// **[Public API]**
+			// **[Public API]:** Stops the stream. After stopping some native resources will be released and the stream can't be used further.
 			stop: function() {
 				stream.stop();
 			},
 
-			// **[Public API]**
+			// **[Public API]:** Returns unique `id` of the stream.
 			getId: function () {
 				// **Note:** `id` property is actual only for *Chrome M26+*.
 				// **Todo:** need to delete this property or generate own id in case of *FF* or *Chrome M25*.
 				return stream.id;
 			},
 
-			// **[Public API]**
+			// **[Public API]: ** Returns `URL` of the stream which provides access to the stream.
+			// E.g. The `URL` can be used for assigning to any html 'video' element.
 			getURL: function () {
 				return webrtc.URL.createObjectURL(stream);
 			},
 
-			// **[Public API]**
+			// **[Public API]:** The method will be helpful if you want to assign the stream to html 'video' element.
 			assignTo: function (videoDomElement) {
-				// stream could not be started if it has not been downloaded yet
+				// Stream could not be started if it has not been downloaded yet.
 				if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
 					assignTo.call(this, videoDomElement);
 				} else {
-					//This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately
+					// This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.
 					exports.setTimeout(proxy(this.assignTo, videoDomElement), 100);
 				}
 			}
@@ -117,8 +120,8 @@
 		}
 	});
 
-	// **Note:** Full list of events for the `xRtc.Stream` object.
 	xrtc.Stream.extend({
+		// **Note:** Full list of events for the `xRtc.Stream` object.
 		events: {
 			ended: 'ended'
 		}

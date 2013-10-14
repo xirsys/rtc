@@ -1,5 +1,12 @@
 ﻿// #### Version 1.3.0 ####
 
+// XirSys (default) realization of connection manager.
+
+// **Responsibility of this manager:**
+
+// * Establish and handle server connection (For XirSys realization is WebSockets).
+// * Implementation of the protocol to communicate with the server (For XirSys is custom protocol).
+
 'use strict';
 
 (function (exports) {

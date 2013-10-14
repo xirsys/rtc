@@ -1,9 +1,10 @@
 ﻿// #### Version 1.3.0 ####
 
+// The base type of all classes for xRtc library.
+
 'use strict';
 
 (function (exports) {
-	// The base type of all classes.
 	exports.xRtc.Class = function (namespace, className, constructor) {
 		namespace[className] = constructor;
 

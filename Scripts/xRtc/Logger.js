@@ -1,5 +1,13 @@
 ﻿// #### Version 1.3.0 ####
 
+// This class used by xRtc for logging all events which can happen in the library:
+
+// * info
+// * debug
+// * test
+// * warning
+// * error
+
 'use strict';
 
 (function (exports) {
@@ -83,6 +91,12 @@
 		}
 	});
 
+	// **[Public API]:** This functionality can be used for ebabling/disabling (by default logging is disabled) logging for the xRtc library.
+
+	// **Simple examples**
+
+	// * `xRtc.Logger.enable({ debug: true, warning: true, error: true, test: true });`
+	// * `xRtc.Logger.disable();`
 	xrtc.Logger.extend({
 		level: false,
 
