@@ -87,7 +87,24 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_2">&#182;</a>
 							</div>
-							<p><code>xRtc.getUserMedia</code> is the special functions for accessing media (audio, video, screen) information.</p>
+							<p><code>xRtc.getUserMedia</code> is the special functions for accessing media data:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<ul>
+<li>audio</li>
+<li>video</li>
+<li>screen sharing</li>
+</ul>
 
 						</td>
 						<td class="code">
@@ -117,12 +134,73 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_3">
+					<tr id="section_4">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_3">&#182;</a>
+								<a class="pilcrow" href="#section_4">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> Asks user to allow use local devices, e.g. camera and microphone.</p>
+							<p><strong>[Public API]:</strong> Asks user to allow use local devices, e.g. <strong>camera</strong>, <strong>microphone</strong>, <strong>screen</strong>.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> Screen sharing available only for <em>Chrome 25+</em> with special flag <code>#enable-usermedia-screen-capture</code> and only in case
+when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> protocol.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_6">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_6">&#182;</a>
+							</div>
+							<p><strong>Simple examples:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_7">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_7">&#182;</a>
+							</div>
+							<ul>
+<li><code>xRtc.getUserMedia({ audio: true, video: true }, function(stream){}, function(error){});</code></li>
+<li><code>xRtc.getUserMedia({ audio: true }, function(stream){}, function(error){});</code></li>
+<li><code>xRtc.getUserMedia({ video: true }, function(stream){}, function(error){});</code></li>
+<li><code>xRtc.getUserMedia({ video: { mandatory: { mediaSource: "screen" } } }, function(stream){}, function(error){});</code></li>
+<li><code>xRtc.getUserMedia({ video: { mandatory: { mediaSource: "screen" } }, audio: true }, function(stream){}, function(error){});</code></li>
+<li><code>xRtc.getUserMedia({ video: { mandatory: { minWidth: 1280, maxWidth: 1280, minHeight: 720, maxHeight: 720, minFrameRate: 30 }}, function(stream){}, function(error){});</code></li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_8">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_8">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> xRtc.getUserMedia uses the same option as native browser's getUserMedia. Some examples of otions you can find here:
+<a href="http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html">http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html</a></p>
 
 						</td>
 						<td class="code">
@@ -139,12 +217,13 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_4">
+					<tr id="section_9">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
-							<p><em>FF 20.0.1: (Not shure about other version, FF 21 works fine)</em> reduces the overall sound of the computer (playing using <em>Chrome</em> and maybe another <em>FF</em>) after calling this functionality.</p>
+							<p><em>FF 20.0.1: (Not shure about other version, FF 21 works fine)</em>
+reduces the overall sound of the computer (playing using <em>Chrome</em> and maybe another <em>FF</em>) after calling this functionality.</p>
 
 						</td>
 						<td class="code">
@@ -158,10 +237,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_5">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p>Combine audio and video components of different streams in one stream.</p>
 

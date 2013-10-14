@@ -79,6 +79,38 @@
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_2">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_2">&#182;</a>
+							</div>
+							<p>This class used by xRtc for logging all events which can happen in the library:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<ul>
+<li>info</li>
+<li>debug</li>
+<li>test</li>
+<li>warning</li>
+<li>error</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
 &#39;use strict&#39;;
 
 (function (exports) {
@@ -162,7 +194,48 @@
 		}
 	});
 
-	xrtc.Logger.extend({
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<p><strong>[Public API]:</strong> This functionality can be used for ebabling/disabling (by default logging is disabled) logging for the xRtc library.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<p><strong>Simple examples</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_6">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_6">&#182;</a>
+							</div>
+							<ul>
+<li><code>xRtc.Logger.enable({ debug: true, warning: true, error: true, test: true });</code></li>
+<li><code>xRtc.Logger.disable();</code></li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>	xrtc.Logger.extend({
 		level: false,
 
 		enable: function (level) {

@@ -79,6 +79,48 @@
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_2">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_2">&#182;</a>
+							</div>
+							<p>XirSys (default) realization of authentication manager.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<p><strong>Responsibility of this manager:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<ul>
+<li>get token</li>
+<li>get ice servers data</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
 &#39;use strict&#39;;
 
 (function (exports) {
@@ -101,10 +143,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_2">
+					<tr id="section_5">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_2">&#182;</a>
+								<a class="pilcrow" href="#section_5">&#182;</a>
 							</div>
 							<p><code>callback</code> function receive array of ice servers as parameter. Each ice server has following format: <code>{ url, credential, username }</code> in case of TURN and <code>{ url }</code> in case of STUN.</p>
 
@@ -189,10 +231,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_3">
+					<tr id="section_6">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_3">&#182;</a>
+								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to discuss it with the team.</p>
 
@@ -216,10 +258,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_4">
+					<tr id="section_7">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
+								<a class="pilcrow" href="#section_7">&#182;</a>
 							</div>
 							<p>Call this method again if error occures.</p>
 
@@ -260,10 +302,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_5">
+					<tr id="section_8">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
+								<a class="pilcrow" href="#section_8">&#182;</a>
 							</div>
 							<p>Save servers in cache with token key.</p>
 
@@ -278,10 +320,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_6">
+					<tr id="section_9">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
 							<p>Call this method again to get it from cache or if error occures.</p>
 
@@ -295,10 +337,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_7">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_7">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.AuthManager</code> object.</p>
 

@@ -79,9 +79,6 @@
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>
-&#39;use strict&#39;;
-
-(function (exports) {
 </code></pre>
 						</td>
 					</tr>
@@ -90,11 +87,15 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_2">&#182;</a>
 							</div>
-							<p>The base type of all classes.</p>
+							<p>The base type of all classes for xRtc library.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>	exports.xRtc.Class = function (namespace, className, constructor) {
+							<pre><code class='prettyprint'>
+&#39;use strict&#39;;
+
+(function (exports) {
+	exports.xRtc.Class = function (namespace, className, constructor) {
 		namespace[className] = constructor;
 
 		var klass = namespace[className];

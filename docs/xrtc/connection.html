@@ -87,7 +87,9 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_2">&#182;</a>
 							</div>
-							<p><code>xRtc.Connection</code> is one of the main objects of <strong>xRtc</strong> library. This object can not be created manually. For the creation of connection need to use <code>xRtc.Room</code> object.</p>
+							<p><code>xRtc.Connection</code> is one of the main objects of <strong>xRtc</strong> library. This object can not be created manually.
+For the creation of connection need to use <code>xRtc.Room</code> object.
+The main goal of this object is handling real p2p connection.</p>
 
 						</td>
 						<td class="code">
@@ -179,7 +181,7 @@
 								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
 							<p>Returns <code>sdp</code> which corrected accordingly current connection type.
-<strong>Note:</strong> FireFox 'offer' and 'answer' contains all ice candidates which should be deleted if connection type is <code>server</code> (equals <code>xrtc.Connection.connectionTypes.server</code>).</p>
+<strong>Note:</strong> FireFox <code>offer</code> and <code>answer</code> contains all ice candidates which should be deleted if connection type is <code>server</code> (equals <code>xrtc.Connection.connectionTypes.server</code>).</p>
 
 						</td>
 						<td class="code">
@@ -1785,6 +1787,7 @@ In <em>Chrome</em> reliable channels doesn't implemented yet: <a href="https://c
 		};
 	});
 
+	xrtc.Connection.extend({
 </code></pre>
 						</td>
 					</tr>
@@ -1797,8 +1800,7 @@ In <em>Chrome</em> reliable channels doesn't implemented yet: <a href="https://c
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>	xrtc.Connection.extend({
-		events: {
+							<pre><code class='prettyprint'>		events: {
 			localStreamAdded: &#39;localstreamadded&#39;,
 			remoteStreamAdded: &#39;remotestreamadded&#39;,
 

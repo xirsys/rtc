@@ -87,7 +87,8 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_2">&#182;</a>
 							</div>
-							<p><code>xRtc.Stream</code> is one of the main objects of <strong>xRtc</strong> library.</p>
+							<p><code>xRtc.Stream</code> is one of the main objects of <strong>xRtc</strong> library. It is wrapper to native browser's <code>MediaStream</code>.
+All instances of this object should be created by <code>xRtc.getUserMedia(options, successCallback, errorCallback)</code> method.</p>
 
 						</td>
 						<td class="code">
@@ -132,7 +133,8 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_4">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> Returns native instanse of browser's <code>MediaStream</code>.
+It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functionality but this functionality exists in <code>MediaStream</code>.</p>
 
 						</td>
 						<td class="code">
@@ -148,7 +150,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_5">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> Stops the stream. After stopping some native resources will be released and the stream can't be used further.</p>
 
 						</td>
 						<td class="code">
@@ -164,7 +166,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> Returns unique <code>id</code> of the stream.</p>
 
 						</td>
 						<td class="code">
@@ -193,7 +195,8 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_8">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><em>*[Public API]: *</em> Returns <code>URL</code> of the stream which provides access to the stream.
+E.g. The <code>URL</code> can be used for assigning to any html 'video' element.</p>
 
 						</td>
 						<td class="code">
@@ -209,7 +212,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> The method will be helpful if you want to assign the stream to html 'video' element.</p>
 
 						</td>
 						<td class="code">
@@ -222,7 +225,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
-							<p>stream could not be started if it has not been downloaded yet</p>
+							<p>Stream could not be started if it has not been downloaded yet.</p>
 
 						</td>
 						<td class="code">
@@ -237,7 +240,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
-							<p>This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately</p>
+							<p>This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.</p>
 
 						</td>
 						<td class="code">
@@ -317,6 +320,7 @@
 		}
 	});
 
+	xrtc.Stream.extend({
 </code></pre>
 						</td>
 					</tr>
@@ -329,8 +333,7 @@
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>	xrtc.Stream.extend({
-		events: {
+							<pre><code class='prettyprint'>		events: {
 			ended: &#39;ended&#39;
 		}
 	});

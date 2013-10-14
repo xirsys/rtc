@@ -97,7 +97,119 @@
 (function (exports) {
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, &#39;Room&#39;, function Room(info, am, sc) {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<p><strong>[Public API]:</strong> <code>xRtc.Room</code> object has public constructor <code>xRtc.Room(info, am, sc)</code>. This constructor can take 3 parameters:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<ol>
+<li><code>info: object | string</code>. It is optional parameter.
+If parameter is <code>string</code> then it is name of a room that already exists on the server.
+If parameter is <code>object</code> then it should have following format <code>{ domain: string, application: string, name: string }</code> (all fields are optional),
+where <code>domain</code> is application domain, <code>application</code> is app name, <code>name</code> is room name.</li>
+<li><code>am: xRtc.AuthManager</code>. It is optional parameter.
+If this parameter is not specified, the default realization of <code>xrtc.AuthManager</code> will be used.
+You may need this option if you use own server side or you want to subscribe to some events of <code>xrtc.AuthManager</code>.</li>
+<li><code>sc: xrtc.ServerConnector</code>. It is optional parameter.
+If this parameter is not specified, the default realization of <code>xrtc.ServerConnector</code> will be used.
+You may need this option if you use own server side or you want to subscribe to some events of <code>xrtc.ServerConnector</code>.</li>
+</ol>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>	
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<p>If any of these cases, <code>domain, application, name</code> values are not specified then values will
+be initializaed using default values(these values can be overwritten):</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_6">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_6">&#182;</a>
+							</div>
+							<ul>
+<li><code>xRtc.Room.settings.info.domain</code>. It is domain which was returned by browser.</li>
+<li><code>xRtc.Room.settings.info.application</code>. It is "default".</li>
+<li><code>xRtc.Room.settings.info.name</code>. It is "default".</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_7">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_7">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> Mentioned values are accessible after room creation. You can get it using following code: <code>var roomInfo = room.getInfo();</code>.
+Additionaly <code>roomInfo</code> will be contain information about current user <code>roomInfo.user</code> (<code>string</code> for xRtc 1.3.0.0).</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_8">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_8">&#182;</a>
+							</div>
+							<p><strong>Simple examples of room creation:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_9">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_9">&#182;</a>
+							</div>
+							<ul>
+<li><code>var room = new xRtc.Room();</code></li>
+<li><code>var room = new xRtc.Room("my test room");</code></li>
+<li><code>var room = new xRtc.Room("my test room", new xRtc.AuthManager(), new xrtc.ServerConnector());</code></li>
+<li><code>var room = new xRtc.Room("my test room", new customAuthManager(), new customServerConnector());</code></li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>	xrtc.Class(xrtc, &#39;Room&#39;, function Room(info, am, sc) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			hcEvents = xrtc.HandshakeController.events,
@@ -115,10 +227,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_3">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_3">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p><code>roomInfo</code> initialization.</p>
 
@@ -137,12 +249,83 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_4">
+					<tr id="section_11">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> It is public method of <code>room</code> object. This method should be used for entering the room.</p>
+							<p><strong>[Public API]:</strong> <code>enter(credentials, options)</code> is public method of <code>room</code> object. This method should be used for entering the room.
+After entering the room, the connection to the server is established,
+the <code>room</code> object will be synchronized to the room on the server and all the events on the server
+will cause appropriate events for the <code>room</code>.
+This method has following arguments:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_12">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_12">&#182;</a>
+							</div>
+							<ol>
+<li><code>credentials: object | string</code>. It is required parameter. If this parameter is <code>object</code> then it should have following format:
+<code>{ username : string, password: string }</code>, where <code>username</code> is the name of the current user(who entering the room),
+<code>password</code> is password of the current user.
+If this parameter is <code>string</code> then it is the name of the current user.</li>
+<li><code>options : object</code>. It is optional parameter. This parameter should have following format: <code>{ autoReply: bool }</code>
+(field is optional),
+where <code>autoReply</code> is flag which mean all incoming call will be accepted automatically or not. Default value can be overwritten here
+<code>xRtc.Room.settings.option.autoReply</code> and equals <code>true</code>.</li>
+</ol>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_13">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_13">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> After entering the room current user information will be accessible using following code:
+<code>var currentUser = room.getInfo().user;</code> (For xRtc 1.3.0 <code>currentUser</code> is <code>string</code>).</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_14">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_14">&#182;</a>
+							</div>
+							<p><strong>Simple examples:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_15">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_15">&#182;</a>
+							</div>
+							<ul>
+<li><code>room.enter("John Doe");</code></li>
+<li><code>room.enter("John Doe", { autoReply: false });</code></li>
+<li><code>room.enter({ username: "John Doe", password: "password" });</code></li>
+<li><code>room.enter({ username: "John Doe", password: "password" }, { autoReply: false });</code></li>
+</ul>
 
 						</td>
 						<td class="code">
@@ -165,16 +348,16 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_5">
+					<tr id="section_16">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
+								<a class="pilcrow" href="#section_16">&#182;</a>
 							</div>
 							<p><code>roomOptions</code> initialization.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>				xrtc.Class.extend(roomOptions, xrtc.Room.settings.options);
+							<pre><code class='prettyprint'>				xrtc.Class.extend(roomOptions, xrtc.Room.settings.enterOptions);
 				if (options) {
 					xrtc.Class.extend(roomOptions, options);
 				};
@@ -182,10 +365,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_6">
+					<tr id="section_17">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
+								<a class="pilcrow" href="#section_17">&#182;</a>
 							</div>
 							<p><code>userData</code> initialization.</p>
 
@@ -208,12 +391,40 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_7">
+					<tr id="section_18">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_7">&#182;</a>
+								<a class="pilcrow" href="#section_18">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> It is public method of <code>room</code> object. This method should be used for leaving the room.</p>
+							<p><strong>[Public API]:</strong> <code>leave()</code> is public method of <code>room</code> object. This method should be used for leaving the room.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_19">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_19">&#182;</a>
+							</div>
+							<p><strong>Simple examples:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_20">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_20">&#182;</a>
+							</div>
+							<ul>
+<li><code>room.leave();</code></li>
+</ul>
 
 						</td>
 						<td class="code">
@@ -230,10 +441,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_8">
+					<tr id="section_21">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_8">&#182;</a>
+								<a class="pilcrow" href="#section_21">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Maybe will be good to close all room connections. Need to discuss it with the team.</p>
 
@@ -246,12 +457,121 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_22">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_22">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> It is public method of <code>room</code> object. This method should be used for connection to someone from the current room.</p>
+							<p><strong>[Public API]:</strong> <code>connect(userId, connectionOptions)</code> is public method of <code>room</code> object. This method should be used for connection to someone from the current room</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_23">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_23">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> After entering a room will be generated <code>participantsupdated</code> event which contains user ids (names for xRtc 1.3.0)
+which can be used for the method</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_24">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_24">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> <code>getParticipants()</code> also returns array of users in the room (user ids | user names for the xRtc 1.3.0).</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_25">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_25">&#182;</a>
+							</div>
+							<p>The method takes following parameters:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_26">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_26">&#182;</a>
+							</div>
+							<ul>
+<li><code>userId: string</code>. It is required parameter.
+This specified target user id (user name for xRtc 1.3.0.0) to which we want to connect (establish p2p connection).</li>
+<li><code>connectionOptions: object</code>. It is optional parameter. This parameter should have following format:
+<code>{ data: object, createDataChannel: string }</code>. Where <code>data</code> is any user data which should be associated with created <code>connection</code>.
+E.g. this <code>data</code> can be used for identifying the connection because there may be many connections and they are asynchronous.
+Beside this <code>data</code> can be used as storage for any informationhe which developer wants to keep it here and this object is accessible
+for the remote side on <code>incomingconnection</code> event (behind the scene object will be serialized
+to JSON and transferred to remote side using server connection).
+<code>createDataChannel</code> is special flag which should be used if you want to create <code>xRtc.DataChannel</code> with minimum code. If this flag equals <code>"auto"</code> then
+on <code>the xRtc.Connection</code> <strong>one</strong> data channel with name <code>"autoDataChannel"</code> will be created automatically.</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_27">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_27">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> For xRtc 1.3.0 <code>userId</code> and <code>userName</code> are identical.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_28">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_28">&#182;</a>
+							</div>
+							<p><strong>Simple examples:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_29">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_29">&#182;</a>
+							</div>
+							<ul>
+<li><code>room.connect("My friend name");</code></li>
+<li><code>room.connect("My friend name", { data: "Hello World!" });</code></li>
+<li><code>room.connect("My friend name", { data: { customField: "Hello World!" } });</code></li>
+<li><code>room.connect("My friend name", { data: "Hello World!", createDataChannel : "auto" });</code></li>
+<li><code>room.connect("My friend name", { createDataChannel : "auto" });</code></li>
+</ul>
 
 						</td>
 						<td class="code">
@@ -276,28 +596,80 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_10">
+					<tr id="section_30">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
+								<a class="pilcrow" href="#section_30">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> It is public method of <code>room</code> object. This method should be used for access room information.</p>
+							<p><strong>[Public API]:</strong> <code>getInfo()</code> is public method of <code>room</code> object. This method should be used for access room information.
+The method returns information about room (domain, application, room name) and current user (name for xRtc 1.3.0).
+The returned object has following format: <code>{ domain: string, application: string, name: string, user: string }</code>, where:</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			getInfo: function () {
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_31">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_31">&#182;</a>
+							</div>
+							<ul>
+<li><code>domain</code>. The value which was defined during room creation.</li>
+<li><code>application</code>. The value which was defined during room creation.</li>
+<li><code>name</code>. Name of the room which was defined during room creation.</li>
+<li><code>user</code>. Current user (<code>string</code> for xRtc 1.3.0) which was initialized after entering the room.
+This value will be cleared (<code>null</code>) after leaving the room.</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_32">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_32">&#182;</a>
+							</div>
+							<p><strong>Simple example:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_33">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_33">&#182;</a>
+							</div>
+							<ul>
+<li><code>var roomInfo = room.getInfo(); var domain = roomInfo.domain; var application = roomInfo.application;
+var roomName = roomInfo.name; var currentUser = roomInfo.user;</code></li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+			getInfo: function () {
 				return roomInfo;
 			},
 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_34">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_34">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> It is public method of <code>room</code> object. Returns existed connections (<code>xRtc.Connection[]</code>) of the room.</p>
+							<p><strong>[Public API]:</strong> <code>getConnections()</code> is public method of <code>room</code> object. Returns existed connections (<code>xRtc.Connection[]</code>) of the room
+which have not been closed yet.</p>
 
 						</td>
 						<td class="code">
@@ -305,10 +677,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_12">
+					<tr id="section_35">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
+								<a class="pilcrow" href="#section_35">&#182;</a>
 							</div>
 							<p>Return the copy of internal array.</p>
 
@@ -322,12 +694,25 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_36">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_36">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> It is public method of <code>room</code> object. Returns array of participans from the current room.</p>
+							<p><strong>[Public API]:</strong> <code>getParticipants()</code> is public method of <code>room</code> object. Returns array of participans from the current room.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_37">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_37">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> array of strings for xRtc 1.3.0 where each <code>string</code> is <code>userId</code> (<code>userName</code>).</p>
 
 						</td>
 						<td class="code">
@@ -335,12 +720,12 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_38">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_38">&#182;</a>
 							</div>
-							<p>return the copy of array</p>
+							<p>Return the copy of internal array.</p>
 
 						</td>
 						<td class="code">
@@ -378,13 +763,13 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_15">
+					<tr id="section_39">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_15">&#182;</a>
+								<a class="pilcrow" href="#section_39">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> everything works fine without sendbye functionality in case when connection was closed manually.
-This functionality helps to detect 'close' action more quickly for Chrome because xRtc.Connection fires close event not immediately.</p>
+This functionality helps to detect 'close' action more quickly for <em>Chrome</em> because 'xRtc.Connection' fires 'connectionclosed' event not immediately.</p>
 
 						</td>
 						<td class="code">
@@ -404,10 +789,10 @@ This functionality helps to detect 'close' action more quickly for Chrome becaus
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_16">
+					<tr id="section_40">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_16">&#182;</a>
+								<a class="pilcrow" href="#section_40">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> What about another events? (<code>connectionOpen</code>, <code>connectionClose</code>, <code>tokenInvalid</code>). Need to think about it later.</p>
 
@@ -438,10 +823,10 @@ This functionality helps to detect 'close' action more quickly for Chrome becaus
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_17">
+					<tr id="section_41">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_17">&#182;</a>
+								<a class="pilcrow" href="#section_41">&#182;</a>
 							</div>
 							<p>Skip <code>offer</code> if it is not for me. It is temporary fix, because server shouldn't pass the <code>offer</code> to wrong target.
 Sometimes it happened that the server had sent the <code>offer</code> to all/wrong participants. So we decided not touch this check.</p>
@@ -474,10 +859,10 @@ Sometimes it happened that the server had sent the <code>offer</code> to all/wro
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_18">
+					<tr id="section_42">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_18">&#182;</a>
+								<a class="pilcrow" href="#section_42">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to transfer remote connection data here.</p>
 
@@ -500,10 +885,10 @@ Sometimes it happened that the server had sent the <code>offer</code> to all/wro
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_19">
+					<tr id="section_43">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_19">&#182;</a>
+								<a class="pilcrow" href="#section_43">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Need to think about declining reason.
 <strong>Todo:</strong> Need to think about <code>bye</code> options definition and about senderId property name.</p>
@@ -522,10 +907,10 @@ Sometimes it happened that the server had sent the <code>offer</code> to all/wro
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_20">
+					<tr id="section_44">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_20">&#182;</a>
+								<a class="pilcrow" href="#section_44">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Think about sending decline reason.</p>
 
@@ -537,10 +922,10 @@ Sometimes it happened that the server had sent the <code>offer</code> to all/wro
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_21">
+					<tr id="section_45">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_21">&#182;</a>
+								<a class="pilcrow" href="#section_45">&#182;</a>
 							</div>
 							<p><strong>Bug:</strong> This actin should be executed only in case when <code>bye</code> was send from target user <code>(userid === connection.targetUser)</code>. As a result near handshake controller need to store userId also.</p>
 
@@ -552,10 +937,10 @@ Sometimes it happened that the server had sent the <code>offer</code> to all/wro
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_22">
+					<tr id="section_46">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_22">&#182;</a>
+								<a class="pilcrow" href="#section_46">&#182;</a>
 							</div>
 							<p><strong>Bug:</strong> Close the connection in case when close command was received from target user of this connection.
 Steps for reproduce:</p>
@@ -566,10 +951,10 @@ Steps for reproduce:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_23">
+					<tr id="section_47">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_23">&#182;</a>
+								<a class="pilcrow" href="#section_47">&#182;</a>
 							</div>
 							<ol>
 <li>Call to user;</li>
@@ -632,12 +1017,12 @@ Steps for reproduce:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_24">
+					<tr id="section_48">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_24">&#182;</a>
+								<a class="pilcrow" href="#section_48">&#182;</a>
 							</div>
-							<p>todo: maybe need to unsubscribe this handshake controllers from all events</p>
+							<p><strong>Todo:</strong> Maybe need to unsubscribe this handshake controllers from all events.</p>
 
 						</td>
 						<td class="code">
@@ -654,20 +1039,20 @@ Steps for reproduce:</p>
 		}
 	});
 
+	xrtc.Room.extend({
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_25">
+					<tr id="section_49">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_25">&#182;</a>
+								<a class="pilcrow" href="#section_49">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.Room</code> object.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>	xrtc.Room.extend({
-		events: {
+							<pre><code class='prettyprint'>		events: {
 			enter: &#39;enter&#39;,
 			leave: &#39;leave&#39;,
 
@@ -682,13 +1067,38 @@ Steps for reproduce:</p>
 		},
 
 		settings: {
-			info: {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_50">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_50">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> Default information values for the <code>xRtc.Room</code> object.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			info: {
 				domain: exports.document.domain,
 				application: &#39;default&#39;,
 				name: &#39;default&#39;
 			},
 
-			options: {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_51">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_51">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> Default options which used for the <code>enter(credentials, options)</code>
+method of <code>xRtc.Room</code> object if some options not specified.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			enterOptions: {
 				autoReply: true
 			}
 		}

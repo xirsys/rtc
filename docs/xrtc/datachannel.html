@@ -87,7 +87,49 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_2">&#182;</a>
 							</div>
-							<p><code>xRtc.DataChannel</code> is one of the main objects of <strong>xRtc</strong> library.</p>
+							<p><code>xRtc.DataChannel</code> is one of the main objects of <strong>xRtc</strong> library. This object can be used for trenferring any information to remote side.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> xRtc 1.3.0 supports only <code>text</code> messages. If <code>object</code> will be used then it will be serialized to <code>text</code> (JSON).</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<p><strong>xRtc 1.3.0 restrictions:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<ul>
+<li>Message should be less then ~1000 symbols.</li>
+<li>Interoperablity between <em>FireFox</em> and <em>Chrome</em> doesn't supported.</li>
+</ul>
 
 						</td>
 						<td class="code">
@@ -107,10 +149,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_3">
+					<tr id="section_6">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_3">&#182;</a>
+								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
 							<p><code>dataChannel.onclose</code> tested in case of disconnect(close browser tab) of remote browser for <em>Chrome M29</em>
 <strong>Todo:</strong> Need to test onclose event in case of remote client disconnection for <em>Chrome M25-28</em>.</p>
@@ -127,12 +169,26 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_4">
+					<tr id="section_7">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
+								<a class="pilcrow" href="#section_7">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Sends a message to remote user where <code>mesage</code> is message to send.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_8">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_8">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> <code>mesage</code> can be as a <code>object</code> and as a <code>string</code>. In any case it is will be serialized to JSON and transferre to remote side
+using p2p connection.</p>
 
 						</td>
 						<td class="code">
@@ -159,12 +215,12 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_5">
+					<tr id="section_9">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> Returns remote user id (name for xRtc 1.3.0) for this data channel.</p>
 
 						</td>
 						<td class="code">
@@ -175,12 +231,13 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_6">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> Returns unique <code>name</code> of the data channel.
+This <code>name</code> should be specified on <code>createDataChannel(name)</code> method of <code>xRtc.Connection</code> object.</p>
 
 						</td>
 						<td class="code">
@@ -191,12 +248,12 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_7">
+					<tr id="section_11">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_7">&#182;</a>
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
-							<p><strong>[Public API]</strong></p>
+							<p><strong>[Public API]:</strong> Returns the <code>state</code> of the data channel. Full list of states you can see below.</p>
 
 						</td>
 						<td class="code">
@@ -246,20 +303,20 @@
 		}
 	});
 
+	xrtc.DataChannel.extend({
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_8">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_8">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.DataChannel</code> object.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>	xrtc.DataChannel.extend({
-		events: {
+							<pre><code class='prettyprint'>		events: {
 			open: &#39;open&#39;,
 			sentMessage: &#39;sentMessage&#39;,
 			receivedMessage: &#39;receivedMessage&#39;,
@@ -271,10 +328,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_13">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_13">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of states of the <code>xRtc.DataChannel</code> object.</p>
 
