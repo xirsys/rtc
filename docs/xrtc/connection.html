@@ -409,6 +409,7 @@ It is internal constructor . The <code>xRtc.Room</code> object uses this constru
 			dataChannelNames = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
+			checkDisconnectedIceStateTimeoutId = null,
 			handshakeController = hc,
 			iceFilter = null,
 			iceServers = null,
@@ -1315,7 +1316,20 @@ enum RTCIceGatheringState {
 				}
 
 				function onIceStateChange(evt) {
-					var state = getIceState.call(this);
+					var state = getIceState.call(self);
+
+					logger.debug(&quot;onIceStateChange&quot;, new Date().getTime(), state);
+					if (checkDisconnectedIceStateTimeoutId) {
+
+						logger.debug(&quot;onIceStateChange&quot;, new Date().getTime(),
+							&quot;checkDisconnectedIceStateTimeout are clearing. ID = &#39;&quot; + checkDisconnectedIceStateTimeoutId + &quot;&#39;&quot;);
+
+						exports.clearTimeout(checkDisconnectedIceStateTimeoutId);
+						checkDisconnectedIceStateTimeoutId = null;
+
+						logger.debug(&quot;onIceStateChange&quot;, new Date().getTime(),
+							&quot;checkDisconnectedIceStateTimeout was cleared. ID = &#39;&quot; + checkDisconnectedIceStateTimeoutId + &quot;&#39;&quot;);
+					}
 
 					if (state === &#39;connected&#39;) {
 </code></pre>
@@ -1330,8 +1344,19 @@ enum RTCIceGatheringState {
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
+							<pre><code class='prettyprint'>						self.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
 					} else if (state === &#39;disconnected&#39;) {
+						var closeDisconnectedConnectionTimeout = 10000;
+
+						logger.debug(&quot;onIceStateChange&quot;, new Date().getTime(),
+							&quot;checkDisconnectedIceStateTimeout(&quot; + closeDisconnectedConnectionTimeout / 1000 + &quot;sec.) was started.&quot;);
+
+						checkDisconnectedIceStateTimeoutId = exports.setTimeout(function () {
+
+							logger.debug(&quot;onIceStateChange&quot;, new Date().getTime(),
+								&quot;ice state equals &#39;disconnected&#39; so closePeerConnection was called. Timeout is &quot; +
+									closeDisconnectedConnectionTimeout / 1000 + &quot;sec and it is expired.&quot;);
+
 </code></pre>
 						</td>
 					</tr>
@@ -1344,7 +1369,13 @@ enum RTCIceGatheringState {
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>						closePeerConnection.call(this);
+							<pre><code class='prettyprint'>							closePeerConnection.call(self);
+							exports.clearInterval(checkDisconnectedIceStateTimeoutId);
+							checkDisconnectedIceStateTimeoutId = null;
+						}, closeDisconnectedConnectionTimeout);
+
+						logger.debug(&quot;onIceStateChange&quot;, new Date().getTime(),
+							&quot;checkDisconnectedIceStateTimeout ID =&#39;&quot; + checkDisconnectedIceStateTimeoutId + &quot;&#39;&quot;);
 					}
 				}
 

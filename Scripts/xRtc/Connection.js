@@ -143,6 +143,7 @@
 			dataChannelNames = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
+			checkDisconnectedIceStateTimeoutId = null,
 			handshakeController = hc,
 			iceFilter = null,
 			iceServers = null,
@@ -528,14 +529,44 @@
 				}
 
 				function onIceStateChange(evt) {
-					var state = getIceState.call(this);
+					var state = getIceState.call(self);
+
+					logger.debug("onIceStateChange", new Date().getTime(), state);
+					if (checkDisconnectedIceStateTimeoutId) {
+
+						logger.debug("onIceStateChange", new Date().getTime(),
+							"checkDisconnectedIceStateTimeout are clearing. ID = '" + checkDisconnectedIceStateTimeoutId + "'");
+
+						exports.clearTimeout(checkDisconnectedIceStateTimeoutId);
+						checkDisconnectedIceStateTimeoutId = null;
+
+						logger.debug("onIceStateChange", new Date().getTime(),
+							"checkDisconnectedIceStateTimeout was cleared. ID = '" + checkDisconnectedIceStateTimeoutId + "'");
+					}
 
 					if (state === 'connected') {
 						// **Todo:** Need to think about name of this event.
-						this.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
+						self.trigger(xrtc.Connection.events.connectionEstablished, { userId: remoteUserId });
 					} else if (state === 'disconnected') {
-						// **Todo:** The event should't be repeated for *FF 24+*, because *FF 18+* has peerConnection.onclosedconnection and *FF 24+* has peerConnection.oniceconnectionstatechange.
-						closePeerConnection.call(this);
+						var closeDisconnectedConnectionTimeout = 10000;
+
+						logger.debug("onIceStateChange", new Date().getTime(),
+							"checkDisconnectedIceStateTimeout(" + closeDisconnectedConnectionTimeout / 1000 + "sec.) was started.");
+
+						checkDisconnectedIceStateTimeoutId = exports.setTimeout(function () {
+
+							logger.debug("onIceStateChange", new Date().getTime(),
+								"ice state equals 'disconnected' so closePeerConnection was called. Timeout is " +
+									closeDisconnectedConnectionTimeout / 1000 + "sec and it is expired.");
+
+							// **Todo:** The event should't be repeated for *FF 24+*, because *FF 18+* has peerConnection.onclosedconnection and *FF 24+* has peerConnection.oniceconnectionstatechange.
+							closePeerConnection.call(self);
+							exports.clearInterval(checkDisconnectedIceStateTimeoutId);
+							checkDisconnectedIceStateTimeoutId = null;
+						}, closeDisconnectedConnectionTimeout);
+
+						logger.debug("onIceStateChange", new Date().getTime(),
+							"checkDisconnectedIceStateTimeout ID ='" + checkDisconnectedIceStateTimeoutId + "'");
 					}
 				}
 
