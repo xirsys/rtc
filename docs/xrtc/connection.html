@@ -10,55 +10,6 @@
 <body onload="prettyPrint()">
 	<div id="container">
 		<div id="background"></div>
-			<div id="jump_to">
-				Jump To &hellip;
-				<div id="jump_wrapper">
-					<div id="jump_page">
-							<a class="source" href="../xrtc/ajax.html">
-								xrtc\Ajax.js
-							</a>
-							<a class="source" href="../xrtc/authmanager.html">
-								xrtc\AuthManager.js
-							</a>
-							<a class="source" href="../xrtc/class.html">
-								xrtc\Class.js
-							</a>
-							<a class="source" href="../xrtc/common.html">
-								xrtc\Common.js
-							</a>
-							<a class="source" href="../xrtc/commonerror.html">
-								xrtc\CommonError.js
-							</a>
-							<a class="source" href="../xrtc/connection.html">
-								xrtc\Connection.js
-							</a>
-							<a class="source" href="../xrtc/datachannel.html">
-								xrtc\DataChannel.js
-							</a>
-							<a class="source" href="../xrtc/eventdispatcher.html">
-								xrtc\EventDispatcher.js
-							</a>
-							<a class="source" href="../xrtc/handshakecontroller.html">
-								xrtc\HandshakeController.js
-							</a>
-							<a class="source" href="../xrtc/logger.html">
-								xrtc\Logger.js
-							</a>
-							<a class="source" href="../xrtc/room.html">
-								xrtc\Room.js
-							</a>
-							<a class="source" href="../xrtc/serverconnector.html">
-								xrtc\ServerConnector.js
-							</a>
-							<a class="source" href="../xrtc/stream.html">
-								xrtc\Stream.js
-							</a>
-							<a class="source" href="../xrtc/usermedia.html">
-								xrtc\UserMedia.js
-							</a>
-					</div>
-				</div>
-			</div>
 		<table cellpadding="0" cellspacing="0">
 			<thead>
 				<tr>
@@ -997,7 +948,7 @@ Creates iceServer from the url for <em>FF</em>.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>						iceServer = { &#39;url&#39;: url };
+							<pre><code class='prettyprint'>						iceServer = { &#39;url&#39;: removeRedundantSymbolFromTheEnd(url, &quot;/&quot;) };
 					} else if (url_parts[0].indexOf(&#39;turn&#39;) === 0 &amp;&amp;
 							   (url.indexOf(&#39;transport=udp&#39;) !== -1 ||
 								url.indexOf(&#39;?transport&#39;) === -1)) {
@@ -1016,7 +967,7 @@ Ignore the transport parameter from TURN url.</p>
 						<td class="code">
 							<pre><code class='prettyprint'>						var turn_url_parts = url.split(&quot;?&quot;);
 						iceServer = {
-							&#39;url&#39;: turn_url_parts[0],
+							&#39;url&#39;: removeRedundantSymbolFromTheEnd(turn_url_parts[0], &quot;/&quot;),
 							&#39;credential&#39;: password,
 							&#39;username&#39;: username
 						};
@@ -1052,7 +1003,7 @@ Ignore the transport parameter from TURN url.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>						iceServer = { &#39;url&#39;: url };
+							<pre><code class='prettyprint'>						iceServer = { &#39;url&#39;: removeRedundantSymbolFromTheEnd(url, &quot;/&quot;) };
 					} else if (url_parts[0].indexOf(&#39;turn&#39;) === 0) {
 						if (webrtc.detectedBrowserVersion &lt; 28) {
 </code></pre>
@@ -1086,7 +1037,7 @@ Ignore the transport parameter from TURN url.</p>
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>							iceServer = {
-								&#39;url&#39;: url,
+								&#39;url&#39;: removeRedundantSymbolFromTheEnd(url, &quot;/&quot;),
 								&#39;credential&#39;: password,
 								&#39;username&#39;: username
 							};
@@ -1095,16 +1046,21 @@ Ignore the transport parameter from TURN url.</p>
 					return iceServer;
 				};
 
+				function removeRedundantSymbolFromTheEnd(str, symbol) {
+					var result = str;
+					if (str[str.length - 1] === symbol) {
+						result = str.substring(0, str.length - 1);
+					}
+
+					return result;
+				}
+
 				var createBrowserCompatibleServer = function (iceServerData) {
 					var resultIceServer;
-					if (iceServerData.url.indexOf(&quot;turn:&quot;) === -1) {
-						resultIceServer = iceServerData;
+					if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
+						resultIceServer = createCromeTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 					} else {
-						if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
-							resultIceServer = createCromeTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
-						} else {
-							resultIceServer = createFireFoxTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
-						}
+						resultIceServer = createFireFoxTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 					}
 
 					return resultIceServer;

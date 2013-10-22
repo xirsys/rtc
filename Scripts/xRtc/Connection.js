@@ -375,7 +375,7 @@
 					var url_parts = url.split(':');
 					if (url_parts[0].indexOf('stun') === 0) {
 						// Create iceServer with stun url.
-						iceServer = { 'url': url };
+						iceServer = { 'url': removeRedundantSymbolFromTheEnd(url, "/") };
 					} else if (url_parts[0].indexOf('turn') === 0 &&
 							   (url.indexOf('transport=udp') !== -1 ||
 								url.indexOf('?transport') === -1)) {
@@ -383,7 +383,7 @@
 						// Ignore the transport parameter from TURN url.
 						var turn_url_parts = url.split("?");
 						iceServer = {
-							'url': turn_url_parts[0],
+							'url': removeRedundantSymbolFromTheEnd(turn_url_parts[0], "/"),
 							'credential': password,
 							'username': username
 						};
@@ -397,7 +397,7 @@
 					var url_parts = url.split(':');
 					if (url_parts[0].indexOf('stun') === 0) {
 						// Create iceServer with stun url.
-						iceServer = { 'url': url };
+						iceServer = { 'url': removeRedundantSymbolFromTheEnd(url, "/") };
 					} else if (url_parts[0].indexOf('turn') === 0) {
 						if (webrtc.detectedBrowserVersion < 28) {
 							// For *pre-M28 Chrome* versions use old TURN format.
@@ -409,7 +409,7 @@
 						} else {
 							// For *Chrome M28* & above use new TURN format.
 							iceServer = {
-								'url': url,
+								'url': removeRedundantSymbolFromTheEnd(url, "/"),
 								'credential': password,
 								'username': username
 							};
@@ -418,16 +418,21 @@
 					return iceServer;
 				};
 
+				function removeRedundantSymbolFromTheEnd(str, symbol) {
+					var result = str;
+					if (str[str.length - 1] === symbol) {
+						result = str.substring(0, str.length - 1);
+					}
+
+					return result;
+				}
+
 				var createBrowserCompatibleServer = function (iceServerData) {
 					var resultIceServer;
-					if (iceServerData.url.indexOf("turn:") === -1) {
-						resultIceServer = iceServerData;
+					if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
+						resultIceServer = createCromeTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 					} else {
-						if (webrtc.detectedBrowser == webrtc.supportedBrowsers.chrome) {
-							resultIceServer = createCromeTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
-						} else {
-							resultIceServer = createFireFoxTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
-						}
+						resultIceServer = createFireFoxTurnServer(iceServerData.url, iceServerData.username, iceServerData.credential);
 					}
 
 					return resultIceServer;
