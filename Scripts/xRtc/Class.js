@@ -1,10 +1,18 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // The base type of all classes for xRtc library.
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.baseClass');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	exports.xRtc.Class = function (namespace, className, constructor) {
 		namespace[className] = constructor;
 

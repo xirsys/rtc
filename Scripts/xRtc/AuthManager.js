@@ -1,4 +1,4 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // XirSys (default) realization of authentication manager.
 
@@ -7,75 +7,54 @@
 // * get token
 // * get ice servers data
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.authManager');
+
+goog.require('xRtc.baseClass');
+goog.require('xRtc.eventDispatcher');
+goog.require('xRtc.commonError');
+goog.require('xRtc.ajax');
+goog.require('xRtc.logger');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	var xrtc = exports.xRtc;
 
 	xrtc.Class(xrtc, 'AuthManager', function AuthManager() {
 		var proxy = xrtc.Class.proxy(this),
-			logger = new xrtc.Logger(this.className),
-			iceServersCache = {};
+			logger = new xrtc.Logger(this.className);
 
 		xrtc.Class.extend(this, xrtc.Ajax, xrtc.EventDispatcher, {
 			_logger: logger,
 
 			getToken: function (userData, callback) {
 				var url = xrtc.AuthManager.settings.tokenHandler,
-					data = getTokenRequestParams.call(this, userData).join("&");
+					data = getRequestParams.call(this, userData).join("&");
 				this.ajax(url, 'POST', data, proxy(handleTokenRequest, userData, callback));
 			},
 
 			// `callback` function receive array of ice servers as parameter. Each ice server has following format: `{ url, credential, username }` in case of TURN and `{ url }` in case of STUN.
-			getIceServers: function (token, userData, callback) {
-				var iceServers = iceServersCache[token];
-				if (iceServers) {
-					logger.info('getIceServers', iceServers, typeof(callback));
-
-					if (typeof (callback) === 'function') {
-						callback(iceServers);
-					}
-				} else {
-					iceServers = xrtc.AuthManager.settings.iceServers;
-					if (iceServers && iceServers.iceServers && iceServers.iceServers.length > 0) {
-						iceServersCache[token] = iceServers;
-
-						this.getIceServers(token, callback);
-					} else {
-						var url = xrtc.AuthManager.settings.iceHandler,
-							data = getIceRequestParams.call(this, userData).join("&");
-						this.ajax(url, 'POST', data, proxy(handleIceServersRequest, token, userData, callback));
-					}
-				}
+			getIceServers: function (userData, callback) {
+				var url = xrtc.AuthManager.settings.iceHandler,
+					data = getRequestParams.call(this, userData).join("&");
+				this.ajax(url, 'POST', data, proxy(handleIceServersRequest, userData, callback));
 			}
 		});
 
-		function getTokenRequestParams(userData) {
-			var tokenParams = xrtc.AuthManager.settings.tokenParams,
-				result = [
-					"domain=" + userData.domain,
-					"application=" + userData.application,
-					"room=" + userData.room,
-					"username=" + userData.name,
-					"password=" + userData.password
-				];
-
-			logger.info('getTokenRequestParams', result);
-
-			return result;
-		}
-
-		function getIceRequestParams(userData) {
-			var result = [
-					"domain=" + userData.domain,
-					"application=" + userData.application,
-					"username=" + userData.name,
-					"password=" + userData.password
-				];
-
-			logger.info('getIceRequestParams', result);
-
-			return result;
+		function getRequestParams(userData) {
+			return [
+				"domain=" + userData.domain,
+				"application=" + userData.application,
+				"room=" + userData.room,
+				"username=" + userData.name,
+				"password=" + userData.password
+			];
 		}
 
 		function handleTokenRequest(response, userData, callback) {
@@ -91,7 +70,7 @@
 				try {
 					response = JSON.parse(response);
 					logger.debug('getToken', response);
-				} catch(ex) {
+				} catch (ex) {
 					logger.error('getToken', response);
 					throw ex;
 				}
@@ -111,21 +90,20 @@
 					else {
 						logger.info('getToken', token);
 
-						if (typeof(callback) === 'function') {
+						if (typeof (callback) === 'function') {
 							callback(token);
 						}
 					}
 				}
 			} catch (ex) {
-				var repeatTimeout = 5000;
-				logger.error('getToken. The request will be repeated after ' + repeatTimeout/1000 + " sec.", ex);
+				logger.error('getToken. The request will be repeated after ' + xrtc.AuthManager.settings.unsuccessfulRequestRepeatTimeout / 1000 + " sec.", ex);
 				// Call this method again if error occures.
-				setTimeout(function () { self.getToken(userData, callback); }, repeatTimeout);
+				setTimeout(function () { self.getToken(userData, callback); }, xrtc.AuthManager.settings.unsuccessfulRequestRepeatTimeout);
 			}
 		}
 
-		function handleIceServersRequest(response, token, userData, callback) {
-			logger.info("handleIceServersRequest callback is ", callback);
+		function handleIceServersRequest(response, userData, callback) {
+			var self = this;
 			try {
 				response = JSON.parse(response);
 				logger.debug('getIceServers', response);
@@ -133,10 +111,10 @@
 				if (!!response && !!response.e && response.e != '') {
 					var error = new xrtc.CommonError('getIceServers', response.e);
 					logger.error('getIceServers', error);
-					this.trigger(xrtc.AuthManager.events.serverError, error);
+					self.trigger(xrtc.AuthManager.events.serverError, error);
 				} else {
 					var iceServers = response.d.iceServers
-						? response.d.iceServers.map(function(iceServer) {
+						? response.d.iceServers.map(function (iceServer) {
 							var resultIceServer = {};
 							if (iceServer.url) {
 								resultIceServer.url = iceServer.url;
@@ -152,15 +130,17 @@
 						})
 						: [];
 
-					// Save servers in cache with token key.
-					iceServersCache[token] = iceServers;
+					logger.info('getIceServers', iceServers);
+
+					if (typeof (callback) === 'function') {
+						callback(iceServers);
+					}
 				}
 			} catch (ex) {
-				logger.error('getIceServers', ex);
+				logger.error('getIceServers. The request will be repeated after ' + xrtc.AuthManager.settings.unsuccessfulRequestRepeatTimeout / 1000 + " sec.", ex);
+				// Call this method again if error occures.
+				setTimeout(function () { self.getIceServers(userData, callback); }, xrtc.AuthManager.settings.unsuccessfulRequestRepeatTimeout);
 			}
-
-			// Call this method again to get it from cache or if error occures.
-			this.getIceServers(token, userData, callback);
 		}
 	});
 
@@ -171,14 +151,9 @@
 		},
 
 		settings: {
+			unsuccessfulRequestRepeatTimeout: 5000,
 			tokenHandler: 'https://beta.xirsys.com/getToken',
-			iceHandler: 'https://beta.xirsys.com/getIceServers',
-
-			tokenParams: {
-				type: 'token_request',
-				authentication: 'public',
-				authorization: null
-			}
+			iceHandler: 'https://beta.xirsys.com/getIceServers'
 		}
 	});
 })(window);

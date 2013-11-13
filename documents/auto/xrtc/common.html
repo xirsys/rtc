@@ -1,0 +1,180 @@
+<!DOCTYPE html />
+
+<html>
+<head>
+	<title>common.js</title>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+	<link href="../nocco.css" rel="stylesheet" media="all" type="text/css" />
+	<script src="../prettify.js" type="text/javascript"></script>
+</head>
+<body onload="prettyPrint()">
+	<div id="container">
+		<div id="background"></div>
+			<div id="jump_to">
+				Jump To &hellip;
+				<div id="jump_wrapper">
+					<div id="jump_page">
+							<a class="source" href="../xrtc/ajax.html">
+								xrtc\ajax.js
+							</a>
+							<a class="source" href="../xrtc/authmanager.html">
+								xrtc\authManager.js
+							</a>
+							<a class="source" href="../xrtc/class.html">
+								xrtc\class.js
+							</a>
+							<a class="source" href="../xrtc/common.html">
+								xrtc\common.js
+							</a>
+							<a class="source" href="../xrtc/commonerror.html">
+								xrtc\commonError.js
+							</a>
+							<a class="source" href="../xrtc/connection.html">
+								xrtc\connection.js
+							</a>
+							<a class="source" href="../xrtc/datachannel.html">
+								xrtc\dataChannel.js
+							</a>
+							<a class="source" href="../xrtc/eventdispatcher.html">
+								xrtc\eventDispatcher.js
+							</a>
+							<a class="source" href="../xrtc/handshakecontroller.html">
+								xrtc\handshakeController.js
+							</a>
+							<a class="source" href="../xrtc/logger.html">
+								xrtc\logger.js
+							</a>
+							<a class="source" href="../xrtc/room.html">
+								xrtc\room.js
+							</a>
+							<a class="source" href="../xrtc/serverconnector.html">
+								xrtc\serverConnector.js
+							</a>
+							<a class="source" href="../xrtc/stream.html">
+								xrtc\stream.js
+							</a>
+							<a class="source" href="../xrtc/usermedia.html">
+								xrtc\userMedia.js
+							</a>
+					</div>
+				</div>
+			</div>
+		<table cellpadding="0" cellspacing="0">
+			<thead>
+				<tr>
+					<th class="docs">
+						<h1>common.js</h1>
+					</th>
+					<th class="code"></th>
+				</tr>
+			</thead>
+			<tbody>
+					<tr id="section_1">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_1">&#182;</a>
+							</div>
+							<h4>Version 1.4.0</h4>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_2">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_2">&#182;</a>
+							</div>
+							<p>Some common information. E.g. current browser, current browser version, etc.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<p><strong>Simple examples:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<ul>
+<li><code>var currentBrowser = xRtc.webrtc.detectedBrowser;</code></li>
+<li><code>var currentBrowserVersion = xRtc.webrtc.detectedBrowserVersion;</code></li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<p><code>goog.provide</code>, <code>goog.require</code> defined in <strong>Google Closure Library</strong>. It is used by <strong>Google Closure Compiler</strong> for the determination of the file order.
+During minification this calls will be removed automatically.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>goog.provide(&#39;xRtc.common&#39;);
+
+(function (exports) {
+	&#39;use strict&#39;;
+
+	if (typeof exports.xRtc === &#39;undefined&#39;) {
+		exports.xRtc = {};
+	}
+
+	var xrtc = exports.xRtc;
+
+	xrtc.webrtc = {
+		getUserMedia: (navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.getUserMedia).bind(navigator),
+		RTCPeerConnection: exports.mozRTCPeerConnection || exports.webkitRTCPeerConnection || exports.RTCPeerConnection,
+		RTCIceCandidate: exports.mozRTCIceCandidate || exports.RTCIceCandidate,
+		RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
+		URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
+		MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
+		supportedBrowsers: { chrome: &quot;chrome&quot;, firefox: &quot;firefox&quot; }
+	};
+
+	xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : xrtc.webrtc.supportedBrowsers.chrome;
+	xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox
+		? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
+		: parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+
+	xRtc.utils = {
+		newGuid: function() {
+			var guid = &#39;xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx&#39;.replace(/[xy]/g, function(c) {
+				var r = Math.random() * 16 | 0, v = c == &#39;x&#39; ? r : (r &amp; 0x3 | 0x8);
+				return v.toString(16);
+			});
+			return guid;
+		}
+	};
+})(window);
+</code></pre>
+						</td>
+					</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+</html>

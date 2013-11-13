@@ -1,18 +1,29 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // `xRtc.Stream` is one of the main objects of **xRtc** library. It is wrapper to native browser's `MediaStream`.
 // All instances of this object should be created by `xRtc.getUserMedia(options, successCallback, errorCallback)` method.
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.stream');
+
+goog.require('xRtc.baseClass');
+goog.require('xRtc.eventDispatcher');
+goog.require('xRtc.logger');
+goog.require('xRtc.common');
+goog.require('xRtc.commonError');
 
 (function (exports, xrtc) {
+	'use strict';
+
 	var webrtc = xrtc.webrtc;
 
 	// **Todo:** Possible we should wrap Video and Audio Tracks.
 	xrtc.Class(xrtc, 'Stream', function Stream(stream) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			events = xrtc.Stream.events;
+			events = xrtc.Stream.events,
+			id = null;
 
 		xrtc.Class.property(this, 'videoEnabled', getVideoEnabled, setVideoEnabled);
 		xrtc.Class.property(this, 'audioEnabled', getAudioEnabled, setAudioEnabled);
@@ -37,9 +48,11 @@
 
 			// **[Public API]:** Returns unique `id` of the stream.
 			getId: function () {
-				// **Note:** `id` property is actual only for *Chrome M26+*.
-				// **Todo:** need to delete this property or generate own id in case of *FF* or *Chrome M25*.
-				return stream.id;
+				if (!id) {
+					id = generateStreamId();
+				}
+
+				return id;
 			},
 
 			// **[Public API]: ** Returns `URL` of the stream which provides access to the stream.
@@ -59,6 +72,18 @@
 				}
 			}
 		});
+
+		function generateStreamId() {
+			var resultId;
+			if (stream.id) {
+				// **Note:** `id` property is actual only for *Chrome M26+*. At the current moment FireFOxe doesn't support it.
+				resultId = stream.id;
+			} else {
+				resultId = xrtc.utils.newGuid();
+			}
+
+			return resultId;
+		}
 
 		function assignTo(videoDomElement) {
 			// Currently for *FireFox* `src` does not work, in future it can be removed.
@@ -114,8 +139,8 @@
 		}
 
 		function checkPossibilityToMuteMediaTrack() {
-			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-				throw new xrtc.CommonError('setVideoEnabled', 'Media track muting is not supported by Firefox browser.');
+			if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion < 22) {
+				throw new xrtc.CommonError('setVideoEnabled', 'Media track muting is not supported if your Firefox browser version less then 22.');
 			}
 		}
 	});

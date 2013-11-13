@@ -2,22 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<title>XirSys Simple Chat Example</title>
-	<script src="../Scripts/xRtc/Common.js"></script>
-	<script src="../Scripts/xRtc/Class.js"></script>
-	<script src="../Scripts/xRtc/CommonError.js"></script>
-	<script src="../Scripts/xRtc/Logger.js"></script>
-	<script src="../Scripts/xRtc/EventDispatcher.js"></script>
-	<script src="../Scripts/xRtc/Ajax.js"></script>
-	<script src="../Scripts/xRtc/ServerConnector.js"></script>
-	<script src="../Scripts/xRtc/AuthManager.js"></script>
-	<script src="../Scripts/xRtc/DataChannel.js"></script>
-	<script src="../Scripts/xRtc/HandshakeController.js"></script>
-	<script src="../Scripts/xRtc/UserMedia.js"></script>
-	<script src="../Scripts/xRtc/Connection.js"></script>
-	<script src="../Scripts/xRtc/Stream.js"></script>
-	<script src="../Scripts/xRtc/Room.js"></script>
+	<script src="../scripts/xrtc-1.4.0.min.js"></script>
 
-	<script src="../Scripts/jquery-2.0.2.min.js"></script>
+	<script src="../scripts/jquery-2.0.3.min.js"></script>
 
 	<script src="utils.js"></script>
 
@@ -110,9 +97,9 @@
 				utils.room( new xRtc.Room(roomInfo) );
 
 				// assign events for updating the rooms user list
-				utils.room().on( xRtc.Room.events.participantsUpdated, utils.refreshRoom )
-							.on( xRtc.Room.events.participantConnected, utils.refreshRoom )
-							.on( xRtc.Room.events.participantDisconnected, utils.refreshRoom )
+				utils.room().on( xRtc.Room.events.usersUpdated, utils.refreshRoom )
+							.on( xRtc.Room.events.userConnected, utils.refreshRoom )
+							.on( xRtc.Room.events.userDisconnected, utils.refreshRoom )
 							.on( xRtc.Room.events.connectionDeclined, utils.refreshRoom )
 							// more events for accepting a call and handling connection creation
 							.on( xRtc.Room.events.incomingConnection, utils.acceptCall )
@@ -135,7 +122,7 @@
 				e.preventDefault();
 				// get username of remote peer
 				var contact = $("#userlist").val();
-				console.log('Connecting to participant...', contact);
+				console.log('Connecting to user...', contact);
 				// connect to remote peer
 				utils.room().connect(contact, { createDataChannel: 'auto' });
 			});

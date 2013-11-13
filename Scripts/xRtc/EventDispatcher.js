@@ -1,10 +1,18 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // It is special class which used by xRtc for event dispatching.
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.eventDispatcher');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	var xrtc = exports.xRtc;
 
 	xrtc.EventDispatcher = {

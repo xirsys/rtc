@@ -6,9 +6,11 @@ $fields_string = '';
 $fields = array(
 	'domain' => $_POST["domain"],
 	'application' => $_POST["application"],
+	'room' => $_POST["room"],
 	'username' => $_POST["username"],
 	'ident' => urlencode("leesylvester"),
-	'secret' => urlencode("7b6ffc50-d9b9-11e2-bbde-45359b958022")
+	'secret' => urlencode("7b6ffc50-d9b9-11e2-bbde-45359b958022"),
+	"secure" => "1" 
 );
 
 //url-ify the data for the POST

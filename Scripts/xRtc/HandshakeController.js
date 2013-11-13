@@ -1,9 +1,21 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // It is internal object of xRtc library.
-'use strict';
+
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.handshakeController');
+
+goog.require('xRtc.baseClass');
+goog.require('xRtc.logger');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	var xrtc = exports.xRtc;
 
 	xrtc.Class(xrtc, 'HandshakeController', function HandshakeController() {
@@ -12,20 +24,20 @@
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			sendIce: function (targetUserId, targetConnectionId, connectionId, iceCandidateData) {
-				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, targetConnectionId, connectionId, iceCandidateData);
+			sendIce: function (targetUserId, connectionId, iceCandidateData) {
+				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, connectionId, iceCandidateData);
 			},
 
-			sendOffer: function (targetUserId, targetConnectionId, connectionId, offerData) {
-				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, targetConnectionId, connectionId, offerData);
+			sendOffer: function (targetUserId, connectionId, offerData) {
+				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, connectionId, offerData);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answerData) {
-				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, targetConnectionId, connectionId, answerData);
+			sendAnswer: function (targetUserId, connectionId, answerData) {
+				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, connectionId, answerData);
 			},
 
-			sendBye: function (targetUserId, targetConnectionId, connectionId) {
-				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, targetConnectionId, connectionId);
+			sendBye: function (targetUserId, connectionId, byeData) {
+				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, connectionId, byeData);
 			}
 		});
 	});

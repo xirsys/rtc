@@ -1,20 +1,34 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // `xRtc.DataChannel` is one of the main objects of **xRtc** library. This object can be used for trenferring any information to remote side.
 
-// **Note:** xRtc 1.3.0 supports only `text` messages. If `object` will be used then it will be serialized to `text` (JSON).
+// **Note:** xRtc 1.4.0 supports only `text` messages. If `object` will be used then it will be serialized to `text` (JSON).
 
-//**xRtc 1.3.0 restrictions:**
+//**xRtc 1.4.0 restrictions:**
 
 // * Message should be less then ~1000 symbols.
 // * Interoperablity between *FireFox* and *Chrome* doesn't supported.
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.dataChannel');
+
+goog.require('xRtc.baseClass');
+goog.require('xRtc.eventDispatcher');
+goog.require('xRtc.logger');
+goog.require('xRtc.common');
+goog.require('xRtc.commonError');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	var xrtc = exports.xRtc;
-	
-	xrtc.Class(xrtc, 'DataChannel', function (dataChannel, userId) {
+
+	xrtc.Class(xrtc, 'DataChannel', function (dataChannel, remoteUser) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			events = xrtc.DataChannel.events;
@@ -35,33 +49,29 @@
 			// **Note:** `mesage` can be as a `object` and as a `string`. In any case it is will be serialized to JSON and transferre to remote side
 			// using p2p connection.
 			send: function (message) {
+				var self = this;
 				logger.info('send', arguments);
 
-				if (this.getState() === xrtc.DataChannel.states.open) {
-					try {
-						var messageContainer = { message: message };
-						dataChannel.send(JSON.stringify(messageContainer));
-						this.trigger(events.sentMessage, messageContainer);
-					} catch(ex) {
-						var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error.', ex);
-						logger.error('error', sendingError);
-						this.trigger(events.error, sendingError);
-					}
-				} else {
-					var error = new xrtc.CommonError('onerror', 'DataChannel should be opened before sending.');
-					logger.error('error', error);
-					this.trigger(events.error, error);
+				// **Note:** Sometimes data channel state is closed but it is works fine. So no need to check data channel status before sending.
+				try {
+					var messageContainer = { message: message };
+					dataChannel.send(JSON.stringify(messageContainer));
+					self.trigger(events.sentMessage, messageContainer);
+				} catch (ex) {
+					var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
+					logger.error('error', sendingError);
+					self.trigger(events.error, sendingError);
 				}
 			},
 
-			// **[Public API]:** Returns remote user id (name for xRtc 1.3.0) for this data channel.
-			getUserId: function() {
-				return userId;
+			// **[Public API]:** Returns remote user for this data channel.
+			getRemoteUser: function () {
+				return remoteUser;
 			},
 
 			// **[Public API]:** Returns unique `name` of the data channel.
 			// This `name` should be specified on `createDataChannel(name)` method of `xRtc.Connection` object.
-			getName: function() {
+			getName: function () {
 				return dataChannel.label;
 			},
 

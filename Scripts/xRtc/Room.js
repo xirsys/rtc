@@ -1,10 +1,28 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // `xRtc.Room` is one of the main objects of **xRtc** library.
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.room');
+
+goog.require('xRtc.baseClass');
+goog.require('xRtc.eventDispatcher');
+goog.require('xRtc.logger');
+goog.require('xRtc.common');
+goog.require('xRtc.commonError');
+goog.require('xRtc.handshakeController');
+goog.require('xRtc.connection');
+goog.require('xRtc.authManager');
+goog.require('xRtc.serverConnector');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	var xrtc = exports.xRtc;
 
 	// **[Public API]:** `xRtc.Room` object has public constructor `xRtc.Room(info, am, sc)`. This constructor can take 3 parameters:
@@ -19,7 +37,7 @@
 	// 3. `sc: xrtc.ServerConnector`. It is optional parameter.
 	// If this parameter is not specified, the default realization of `xrtc.ServerConnector` will be used.
 	// You may need this option if you use own server side or you want to subscribe to some events of `xrtc.ServerConnector`.
-	
+
 	// If any of these cases, `domain, application, name` values are not specified then values will
 	// be initializaed using default values(these values can be overwritten):
 
@@ -28,7 +46,7 @@
 	// * `xRtc.Room.settings.info.name`. It is "default".
 
 	// **Note:** Mentioned values are accessible after room creation. You can get it using following code: `var roomInfo = room.getInfo();`.
-	// Additionaly `roomInfo` will be contain information about current user `roomInfo.user` (`string` for xRtc 1.3.0.0).
+	// Additionaly `roomInfo` will be contain information about current user `roomInfo.user`.
 
 	// **Simple examples of room creation:**
 
@@ -41,7 +59,7 @@
 			logger = new xrtc.Logger(this.className),
 			hcEvents = xrtc.HandshakeController.events,
 			scEvents = xrtc.ServerConnector.events,
-			participants = [],
+			users = [],
 			isServerConnectorSubscribed = false,
 			roomOptions = {},
 			roomInfo = {},
@@ -49,7 +67,10 @@
 			authManager = am || new xRtc.AuthManager(),
 			serverConnector = sc || new xrtc.ServerConnector(),
 			connections = [],
-			handshakeControllers = {};
+			handshakeControllerObjects = {},
+			byeTypes = {
+				decline : 'decline'
+			};
 
 		// `roomInfo` initialization.
 		xrtc.Class.extend(roomInfo, xrtc.Room.settings.info);
@@ -78,7 +99,7 @@
 			// `xRtc.Room.settings.option.autoReply` and equals `true`.
 
 			// **Note:** After entering the room current user information will be accessible using following code:
-			// `var currentUser = room.getInfo().user;` (For xRtc 1.3.0 `currentUser` is `string`).
+			// `var currentUser = room.getInfo().user;`.
 
 			// **Simple examples:**
 
@@ -118,7 +139,7 @@
 				};
 
 				authManager.getToken(currentUserData, function (token) {
-					roomInfo.user = user;
+					roomInfo.user = { id: null, name: user };
 					serverConnector.connect(token);
 				});
 			},
@@ -129,31 +150,33 @@
 
 			// * `room.leave();`
 			leave: function () {
+				serverConnector.on(xrtc.ServerConnector.events.connectionClose, function () {
+					unsubscribeFromServerEvents.call(this);
+
+					roomOptions = {};
+					currentUserData = null;
+					roomInfo.user = null;
+					users = [];
+
+					// **Todo:** Maybe will be good to close all room connections. Need to discuss it with the team.
+					connections = [],
+					handshakeControllerObjects = {};
+				});
+
 				serverConnector.disconnect();
-
-				unsubscribeFromServerEvents.call(this);
-
-				roomOptions = {};
-				currentUserData = null;
-				roomInfo.user = null;
-				participants = [];
-
-				// **Todo:** Maybe will be good to close all room connections. Need to discuss it with the team.
-				connections = [],
-				handshakeControllers = {};
 			},
 
-			// **[Public API]:** `connect(userId, connectionOptions)` is public method of `room` object. This method should be used for connection to someone from the current room
-			
-			// **Note:** After entering a room will be generated `participantsupdated` event which contains user ids (names for xRtc 1.3.0)
+			// **[Public API]:** `connect(targetUserId, connectionOptions)` is public method of `room` object. This method should be used for connection to someone from the current room
+
+			// **Note:** After entering a room will be generated `usersupdated` event which contains users ids
 			// which can be used for the method
-			
-			// **Note:** `getParticipants()` also returns array of users in the room (user ids | user names for the xRtc 1.3.0).
+
+			// **Note:** `getUsers()` also returns array of users in the room.
 
 			// The method takes following parameters:
 
-			// * `userId: string`. It is required parameter.
-			// This specified target user id (user name for xRtc 1.3.0.0) to which we want to connect (establish p2p connection).
+			// * `targetUserId: string`. It is required parameter.
+			// This specified `targetUserId` to which we want to connect (establish p2p connection).
 			// * `connectionOptions: object`. It is optional parameter. This parameter should have following format:
 			// `{ data: object, createDataChannel: string }`. Where `data` is any user data which should be associated with created `connection`.
 			// E.g. this `data` can be used for identifying the connection because there may be many connections and they are asynchronous.
@@ -163,8 +186,6 @@
 			// `createDataChannel` is special flag which should be used if you want to create `xRtc.DataChannel` with minimum code. If this flag equals `"auto"` then
 			// on `the xRtc.Connection` **one** data channel with name `"autoDataChannel"` will be created automatically.
 
-			// **Note:** For xRtc 1.3.0 `userId` and `userName` are identical.
-
 			// **Simple examples:**
 
 			// * `room.connect("My friend name");`
@@ -172,32 +193,38 @@
 			// * `room.connect("My friend name", { data: { customField: "Hello World!" } });`
 			// * `room.connect("My friend name", { data: "Hello World!", createDataChannel : "auto" });`
 			// * `room.connect("My friend name", { createDataChannel : "auto" });`
-			connect: function (userId, connectionOptions) {
+			connect: function (targetUserId, connectionOptions) {
 				if (!roomInfo.user) {
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
 				}
 
-				var connectionDataContainer = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
+				var targetUser = getUserById(targetUserId);
+				if (targetUser == null) {
+					var error = xrtc.CommonError('connect', 'Target user not found.');
+					this.trigger(xrtc.Room.events.error, { userId: userId, error: error });
+				} else {
+					var connectionDataContainer = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
 
-				createConnection.call(this, currentUserData, userId, connectionDataContainer, function (connectionData) {
-					var connection = connectionData.connection;
+					createConnection.call(this, xrtc.utils.newGuid(), currentUserData, targetUser, connectionDataContainer, function (connectionData) {
+						var connection = connectionData.connection;
 
-					if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
-						connection.createDataChannel('autoDataChannel');
-					}
+						if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
+							connection.createDataChannel('autoDataChannel');
+						}
 
-					connection._open(connectionOptions);
-				});
+						connection._open(connectionOptions);
+					});
+				}
 			},
 
 			// **[Public API]:** `getInfo()` is public method of `room` object. This method should be used for access room information.
-			// The method returns information about room (domain, application, room name) and current user (name for xRtc 1.3.0).
+			// The method returns information about room (domain, application, room name) and current user.
 			// The returned object has following format: `{ domain: string, application: string, name: string, user: string }`, where:
 
 			// * `domain`. The value which was defined during room creation.
 			// * `application`. The value which was defined during room creation.
 			// * `name`. Name of the room which was defined during room creation.
-			// * `user`. Current user (`string` for xRtc 1.3.0) which was initialized after entering the room.
+			// * `user`. Current user which was initialized after entering the room.
 			// This value will be cleared (`null`) after leaving the room.
 
 			// **Simple example:**
@@ -218,45 +245,73 @@
 				});
 			},
 
-			// **[Public API]:** `getParticipants()` is public method of `room` object. Returns array of participans from the current room.
+			// **[Public API]:** `getUsers()` is public method of `room` object. Returns array of users from the current room.
 
-			// **Note:** array of strings for xRtc 1.3.0 where each `string` is `userId` (`userName`).
-			getParticipants: function () {
+			getUsers: function () {
 				// Return the copy of internal array.
-				return participants.map(function (participant) {
-					return participant;
+				return users.map(function (user) {
+					return user;
 				});
 			}
 		});
 
 		function subscribeToServerEvents() {
+			var self = this;
 			if (!isServerConnectorSubscribed) {
 				serverConnector
 					.on(scEvents.connectionOpen, proxy(function (event) { this.trigger(xrtc.Room.events.enter); }))
 					.on(scEvents.connectionClose, proxy(function (event) { this.trigger(xrtc.Room.events.leave); }))
-					.on(scEvents.tokenInvalid, proxy(function (event) { this.trigger(xrtc.Room.events.tokenInvalid); }))
-					.on(scEvents.participantsUpdated, proxy(function (data) {
-						participants = data.participants;
-						sortParticipants();
+					.on(scEvents.tokenInvalid, proxy(function (event) { this.trigger(xrtc.Room.events.tokenInvalid, event); }))
+					.on(scEvents.usersUpdated, proxy(function (data) {
+						users = data.users;
+						sortUsers();
 
-						this.trigger(xrtc.Room.events.participantsUpdated, { participants: this.getParticipants() });
+						this.trigger(xrtc.Room.events.usersUpdated, { users: this.getUsers() });
 					}))
-					.on(scEvents.participantConnected, proxy(function (data) {
-						participants.push(data.participantId);
-						sortParticipants();
+					.on(scEvents.userConnected, proxy(function (data) {
+						users.push(data.user);
+						sortUsers();
 
-						this.trigger(xrtc.Room.events.participantConnected, { participantId: data.participantId });
+						this.trigger(xrtc.Room.events.userConnected, { user: data.user });
 					}))
-					.on(scEvents.participantDisconnected, proxy(function (data) {
-						participants.splice(participants.indexOf(data.participantId), 1);
-						sortParticipants();
+					.on(scEvents.userDisconnected, proxy(function (data) {
+						users.splice(getUserIndexById(users, data.user.id), 1);
+						sortUsers();
 
-						this.trigger(xrtc.Room.events.participantDisconnected, { participantId: data.participantId });
+						this.trigger(xrtc.Room.events.userDisconnected, { user: data.user });
 					}))
 					.on(scEvents.receiveOffer, proxy(onIncomingConnection))
 					// **Note:** everything works fine without sendbye functionality in case when connection was closed manually.
 					// This functionality helps to detect 'close' action more quickly for *Chrome* because 'xRtc.Connection' fires 'connectionclosed' event not immediately.
-					.on(scEvents.receiveBye, proxy(onCloseConnection));
+					.on(scEvents.receiveBye, proxy(onReceiveBye))
+					.on(scEvents.receiveAnswer, function (data) {
+						if (!data.senderId || !data.connectionId) {
+							return;
+						}
+
+						var sender = getUserById(data.senderId);
+						if (sender) {
+							var targetHcObject = handshakeControllerObjects[data.connectionId];
+							if (targetHcObject) {
+								if (targetHcObject.userId === sender.id) {
+									self.trigger(xrtc.Room.events.connectionAccepted, { user: sender, connection: getConnectionById(data.connectionId), data: data.acceptData });
+									targetHcObject.hc.trigger(hcEvents.receiveAnswer, { connectionId: data.connectionId, answer: data.answer });
+								}
+							} else {
+								serverConnector.sendBye(data.senderId, data.connectionId, { type: byeTypes.decline, data: 'Remote connection not found.' });
+							}
+						}
+					})
+					.on(scEvents.receiveIce, function (data) {
+						if (!data.senderId || !data.connectionId) {
+							return;
+						}
+
+						var targetHcObject = handshakeControllerObjects[data.connectionId];
+						if (targetHcObject && targetHcObject.userId === data.senderId) {
+							targetHcObject.hc.trigger(hcEvents.receiveIce, { iceCandidate: data.iceCandidate, connectionId: data.connectionId });
+						}
+					});
 
 				isServerConnectorSubscribed = true;
 			}
@@ -265,22 +320,176 @@
 		function unsubscribeFromServerEvents() {
 			if (isServerConnectorSubscribed) {
 				serverConnector
-					.off(scEvents.participantsUpdated)
-					.off(scEvents.participantConnected)
-					.off(scEvents.participantDisconnected);
-
-				// **Todo:** What about another events? (`connectionOpen`, `connectionClose`, `tokenInvalid`). Need to think about it later.
+					.off(scEvents.connectionOpen)
+					.off(scEvents.connectionClose)
+					.off(scEvents.tokenInvalid)
+					.off(scEvents.usersUpdated)
+					.off(scEvents.userConnected)
+					.off(scEvents.userDisconnected)
+					.off(scEvents.receiveOffer)
+					.off(scEvents.receiveBye)
+					.off(scEvents.receiveAnswer)
+					.off(scEvents.receiveIce);
 
 				isServerConnectorSubscribed = false;
 			}
 		}
 
-		function sortParticipants() {
-			participants.sort();
+		function sortUsers() {
+			users.sort(compareUsers);
+		}
+
+		function onIncomingConnection(data) {
+			if (!data.senderId || !data.connectionId) {
+				return;
+			}
+
+			var self = this;
+
+			var incomingConnectionData = {
+				user: getUserById(data.senderId)
+			};
+
+			if (!roomOptions.autoReply) {
+				incomingConnectionData.data = data.connectionData;
+				incomingConnectionData.accept = proxy(onAcceptCall);
+				incomingConnectionData.decline = proxy(onDeclineCall);
+			}
+
+			handshakeControllerObjects[data.connectionId] = { userId: data.senderId, hc: null };
+
+			this.trigger(xrtc.Room.events.incomingConnection, incomingConnectionData);
+
+			if (roomOptions.autoReply) {
+				onAcceptCall.call(self);
+			}
+
+			function onAcceptCall(acceptData) {
+				createConnection.call(self, data.connectionId, currentUserData, getUserById(data.senderId), data.connectionData, function (connectionData) {
+					var offerData = {
+						offer: data.offer,
+						iceServers: data.iceServers,
+						connectionType: data.connectionType,
+						connectionId: data.connectionId,
+						connectionData: data.connectionData,
+						acceptData: acceptData
+					};
+
+					connectionData.handshakeController.trigger(hcEvents.receiveOffer, offerData);
+				});
+			}
+
+			function onDeclineCall(declineData) {
+				serverConnector.sendBye(data.senderId, data.connectionId, { type: byeTypes.decline, data: declineData });
+			}
+		}
+
+		function onReceiveBye(data) {
+			if (!data.senderId || !data.connectionId) {
+				return;
+			}
+
+			var sender = getUserById(data.senderId);
+			if (sender) {
+				var targetHcObject = handshakeControllerObjects[data.connectionId];
+				if (targetHcObject) {
+					if (targetHcObject.userId === sender.id) {
+						if (data.byeData && data.byeData.type === byeTypes.decline /* your connection was declined on the remote side */ ||
+							!targetHcObject.hc /* incoming connection of the remote user was declined by remote user (remote user close appropriate connection)*/) {
+							this.trigger(xrtc.Room.events.connectionDeclined, {
+								user: sender,
+								// `connection` can be null in case if incoming call of remote user was declined by remote user.
+								// `connection` object on local side will be created only if incoming call will be accepted on local side.
+								connection: getConnectionById(data.connectionId),
+								data: data.byeData
+							});
+						}
+
+						if (targetHcObject.hc) {
+							targetHcObject.hc.trigger(hcEvents.receiveBye);
+						}
+					}
+				}
+			}
+		}
+
+		function createConnection(connectionId, userData, targetUser, connectionData, connectionCreated) {
+			var self = this;
+
+			var hc = new xrtc.HandshakeController();
+
+			var connection = new xRtc.Connection(connectionId, userData, targetUser, hc, authManager, connectionData);
+
+			if (!handshakeControllerObjects[connectionId]) {
+				handshakeControllerObjects[connectionId] = { userId: targetUser.id, hc: hc };
+			} else /* handshake controller object was already created on the incoming connection event */ {
+				handshakeControllerObjects[connectionId].hc = hc;
+			}
+
+			hc.on(hcEvents.sendOffer, proxy(function (tUserId, connId, data) {
+				serverConnector.sendOffer(tUserId, connId, data);
+			}))
+			.on(hcEvents.sendAnswer, proxy(function (tUserId, connId, data) {
+				serverConnector.sendAnswer(tUserId, connId, data);
+			}))
+			.on(hcEvents.sendIce, proxy(function (tUserId, connId, data) {
+				serverConnector.sendIce(tUserId, connId, data);
+			}))
+			.on(hcEvents.sendBye, proxy(function (tUserId, connId, data) {
+				serverConnector.sendBye(tUserId, connId, data);
+			}));
+
+			connection.on(xrtc.Connection.events.connectionClosed, function () {
+				connections.splice(getConnectionIndexById(connections, connectionId), 1);
+				delete handshakeControllerObjects[connectionId];
+			});
+
+			connections.push(connection);
+
+			self.trigger(xrtc.Room.events.connectionCreated, { user: targetUser, connection: connection });
+
+			if (typeof connectionCreated === 'function') {
+				connectionCreated({ connection: connection, handshakeController: hc });
+			}
+		}
+
+		function compareUsers(p1, p2) {
+			var result = 0;
+			if (p1.name < p2.name) {
+				result = -1;
+			} else if (p1.name > p2.name) {
+				result = 1;
+			}
+
+			return result;
+		}
+
+		function getUserById(userId) {
+			var user = null;
+			for (var i = 0, len = users.length; i < len; i++) {
+				if (users[i].id === userId) {
+					user = users[i];
+					break;
+				}
+			}
+
+			return user;
+		}
+
+		function getConnectionById(connectionId) {
+			var connection = null;
+			for (var i = 0, len = connections.length; i < len; i++) {
+				if (connections[i].getId() === connectionId) {
+					connection = connections[i];
+					break;
+				}
+			}
+
+			return connection;
 		}
 
 		function getConnectionIndexById(connectionsArray, connectionId) {
-			var resultIndex = null;
+			var resultIndex = -1;
 			for (var i = 0, len = connectionsArray.length; i < len; i++) {
 				if (connectionsArray[i].getId() === connectionId) {
 					resultIndex = i;
@@ -291,133 +500,14 @@
 			return resultIndex;
 		}
 
-		function onIncomingConnection(data) {
-			// Skip `offer` if it is not for me. It is temporary fix, because server shouldn't pass the `offer` to wrong target.
-			// Sometimes it happened that the server had sent the `offer` to all/wrong participants. So we decided not touch this check.
-			if (data.receiverId !== roomInfo.user) {
-				return;
-			}
-
-			var self = this;
-
-			var incomingConnectionData = {
-				userId: data.senderId
-			};
-
-			if (!roomOptions.autoReply) {
-				incomingConnectionData.data = data.connectionData;
-				incomingConnectionData.accept = proxy(onAcceptCall);
-				incomingConnectionData.decline = proxy(onDeclineCall);
-			}
-
-			this.trigger(xrtc.Room.events.incomingConnection, incomingConnectionData);
-
-			if (roomOptions.autoReply) {
-				onAcceptCall.call(self);
-			}
-
-			function onAcceptCall() {
-				// **Todo:** Need to transfer remote connection data here.
-				createConnection.call(self, currentUserData, data.senderId, data.connectionData, function (connectionData) {
-					var offerData = {
-						offer: data.offer,
-						iceServers: data.iceServers,
-						connectionType: data.connectionType,
-						connectionId: data.connectionId,
-						connectionData: data.connectionData
-					};
-
-					connectionData.handshakeController.trigger(hcEvents.receiveOffer, offerData);
-				});
-			}
-
-			function onDeclineCall() {
-				// **Note:** Need to think about declining reason.
-				// **Todo:** Need to think about `bye` options definition and about senderId property name.
-				serverConnector.sendBye(data.senderId, data.connectionId, null, { type: 'decline' });
-			}
-		}
-
-		function onCloseConnection(data) {
-			if (data.targetConnectionId) {
-				var targetHc = handshakeControllers[data.targetConnectionId];
-				if (targetHc) {
-					if (data.options && data.options.type === 'decline') {
-						// **Todo:** Think about sending decline reason.
-						this.trigger(xrtc.Room.events.connectionDeclined, { userId: data.senderId, connectionId: data.connectionId });
-					}
-
-					// **Bug:** This actin should be executed only in case when `bye` was send from target user `(userid === connection.targetUser)`. As a result near handshake controller need to store userId also.
-					targetHc.trigger(hcEvents.receiveBye);
+		function getUserIndexById(usersArray, userId) {
+			var resultIndex = -1;
+			for (var i = 0, len = usersArray.length; i < len; i++) {
+				if (usersArray[i].id === userId) {
+					resultIndex = i;
 				}
-
-				// **Bug:** Close the connection in case when close command was received from target user of this connection.
-				// Steps for reproduce:
-
-				// 1.   Call to user;
-				// 2.   Close created connection which was created for the user;
-				// 3.   User accept incomin connection -> answer will be sent to me;
-				// 4.   I received answer and send `bye` to the user, becuase my connection was closed already;
-				// 5.   User receiving `bye` and doing nothing, but the connection should be closed.
-				// **Note:** Do not forget about filtering close command by target user id.
 			}
-		}
-
-		function createConnection(userData, targetUserId, connectionData, connectionCreated) {
-			var self = this;
-			var hc = new xrtc.HandshakeController();
-
-			var connection = new xRtc.Connection(userData, targetUserId, hc, authManager, connectionData);
-			var connectionId = connection.getId();
-
-			handshakeControllers[connectionId] = hc;
-
-			serverConnector.on(scEvents.receiveAnswer, function (data) {
-				if (data.targetConnectionId) {
-					var targetHc = handshakeControllers[data.targetConnectionId];
-					if (targetHc) {
-						targetHc.trigger(hcEvents.receiveAnswer, { connectionId: data.connectionId, answer: data.answer });
-					} else {
-						serverConnector.sendBye(data.senderId, data.connectionId, data.targetConnectionId);
-					}
-				}
-			});
-
-			serverConnector.on(scEvents.receiveIce, function (data) {
-				if (data.targetConnectionId) {
-					var targetHc = handshakeControllers[data.targetConnectionId];
-					if (targetHc) {
-						targetHc.trigger(hcEvents.receiveIce, { iceCandidate: data.iceCandidate });
-					}
-				}
-			});
-
-			hc.on(hcEvents.sendOffer, proxy(function (tUserId, tConnId, connId, sd) {
-				serverConnector.sendOffer(tUserId, tConnId, connId, sd);
-			}))
-			.on(hcEvents.sendAnswer, proxy(function (tUserId, tConnId, connId, sd) {
-				serverConnector.sendAnswer(tUserId, tConnId, connId, sd);
-			}))
-			.on(hcEvents.sendIce, proxy(function (tUserId, tConnId, connId, sd) {
-				serverConnector.sendIce(tUserId, tConnId, connId, sd);
-			}))
-			.on(hcEvents.sendBye, proxy(function (tUserId, tConnId, connId) {
-				serverConnector.sendBye(tUserId, tConnId, connId);
-			}));
-
-			connection.on(xrtc.Connection.events.connectionClosed, function () {
-				connections.splice(getConnectionIndexById(connections, connectionId), 1);
-				// **Todo:** Maybe need to unsubscribe this handshake controllers from all events.
-				delete handshakeControllers[connectionId];
-			});
-
-			connections.push(connection);
-
-			self.trigger(xrtc.Room.events.connectionCreated, { userId: targetUserId, connection: connection });
-
-			if (typeof connectionCreated === 'function') {
-				connectionCreated({ connection: connection, handshakeController: hc });
-			}
+			return resultIndex;
 		}
 	});
 
@@ -428,13 +518,17 @@
 			leave: 'leave',
 
 			incomingConnection: 'incomingconnection',
+
 			connectionCreated: 'connectioncreated',
+			connectionAccepted: 'connectionaccepted',
 			connectionDeclined: 'connectiondeclined',
 
-			participantsUpdated: 'participantsupdated',
-			participantConnected: 'participantconnected',
-			participantDisconnected: 'participantdisconnected',
-			tokenInvalid: 'tokeninvalid'
+			usersUpdated: 'usersupdated',
+			userConnected: 'userconnected',
+			userDisconnected: 'userdisconnected',
+			tokenInvalid: 'tokeninvalid',
+
+			error: 'error'
 		},
 
 		settings: {

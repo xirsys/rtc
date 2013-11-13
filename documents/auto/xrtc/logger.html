@@ -1,0 +1,278 @@
+<!DOCTYPE html />
+
+<html>
+<head>
+	<title>logger.js</title>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+	<link href="../nocco.css" rel="stylesheet" media="all" type="text/css" />
+	<script src="../prettify.js" type="text/javascript"></script>
+</head>
+<body onload="prettyPrint()">
+	<div id="container">
+		<div id="background"></div>
+			<div id="jump_to">
+				Jump To &hellip;
+				<div id="jump_wrapper">
+					<div id="jump_page">
+							<a class="source" href="../xrtc/ajax.html">
+								xrtc\ajax.js
+							</a>
+							<a class="source" href="../xrtc/authmanager.html">
+								xrtc\authManager.js
+							</a>
+							<a class="source" href="../xrtc/class.html">
+								xrtc\class.js
+							</a>
+							<a class="source" href="../xrtc/common.html">
+								xrtc\common.js
+							</a>
+							<a class="source" href="../xrtc/commonerror.html">
+								xrtc\commonError.js
+							</a>
+							<a class="source" href="../xrtc/connection.html">
+								xrtc\connection.js
+							</a>
+							<a class="source" href="../xrtc/datachannel.html">
+								xrtc\dataChannel.js
+							</a>
+							<a class="source" href="../xrtc/eventdispatcher.html">
+								xrtc\eventDispatcher.js
+							</a>
+							<a class="source" href="../xrtc/handshakecontroller.html">
+								xrtc\handshakeController.js
+							</a>
+							<a class="source" href="../xrtc/logger.html">
+								xrtc\logger.js
+							</a>
+							<a class="source" href="../xrtc/room.html">
+								xrtc\room.js
+							</a>
+							<a class="source" href="../xrtc/serverconnector.html">
+								xrtc\serverConnector.js
+							</a>
+							<a class="source" href="../xrtc/stream.html">
+								xrtc\stream.js
+							</a>
+							<a class="source" href="../xrtc/usermedia.html">
+								xrtc\userMedia.js
+							</a>
+					</div>
+				</div>
+			</div>
+		<table cellpadding="0" cellspacing="0">
+			<thead>
+				<tr>
+					<th class="docs">
+						<h1>logger.js</h1>
+					</th>
+					<th class="code"></th>
+				</tr>
+			</thead>
+			<tbody>
+					<tr id="section_1">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_1">&#182;</a>
+							</div>
+							<h4>Version 1.4.0</h4>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_2">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_2">&#182;</a>
+							</div>
+							<p>This class used by xRtc for logging all events which can happen in the library:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<ul>
+<li>info</li>
+<li>debug</li>
+<li>test</li>
+<li>warning</li>
+<li>error</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<p><code>goog.provide</code>, <code>goog.require</code> defined in <strong>Google Closure Library</strong>. It is used by <strong>Google Closure Compiler</strong> for the determination of the file order.
+During minification this calls will be removed automatically.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>goog.provide(&#39;xRtc.logger&#39;);
+
+goog.require(&#39;xRtc.baseClass&#39;);
+
+(function (exports) {
+	&#39;use strict&#39;;
+
+	if (typeof exports.xRtc === &#39;undefined&#39;) {
+		exports.xRtc = {};
+	}
+
+	var xrtc = exports.xRtc;
+	xrtc.Class(xrtc, &#39;Logger&#39;, function Logger(className) {
+		xrtc.Class.extend(this, {
+			info: function(method) {
+				if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === &quot;object&quot; &amp;&amp; xrtc.Logger.level.info)) {
+					if (typeof method === &quot;string&quot;) {
+						console.info(&#39;Info:\t\t&#39;, className + &#39;.&#39; + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+					} else {
+						console.info(&#39;Info:\t\t&#39;, convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+					}
+				}
+			},
+
+			debug: function(method) {
+				if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === &quot;object&quot; &amp;&amp; xrtc.Logger.level.debug)) {
+					if (typeof method === &quot;string&quot;) {
+						console.debug(&#39;Debug:\t\t&#39;, className + &#39;.&#39; + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+					} else {
+						console.debug(&#39;Debug:\t\t&#39;, convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+					}
+				}
+			},
+
+			test: function(method) {
+				if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === &quot;object&quot; &amp;&amp; xrtc.Logger.level.test)) {
+					if (typeof method === &quot;string&quot;) {
+						console.debug(&#39;Test:\t\t&#39;, className + &#39;.&#39; + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+					} else {
+						console.debug(&#39;Test:\t\t&#39;, convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+					}
+				}
+			},
+
+			warning: function(method) {
+				if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === &quot;object&quot; &amp;&amp; xrtc.Logger.level.warning)) {
+					if (typeof method === &quot;string&quot;) {
+						console.warn(&#39;Warning:\t&#39;, className + &#39;.&#39; + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+					} else {
+						console.warn(&#39;Warning:\t&#39;, convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+					}
+
+				}
+			},
+
+			error: function(method) {
+				if (xrtc.Logger.level === true || (typeof xrtc.Logger.level === &quot;object&quot; &amp;&amp; xrtc.Logger.level.error)) {
+					if (typeof method === &quot;string&quot;) {
+						console.error(&#39;Error:\t\t&#39;, className + &#39;.&#39; + method, convertArgumentsToArray(Array.prototype.slice.call(arguments, 1)));
+					} else {
+						console.error(&#39;Error:\t\t&#39;, convertArgumentsToArray(Array.prototype.slice.call(arguments)));
+					}
+				}
+			}
+		});
+
+		function convertArgumentsToArray() {
+			var args = [], arg,
+				index = 0,
+				len = arguments.length;
+
+			for (; index &lt; len; index++) {
+				arg = arguments[index];
+
+				if ((typeof arg === &#39;object&#39;) &amp;&amp; (arg instanceof Object) &amp;&amp; (typeof arg.length !== &#39;undefined&#39;)) {
+					var subArgs = convertArgumentsToArray.apply(null, Array.prototype.slice.call(arg)),
+						subIndex = 0,
+						subLen = subArgs.length;
+
+					for (; subIndex &lt; subLen; subIndex++) {
+						args.push(subArgs[subIndex]);
+					}
+				} else {
+					args.push(arg);
+				}
+			}
+
+			return args;
+		}
+	});
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<p><strong>[Public API]:</strong> This functionality can be used for ebabling/disabling (by default logging is disabled) logging for the xRtc library.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_6">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_6">&#182;</a>
+							</div>
+							<p><strong>Simple examples</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_7">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_7">&#182;</a>
+							</div>
+							<ul>
+<li><code>xRtc.Logger.enable({ debug: true, warning: true, error: true, test: true });</code></li>
+<li><code>xRtc.Logger.disable();</code></li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>	xrtc.Logger.extend({
+		level: false,
+
+		enable: function (level) {
+			this.level = typeof level === &quot;undefined&quot; ? true : level;
+		},
+
+		disable: function () {
+			this.level = false;
+		}
+	});
+})(window);
+</code></pre>
+						</td>
+					</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+</html>

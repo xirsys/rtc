@@ -87,14 +87,13 @@ var wsTest = {};
 var chat = {};
 (function (chat, xrtc) {
 	var connection = null,
-		remoteParticipantId = null,
+		remoteUser = null,
 		localMediaStreamObtained = null,
 		localMediaStream = null,
 		authManager = null,
 		serverConnector = null,
 		room = null,
 		textChannel = null,
-		userName = null,
 		roomInfo = null,
 		systemName = 'APP',
 		logger = false,
@@ -141,23 +140,12 @@ var chat = {};
 
 		joinRoom: function (ud) {
 			$('#step1, #step2').toggle();
-			userName = ud.name;
+			var userName = ud.name;
 			roomInfo = {
 				domain: ud.domain,
 				application: ud.application,
 				name: ud.room
 			};
-
-			xrtc.getUserMedia({ video: true, audio: true },
-				function (stream) {
-					chat.addVideo({ stream: stream, isLocalStream: true, userId: userName });
-					localMediaStreamObtained = true;
-					localMediaStream = stream;
-					chat.contactsList.updateState();
-				},
-				function (err) {
-					chat.addSystemMessage('Get media stream error. ' + err);
-				});
 
 			authManager = new xrtc.AuthManager();
 
@@ -172,21 +160,33 @@ var chat = {};
 			serverConnector = new xrtc.ServerConnector();
 
 			room = new xrtc.Room(roomInfo, authManager, serverConnector)
-				.on(xrtc.Room.events.participantsUpdated, function (data) {
-					chat.contactsList.refreshParticipants();
+				.on(xrtc.Room.events.usersUpdated, function (data) {
+					chat.contactsList.refreshUsers();
 				})
-				.on(xrtc.Room.events.participantConnected, function (data) {
-					chat.addSystemMessage("'" + data.participantId + "' entered the room.");
+				.on(xrtc.Room.events.userConnected, function (data) {
+					chat.addSystemMessage("'" + data.user.name + "' entered the room.");
 
-					chat.contactsList.refreshParticipants();
+					chat.contactsList.refreshUsers();
 				})
-				.on(xrtc.Room.events.participantDisconnected, function (data) {
-					chat.addSystemMessage("'" + data.participantId + "' left the room.");
+				.on(xrtc.Room.events.userDisconnected, function (data) {
+					chat.addSystemMessage("'" + data.user.name + "' left the room.");
 
-					chat.contactsList.refreshParticipants();
+					chat.contactsList.refreshUsers();
 				})
 				.on(xrtc.Room.events.enter, function () {
 					roomInfo = room.getInfo();
+
+					xrtc.getUserMedia({ video: true, audio: true },
+						function (stream) {
+							chat.addVideo({ stream: stream, isLocalStream: true, user: roomInfo.user });
+							localMediaStreamObtained = true;
+							localMediaStream = stream;
+							chat.contactsList.updateState();
+						},
+						function (err) {
+							chat.addSystemMessage('Get media stream error. ' + err);
+						});
+
 					chat.addSystemMessage('You have connected to the server.');
 				})
 				.on(xrtc.Room.events.leave, function () {
@@ -200,7 +200,7 @@ var chat = {};
 				})
 				.on(xrtc.Room.events.connectionCreated, function (connectionData) {
 					connection = connectionData.connection;
-					remoteParticipantId = connectionData.userId;
+					remoteUser = connectionData.user;
 
 					chat.subscribe(connection, xrtc.Connection.events);
 
@@ -221,9 +221,9 @@ var chat = {};
 							textChannel.on(xrtc.DataChannel.events.error, function (error) {
 								chat.addSystemMessage(error.message + " Please, see log.");
 							}).on(xrtc.DataChannel.events.sentMessage, function (msgData) {
-								chat.addMessage(userName, msgData.message, true);
+								chat.addMessage(roomInfo.user.name, msgData.message, true);
 							}).on(xrtc.DataChannel.events.receivedMessage, function (msgData) {
-								chat.addMessage(textChannel.getUserId(), msgData.message);
+								chat.addMessage(textChannel.getRemoteUser().name, msgData.message);
 							});
 						})
 						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {
@@ -234,17 +234,17 @@ var chat = {};
 						})
 						.on(xrtc.Connection.events.connectionEstablished, function (data) {
 							console.log('Connection is established.');
-							chat.addSystemMessage("p2p connection has been established with '" + data.userId + "'.");
+							chat.addSystemMessage("p2p connection has been established with '" + data.user.name + "'.");
 						})
 						.on(xrtc.Connection.events.connectionClosed, function (data) {
-							chat.contactsList.refreshParticipants();
-							chat.removeVideo(data.userId);
-							chat.addSystemMessage("p2p connection with '" + data.userId + "' has been closed.");
+							chat.contactsList.refreshUsers();
+							chat.removeVideo(data.user);
+							chat.addSystemMessage("p2p connection with '" + data.user.name + "' has been closed.");
 							connection = null;
-							remoteParticipantId = null;
+							remoteUser = null;
 						})
-						.on(xrtc.Connection.events.stateChanged, function (state) {
-							chat.contactsList.updateState(state);
+						.on(xrtc.Connection.events.stateChanged, function (stateData) {
+							chat.contactsList.updateState(stateData.state);
 						});
 
 					connection.addStream(localMediaStream);
@@ -253,10 +253,10 @@ var chat = {};
 					chat.acceptCall(data);
 				})
 				.on(xrtc.Room.events.connectionDeclined, function (data) {
-					chat.contactsList.refreshParticipants();
-					chat.addSystemMessage("'" + data.userId +  "' has declined your call.");
+					chat.contactsList.refreshUsers();
+					chat.addSystemMessage("'" + data.user.name + "' has declined your call.");
 					connection = null;
-					remoteParticipantId = null;
+					remoteUser = null;
 				});
 
 			chat.subscribe(authManager, xrtc.AuthManager.events);
@@ -279,7 +279,7 @@ var chat = {};
 			}
 
 			//todo: need to think about senderId property name
-			if (confirm('User "' + incomingConnectionData.userId + '" is calling to you. Would you like to answer?')) {
+			if (confirm('User "' + incomingConnectionData.user.name + '" is calling to you. Would you like to answer?')) {
 				incomingConnectionData.accept();
 			} else {
 				incomingConnectionData.decline();
@@ -311,7 +311,7 @@ var chat = {};
 		},
 
 		connect: function (contact) {
-			console.log('Connecting to participant...', contact);
+			console.log('Connecting to user...', contact);
 
 			var options = $('#connection-form').serializeObject();
 			options.createDataChannel = 'auto';
@@ -323,21 +323,21 @@ var chat = {};
 		},
 
 		disconnect: function (contact) {
-			console.log('Disconnection from participant...', contact);
+			console.log('Disconnection from user...', contact);
 
 			connection.close();
 		},
 
 		contactsList: {
-			addParticipant: function (participant) {
-				$('#contacts').append($('#contact-info-tmpl').tmpl(participant));
+			addUser: function (user) {
+				$('#contacts').append($('#contact-info-tmpl').tmpl(user));
 			},
 
-			removeParticipant: function (participantId) {
-				$('#contacts').find('.contact[data-name="' + participantId + '"]').remove();
+			removeUser: function (userId) {
+				$('#contacts').find('.contact[data-name="' + userId + '"]').remove();
 			},
 
-			refreshParticipants: function () {
+			refreshUsers: function () {
 				roomInfo = room.getInfo();
 				var contactsData = {
 					roomName: roomInfo.name
@@ -345,22 +345,21 @@ var chat = {};
 
 				$('#contacts-cell').empty().append($('#contacts-info-tmpl').tmpl(contactsData));
 
-				var contacts = this.convertContacts(room.getParticipants());
+				var contacts = this.convertContacts(room.getUsers());
 				for (var index = 0, len = contacts.length; index < len; index++) {
-					this.addParticipant(contacts[index]);
+					this.addUser(contacts[index]);
 				}
 
 				this.updateState();
 			},
 
-			convertContacts: function (participants) {
+			convertContacts: function (users) {
 				var contacts = [];
 
-				for (var i = 0, len = participants.length; i < len; i++) {
-					var name = participants[i];
+				for (var i = 0, len = users.length; i < len; i++) {
 					contacts[i] = {
-						name: name,
-						isMe: name === userName
+						name: users[i].name,
+						isMe: users[i].name === roomInfo.user.name
 					};
 				}
 
@@ -381,32 +380,31 @@ var chat = {};
 
 				var contacts = $('#contacts').removeClass().addClass(state).find('.contact').removeClass('current');
 
-				if (!freeStates[state] && remoteParticipantId) {
-					contacts.filter('[data-name="' + remoteParticipantId + '"]').addClass('current');
+				if (!freeStates[state] && remoteUser) {
+					contacts.filter('[data-name="' + remoteUser.name + '"]').addClass('current');
 				}
 			}
 		},
 
 		addVideo: function (data) {
 			var stream = data.stream;
-			var userId = data.userId;
 
 			stream.on(xrtc.Stream.events.ended, function (streamData) {
 				chat.removeVideoById(streamData.id);
 			});
 
 			var videoData = {
-				name: userId,
+				name: data.user.name,
 				isMe: data.isLocalStream,
 				isVideoAvailable: stream.videoAvailable,
 				isAudioAvailable: stream.audioAvailable,
 				id: stream.getId()
 			};
 
-			var participantItem = $('#video-tmpl').tmpl(videoData);
-			$('#video').append(participantItem);
+			var userItem = $('#video-tmpl').tmpl(videoData);
+			$('#video').append(userItem);
 
-			var video = participantItem.find('video')
+			var video = userItem.find('video')
 				.removeClass('hide')
 				.get(0);
 
@@ -444,11 +442,11 @@ var chat = {};
 				video.volume = 0;
 			}
 
-			participantItem.data('stream', stream);
+			userItem.data('stream', stream);
 		},
 
-		removeVideo: function (participantId) {
-			$('#video .person[data-name="' + participantId + '"]').remove();
+		removeVideo: function (user) {
+			$('#video .person[data-name="' + user.name + '"]').remove();
 		},
 
 		removeVideoById: function (id) {

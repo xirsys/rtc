@@ -1,18 +1,20 @@
 ///<reference path="~/Tests/jasmine/lib/jasmine-1.3.1/jasmine.js" />
-///<reference path="~/Tests/jasmine/lib/sinon-1.6.0.js" />
+///<reference path="~/Tests/jasmine/lib/sinon-1.7.3.js" />
 
-///<reference path="~/Scripts/xRtc/Ajax.js" />
-///<reference path="~/Scripts/xRtc/AuthManager.js" />
-///<reference path="~/Scripts/xRtc/Class.js" />
-///<reference path="~/Scripts/xRtc/CommonError.js" />
-///<reference path="~/Scripts/xRtc/Connection.js" />
-///<reference path="~/Scripts/xRtc/DataChannel.js" />
-///<reference path="~/Scripts/xRtc/EventDispatcher.js" />
-///<reference path="~/Scripts/xRtc/HandshakeController.js" />
-///<reference path="~/Scripts/xRtc/Logger.js" />
-///<reference path="~/Scripts/xRtc/Room.js" />
-///<reference path="~/Scripts/xRtc/ServerConnector.js" />
-///<reference path="~/Scripts/xRtc/Stream.js" />
+///<reference path="~/Scripts/xRtc/ajax.js" />
+///<reference path="~/Scripts/xRtc/authManager.js" />
+///<reference path="~/Scripts/xRtc/class.js" />
+///<reference path="~/Scripts/xRtc/common.js" />
+///<reference path="~/Scripts/xRtc/commonError.js" />
+///<reference path="~/Scripts/xRtc/connection.js" />
+///<reference path="~/Scripts/xRtc/dataChannel.js" />
+///<reference path="~/Scripts/xRtc/eventDispatcher.js" />
+///<reference path="~/Scripts/xRtc/handshakeController.js" />
+///<reference path="~/Scripts/xRtc/logger.js" />
+///<reference path="~/Scripts/xRtc/room.js" />
+///<reference path="~/Scripts/xRtc/serverConnector.js" />
+///<reference path="~/Scripts/xRtc/stream.js" />
+///<reference path="~/Scripts/xRtc/userMedia.js" />
 
 describe("Connection", function () {
 	//xRtc.Logger.level = true;

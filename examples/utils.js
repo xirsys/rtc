@@ -15,7 +15,7 @@ var utils = {};
 		_textChannel = null,
 		_connection = null,
 		_localMediaStream = null,
-		_remoteParticipantId = null;
+		_remoteUsertId = null;
 
 	xrtc.Class.extend(utils, {
 
@@ -51,9 +51,9 @@ var utils = {};
 			return _localMediaStream;
 		},
 
-		remoteParticipantId: function(r) {
-			if (!!r) _remoteParticipantId = r;
-			return _remoteParticipantId;
+		remoteUserId: function(r) {
+			if (!!r) _remoteUsertId = r;
+			return _remoteUsertId;
 		},
 
 		// utility functions
@@ -71,7 +71,7 @@ var utils = {};
 		// once connection created, assign necessary events
 		connectionCreated: function(connectionData) {
 			_connection = connectionData.connection;
-			_remoteParticipantId = connectionData.userId;
+			_remoteUsertId = connectionData.user.id;
 
 			utils.subscribe( _connection, xrtc.Connection.events );
 
@@ -86,7 +86,7 @@ var utils = {};
 					utils.refreshRoom();
 				})
 				// update users list on state change
-				.on( xrtc.Connection.events.stateChanged, function (state) {
+				.on( xrtc.Connection.events.stateChanged, function (stateData) {
 					utils.refreshRoom();
 				})
 				// handler for simple chat demo's data channel
@@ -96,7 +96,7 @@ var utils = {};
 					_textChannel.on(xrtc.DataChannel.events.sentMessage, function (msgData) {
 						utils.addMessage(_userName, msgData.message, true);
 					}).on(xrtc.DataChannel.events.receivedMessage, function (msgData) {
-						utils.addMessage(_textChannel.getUserId(), msgData.message);
+						utils.addMessage(_textChannel.getRemoteUser().name, msgData.message);
 					});
 					utils.addMessage("SYSTEM", "You are now connected.");
 
@@ -117,7 +117,6 @@ var utils = {};
 		// assign stream to a video DOM tag
 		addVideo: function(data) {
 			var stream = data.stream;
-			var userId = data.userId;
 
 			var video = (data.isLocalStream) ? $('#vid1').get(0) : $('#vid2').get(0);
 
@@ -152,9 +151,9 @@ var utils = {};
 
 			$('#userlist').empty();
 
-			var contacts = utils.convertContacts(_room.getParticipants());
+			var contacts = utils.convertContacts(_room.getUsers());
 			for (var index = 0, len = contacts.length; index < len; index++) {
-				utils.addParticipant(contacts[index]);
+				utils.addUser(contacts[index]);
 			}
 		},
 
@@ -163,29 +162,29 @@ var utils = {};
 			incomingConnectionData.accept();
 		},
 
-		// return a list of participants excluding local users name
-		convertContacts: function(participants) {
+		// return a list of users excluding local users name
+		convertContacts: function(users) {
 			var contacts = [];
 
-			for (var i = 0, len = participants.length; i < len; i++) {
-				var name = participants[i];
+			for (var i = 0, len = users.length; i < len; i++) {
+				var name = users[i].name;
 				if ( !!name && name != $("#username").val() )
-					contacts.push(name);
+					contacts.push(users[i]);
 			}
 
 			return contacts;
 		},
 
 		// add remote peer name to contacts drop down list
-		addParticipant: function(participant) {
+		addUser: function(user) {
 			$('#userlist').append(
-				'<option value="' + participant + '">' + participant + '</option>'
+				'<option value="' + user.name + '">' + user.name + '</option>'
 			);
 		},
 
 		// remove remote peer from contacts drop down list
-		removeParticipant: function(participant) {
-			$('#userlist').find('.option[value="' + participant + '"]').remove();
+		removeUser: function(user) {
+			$('#userlist').find('.option[value="' + user.name + '"]').remove();
 		},
 
 		// subscribe to events on object eventDispatcher

@@ -1,4 +1,4 @@
-﻿// #### Version 1.3.0 ####
+﻿// #### Version 1.4.0 ####
 
 // XirSys (default) realization of connection manager.
 
@@ -7,9 +7,23 @@
 // * Establish and handle server connection (For XirSys realization is WebSockets).
 // * Implementation of the protocol to communicate with the server (For XirSys is custom protocol).
 
-'use strict';
+// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
+// During minification this calls will be removed automatically.
+goog.provide('xRtc.serverConnector');
+
+goog.require('xRtc.baseClass');
+goog.require('xRtc.eventDispatcher');
+goog.require('xRtc.commonError');
+goog.require('xRtc.ajax');
+goog.require('xRtc.logger');
 
 (function (exports) {
+	'use strict';
+
+	if (typeof exports.xRtc === 'undefined') {
+		exports.xRtc = {};
+	}
+
 	var xrtc = exports.xRtc;
 
 	xrtc.Class(xrtc, 'ServerConnector', function ServerConnector(options) {
@@ -43,40 +57,37 @@
 				}
 			},
 
-			sendOffer: function (targetUserId, targetConnectionId, connectionId, offerData) {
+			sendOffer: function (targetUserId, connectionId, offerData) {
 				var request = {
 					eventName: scEvents.receiveOffer,
 					targetUserId: targetUserId,
 					data: {
-						targetConnectionId: targetConnectionId,
 						connectionId: connectionId,
-						offer: offerData
+						offer: offerData || {}
 					}
 				};
 
 				send(request);
 			},
 
-			sendAnswer: function (targetUserId, targetConnectionId, connectionId, answerData) {
+			sendAnswer: function (targetUserId, connectionId, answerData) {
 				var request = {
 					eventName: scEvents.receiveAnswer,
 					targetUserId: targetUserId,
 					data: {
-						targetConnectionId: targetConnectionId,
 						connectionId: connectionId,
-						answer: answerData
+						answer: answerData || {}
 					}
 				};
 
 				send(request);
 			},
 
-			sendIce: function (targetUserId, targetConnectionId, connectionId, iceCandidate) {
+			sendIce: function (targetUserId, connectionId, iceCandidate) {
 				var request = {
 					eventName: scEvents.receiveIce,
 					targetUserId: targetUserId,
 					data: {
-						targetConnectionId: targetConnectionId,
 						connectionId: connectionId,
 						iceCandidate: iceCandidate
 					}
@@ -85,19 +96,15 @@
 				send(request);
 			},
 
-			sendBye: function (targetUserId, targetConnectionId, connectionId, byeOptions) {
+			sendBye: function (targetUserId, connectionId, byeData) {
 				var request = {
 					eventName: scEvents.receiveBye,
 					targetUserId: targetUserId,
 					data: {
-						targetConnectionId: targetConnectionId,
-						connectionId: connectionId
+						connectionId: connectionId,
+						byeData: byeData || {}
 					}
 				};
-
-				if (byeOptions) {
-					request.data.options = byeOptions;
-				}
 
 				send(request);
 			}
@@ -131,7 +138,7 @@
 				if (!!response && !!response.e && response.e != '') {
 					var error = new xrtc.CommonError('getWebSocketURL', 'Error occured while getting the URL of WebSockets', response.e);
 					logger.error('getWebSocketURL', error);
-					this.trigger(scEvents.serverError, error);
+					this.trigger(scEvents.serverError, { error: error });
 				} else {
 					var url = response.d.value;
 					logger.info('getWebSocketURL', url);
@@ -181,7 +188,7 @@
 		function socketOnError(evt) {
 			var error = new xrtc.CommonError('onerror', 'WebSocket has got an error', evt);
 			logger.error('error', error);
-			this.trigger(scEvents.connectionError, error);
+			this.trigger(scEvents.connectionError, { error: error });
 		}
 
 		function socketOnMessage(msg) {
@@ -212,36 +219,41 @@
 				var error = new xrtc.CommonError('parseServerMessage', 'Message format error', e);
 				logger.error('parseServerMessage', error, msg);
 
-				this.trigger(scEvents.messageFormatError, error);
+				this.trigger(scEvents.messageFormatError, { error: error });
 			}
 
 			return resultObject;
 		}
 
 		function handleRoomEvents(eventName, data) {
-			if (eventName == scEvents.participantsUpdated) {
-				var participantsData = {
-					senderId: data.userid,
-					room: data.room,
-					participants: data.message.users,
+			if (eventName == scEvents.usersUpdated) {
+				var users = [];
+				for (var i = 0, len = data.message.users.length; i < len; i++) {
+					users.push({ id: data.message.users[i], name: data.message.users[i] });
+				}
+
+				var usersData = {
+					//senderId: data.userid,
+					//room: data.room,
+					users: users
 				};
-				this.trigger(scEvents.participantsUpdated, participantsData);
+				this.trigger(scEvents.usersUpdated, usersData);
 			}
-			else if (eventName == scEvents.participantConnected) {
+			else if (eventName == scEvents.userConnected) {
 				var connectedData = {
-					senderId: data.userid,
-					room: data.room,
-					participantId: data.message,
+					//senderId: data.userid,
+					//room: data.room,
+					user: { id: data.message, name: data.message }
 				};
-				this.trigger(scEvents.participantConnected, connectedData);
+				this.trigger(scEvents.userConnected, connectedData);
 			}
-			else if (eventName == scEvents.participantDisconnected) {
+			else if (eventName == scEvents.userDisconnected) {
 				var disconnectedData = {
-					senderId: data.userid,
-					room: data.room,
-					participantId: data.message,
+					//senderId: data.userid,
+					//room: data.room,
+					user: { id: data.message, name: data.message }
 				};
-				this.trigger(scEvents.participantDisconnected, disconnectedData);
+				this.trigger(scEvents.userDisconnected, disconnectedData);
 			}
 		}
 
@@ -254,7 +266,7 @@
 					offer: data.message.data.offer.offer,
 					iceServers: data.message.data.offer.iceServers,
 					connectionType: data.message.data.offer.connectionType,
-					connectionData: data.message.data.offer.connectionData,
+					connectionData: data.message.data.offer.connectionData
 					/*targetConnectionId: data.message.data.targetConnectionId*/
 				};
 
@@ -266,18 +278,17 @@
 					/*receiverId: data.message.targetUserId,*/
 					connectionId: data.message.data.connectionId,
 					answer: data.message.data.answer.answer,
-					targetConnectionId: data.message.data.targetConnectionId
+					acceptData: data.message.data.answer.acceptData
 				};
 
 				this.trigger(scEvents.receiveAnswer, answerData);
 			}
 			else if (eventName == scEvents.receiveIce) {
 				var iceData = {
-					/*senderId: data.userid,
-					receiverId: data.message.targetUserId,
-					connectionId: data.message.data.connectionId,*/
-					iceCandidate: data.message.data.iceCandidate,
-					targetConnectionId: data.message.data.targetConnectionId
+					senderId: data.userid,
+					/*receiverId: data.message.targetUserId,*/
+					connectionId: data.message.data.connectionId,
+					iceCandidate: data.message.data.iceCandidate
 				};
 
 				this.trigger(scEvents.receiveIce, iceData);
@@ -287,12 +298,8 @@
 					senderId: data.userid,
 					/*receiverId: data.message.targetUserId,*/
 					connectionId: data.message.data.connectionId,
-					targetConnectionId: data.message.data.targetConnectionId
+					byeData: data.message.data.byeData
 				};
-
-				if (data.message.data.options && data.message.data.options.type) {
-					byeData.options = { type: data.message.data.options.type };
-				}
 
 				this.trigger(scEvents.receiveBye, byeData);
 			}
@@ -302,9 +309,9 @@
 			if (validateServerMessage(msg)) {
 				var data = parseServerMessage(msg);
 				var eventName = data.type;
-				if (eventName == scEvents.participantsUpdated ||
-					eventName == scEvents.participantConnected ||
-					eventName == scEvents.participantDisconnected) {
+				if (eventName == scEvents.usersUpdated ||
+					eventName == scEvents.userConnected ||
+					eventName == scEvents.userDisconnected) {
 					handleRoomEvents.call(this, eventName, data);
 				} else if (eventName == scEvents.receiveOffer ||
 					eventName == scEvents.receiveAnswer ||
@@ -359,9 +366,9 @@
 			receiveBye: 'receivebye',
 
 			/* Server generated events */
-			participantsUpdated: 'peers',
-			participantConnected: 'peer_connected',
-			participantDisconnected: 'peer_removed'
+			usersUpdated: 'peers',
+			userConnected: 'peer_connected',
+			userDisconnected: 'peer_removed'
 		},
 
 		settings: {
