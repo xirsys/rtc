@@ -210,30 +210,35 @@ goog.require('xRtc.dataChannel');
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
-						// Starting from FF 27+ FF sihnling mechanism was changed and ice candidates for FF 27+ generates like in Chrome browser.
-						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
-							offer.sdp = iceFilter.filterSDP(offer.sdp);
+						// **Note:** `peerConnection` object can be `null` in case if connection was created and closed straightway.
+						// So after it async `onCreateOfferSuccess` will start and 'peerConnection' will be `null`.
+						if (peerConnection) {
+							// Starting from FF 27+ FF signaling mechanism was changed and ice candidates for FF 27+ generates like in Chrome browser.
+							if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
+								offer.sdp = iceFilter.filterSDP(offer.sdp);
+							}
+
+							logger.debug('onCreateOfferSuccess', offer);
+
+							peerConnection.setLocalDescription(offer);
+
+							// This magis is required for interoperability support of FF21 and Chrome.
+							if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
+								var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
+								offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? offer.sdp.replace(/c=IN/g, inline) : offer.sdp;
+							}
+
+							var request = {
+								offer: JSON.stringify(offer),
+								connectionData: connectionData,
+								connectionType: iceFilter.getType(),
+								iceServers: iceServers
+							};
+
+							logger.debug('sendOffer', remoteUser.id, offer);
+							handshakeController.sendOffer(remoteUser.id, connectionId, request);
+							self.trigger(xrtc.Connection.events.offerSent, { connection: this, user: remoteUser, offerData: request });
 						}
-
-						logger.debug('onCreateOfferSuccess', offer);
-						peerConnection.setLocalDescription(offer);
-
-						// This magis is required for interoperability support of FF21 and Chrome.
-						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
-							var inline = 'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN';
-							offer.sdp = offer.sdp.indexOf('a=crypto') == -1 ? offer.sdp.replace(/c=IN/g, inline) : offer.sdp;
-						}
-
-						var request = {
-							offer: JSON.stringify(offer),
-							connectionData: connectionData,
-							connectionType: iceFilter.getType(),
-							iceServers: iceServers
-						};
-
-						logger.debug('sendOffer', remoteUser.id, offer);
-						handshakeController.sendOffer(remoteUser.id, connectionId, request);
-						self.trigger(xrtc.Connection.events.offerSent, { connection: this, user: remoteUser, offerData: request });
 					}
 
 					function onCreateOfferError(err) {

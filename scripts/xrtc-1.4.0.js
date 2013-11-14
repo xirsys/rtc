@@ -845,19 +845,21 @@ goog.require("xRtc.dataChannel");
         iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
         peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
         function onCreateOfferSuccess(offer) {
-          if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
-            offer.sdp = iceFilter.filterSDP(offer.sdp);
+          if (peerConnection) {
+            if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
+              offer.sdp = iceFilter.filterSDP(offer.sdp);
+            }
+            logger.debug("onCreateOfferSuccess", offer);
+            peerConnection.setLocalDescription(offer);
+            if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
+              var inline = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN";
+              offer.sdp = offer.sdp.indexOf("a=crypto") == -1 ? offer.sdp.replace(/c=IN/g, inline) : offer.sdp;
+            }
+            var request = {offer:JSON.stringify(offer), connectionData:connectionData, connectionType:iceFilter.getType(), iceServers:iceServers};
+            logger.debug("sendOffer", remoteUser.id, offer);
+            handshakeController.sendOffer(remoteUser.id, connectionId, request);
+            self.trigger(xrtc.Connection.events.offerSent, {connection:this, user:remoteUser, offerData:request});
           }
-          logger.debug("onCreateOfferSuccess", offer);
-          peerConnection.setLocalDescription(offer);
-          if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 21) {
-            var inline = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:FakeFakeFakeFakeFakeFakeFakeFakeFakeFake\r\nc=IN";
-            offer.sdp = offer.sdp.indexOf("a=crypto") == -1 ? offer.sdp.replace(/c=IN/g, inline) : offer.sdp;
-          }
-          var request = {offer:JSON.stringify(offer), connectionData:connectionData, connectionType:iceFilter.getType(), iceServers:iceServers};
-          logger.debug("sendOffer", remoteUser.id, offer);
-          handshakeController.sendOffer(remoteUser.id, connectionId, request);
-          self.trigger(xrtc.Connection.events.offerSent, {connection:this, user:remoteUser, offerData:request});
         }
         function onCreateOfferError(err) {
           var error = new xrtc.CommonError("startSession", "Cannot create WebRTC offer", err);
