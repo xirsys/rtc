@@ -210,7 +210,8 @@ goog.require('xRtc.dataChannel');
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
-						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+						// Starting from FF 27+ FF sihnling mechanism was changed and ice candidates for FF 27+ generates like in Chrome browser.
+						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
 							offer.sdp = iceFilter.filterSDP(offer.sdp);
 						}
 

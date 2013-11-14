@@ -845,7 +845,7 @@ goog.require("xRtc.dataChannel");
         iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
         peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
         function onCreateOfferSuccess(offer) {
-          if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+          if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
             offer.sdp = iceFilter.filterSDP(offer.sdp);
           }
           logger.debug("onCreateOfferSuccess", offer);
