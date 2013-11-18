@@ -372,7 +372,7 @@ goog.require('xRtc.logger');
 		},
 
 		settings: {
-			URL: 'https://beta.xirsys.com/wsList'
+			URL: 'https://api.xirsys.com/wsList'
 		}
 	});
 })(window);

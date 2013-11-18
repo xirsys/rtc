@@ -361,7 +361,7 @@ goog.require("xRtc.logger");
       }
     }
   });
-  xrtc.AuthManager.extend({events:{serverError:"servererror"}, settings:{unsuccessfulRequestRepeatTimeout:5E3, tokenHandler:"https://beta.xirsys.com/getToken", iceHandler:"https://beta.xirsys.com/getIceServers"}});
+  xrtc.AuthManager.extend({events:{serverError:"servererror"}, settings:{unsuccessfulRequestRepeatTimeout:5E3, tokenHandler:"https://api.xirsys.com/getToken", iceHandler:"https://api.xirsys.com/getIceServers"}});
 })(window);
 goog.provide("xRtc.dataChannel");
 goog.require("xRtc.baseClass");
@@ -648,7 +648,7 @@ goog.require("xRtc.logger");
       }, interval);
     }
   });
-  xrtc.ServerConnector.extend({events:{connectionOpen:"connectionopen", connectionClose:"connectionclose", connectionError:"connectionerror", message:"message", messageFormatError:"messageformaterror", serverError:"servererror", tokenInvalid:"tokeninvalid", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveIce:"receiveice", receiveBye:"receivebye", usersUpdated:"peers", userConnected:"peer_connected", userDisconnected:"peer_removed"}, settings:{URL:"https://beta.xirsys.com/wsList"}});
+  xrtc.ServerConnector.extend({events:{connectionOpen:"connectionopen", connectionClose:"connectionclose", connectionError:"connectionerror", message:"message", messageFormatError:"messageformaterror", serverError:"servererror", tokenInvalid:"tokeninvalid", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveIce:"receiveice", receiveBye:"receivebye", usersUpdated:"peers", userConnected:"peer_connected", userDisconnected:"peer_removed"}, settings:{URL:"https://api.xirsys.com/wsList"}});
 })(window);
 goog.provide("xRtc.stream");
 goog.require("xRtc.baseClass");

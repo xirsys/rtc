@@ -152,8 +152,8 @@ goog.require('xRtc.logger');
 
 		settings: {
 			unsuccessfulRequestRepeatTimeout: 5000,
-			tokenHandler: 'https://beta.xirsys.com/getToken',
-			iceHandler: 'https://beta.xirsys.com/getIceServers'
+			tokenHandler: 'https://api.xirsys.com/getToken',
+			iceHandler: 'https://api.xirsys.com/getIceServers'
 		}
 	});
 })(window);

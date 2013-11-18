@@ -1,14 +1,15 @@
 <?php
 //set POST variables
-$url = 'https://beta.xirsys.com/getToken';
+$url = 'https://api.xirsys.com/getToken';
 $fields_string = '';
 $fields = array(
 	'domain' => $_POST["domain"],
 	'application' => $_POST["application"],
 	'room' => $_POST["room"],
 	'username' => $_POST["username"],
-	'ident' => urlencode("leesylvester"),
-	'secret' => urlencode("7b6ffc50-d9b9-11e2-bbde-45359b958022")
+	'ident' => urlencode("jerrychabolla"),
+	'secret' => urlencode("06727832-b20f-4cc0-a954-5bed3310033d"),
+	"secure" => "1" 
 );
 
 //url-ify the data for the POST
