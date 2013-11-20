@@ -604,7 +604,7 @@ on <code>the xRtc.Connection</code> <strong>one</strong> data channel with name 
 				var targetUser = getUserById(targetUserId);
 				if (targetUser == null) {
 					var error = xrtc.CommonError(&#39;connect&#39;, &#39;Target user not found.&#39;);
-					this.trigger(xrtc.Room.events.error, { userId: userId, error: error });
+					this.trigger(xrtc.Room.events.error, { userId: targetUserId, error: error });
 				} else {
 					var connectionDataContainer = (connectionOptions &amp;&amp; connectionOptions.data) ? connectionOptions.data : null;
 

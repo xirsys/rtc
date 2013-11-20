@@ -201,7 +201,7 @@ goog.require('xRtc.serverConnector');
 				var targetUser = getUserById(targetUserId);
 				if (targetUser == null) {
 					var error = xrtc.CommonError('connect', 'Target user not found.');
-					this.trigger(xrtc.Room.events.error, { userId: userId, error: error });
+					this.trigger(xrtc.Room.events.error, { userId: targetUserId, error: error });
 				} else {
 					var connectionDataContainer = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
 
