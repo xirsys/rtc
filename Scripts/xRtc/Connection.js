@@ -213,8 +213,7 @@ goog.require('xRtc.dataChannel');
 						// **Note:** `peerConnection` object can be `null` in case if connection was created and closed straightway.
 						// So after it async `onCreateOfferSuccess` will start and 'peerConnection' will be `null`.
 						if (peerConnection) {
-							// Starting from FF 27+ FF signaling mechanism was changed and ice candidates for FF 27+ generates like in Chrome browser.
-							if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox && webrtc.detectedBrowserVersion <= 27) {
+							if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 								offer.sdp = iceFilter.filterSDP(offer.sdp);
 							}
 
