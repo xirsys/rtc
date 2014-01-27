@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.0 ####
+﻿// #### Version 1.4.1 ####
 
 // This class used by xRtc for logging all events which can happen in the library:
 

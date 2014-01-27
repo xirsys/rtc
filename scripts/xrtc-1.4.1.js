@@ -754,31 +754,30 @@ goog.require("xRtc.dataChannel");
     exports.xRtc = {};
   }
   var xrtc = exports.xRtc, internal = {}, webrtc = xrtc.webrtc;
-  xrtc.Class(internal, "IceCandidateFilter", function IceCandidateFilter(type, is) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), connectionType = type || xrtc.Connection.connectionTypes["default"], iceServers = is && is.iceServers || null, ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
+  xrtc.Class(internal, "IceCandidateFilter", function IceCandidateFilter(type, iceServers) {
+    var connectionType = type || xrtc.Connection.connectionTypes["default"], ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
     xrtc.Class.extend(this, {getType:function() {
       return connectionType;
-    }, isAllowed:function(ice) {
-      var result = true;
-      switch(connectionType) {
-        case xrtc.Connection.connectionTypes.direct:
-          result = iceCandidatesFilters.local(ice) || iceCandidatesFilters.stun(ice);
-          break;
-        case xrtc.Connection.connectionTypes.server:
-          if (iceCandidatesFilters.stun(ice)) {
-            iceCandidateConverters.stun2turn(ice);
-          } else {
-            if (iceCandidatesFilters.turn(ice)) {
-              iceCandidateConverters.turn2turn(ice);
+    }, filterCandidate:function(iceCandidate) {
+      var resultCandidate = null;
+      if (connectionType === xrtc.Connection.connectionTypes["default"]) {
+        resultCandidate = iceCandidate;
+      } else {
+        if (connectionType === xrtc.Connection.connectionTypes.direct && (iceCandidateTypeDetector.isLocal(iceCandidate) || iceCandidateTypeDetector.isStun(iceCandidate))) {
+          resultCandidate = iceCandidate;
+        } else {
+          if (connectionType === xrtc.Connection.connectionTypes.server) {
+            if (iceCandidateTypeDetector.isTurn(iceCandidate)) {
+              resultCandidate = iceCandidate;
             } else {
-              result = false;
+              if (iceCandidateTypeDetector.isStun(iceCandidate)) {
+                resultCandidate = stun2Turn(iceCandidate);
+              }
             }
           }
-          break;
-        default:
-          break;
+        }
       }
-      return result;
+      return resultCandidate;
     }, filterSDP:function(sdp) {
       var changedSdp = sdp;
       if (connectionType === xrtc.Connection.connectionTypes.server) {
@@ -790,40 +789,39 @@ goog.require("xRtc.dataChannel");
       }
       return changedSdp;
     }});
-    var iceCandidatesFilters = {local:function(iceCandidate) {
-      var regexp = /typ host/;
-      return filterIceCandidate(iceCandidate, regexp);
-    }, stun:function(iceCandidate) {
-      var regexp = /typ srflx/;
-      return filterIceCandidate(iceCandidate, regexp);
-    }, turn:function(iceCandidate) {
-      var regexp = /typ relay/;
-      return filterIceCandidate(iceCandidate, regexp);
+    var iceCandidateTypeDetector = {isLocal:function(iceCandidate) {
+      return/typ host/.test(iceCandidate.candidate);
+    }, isStun:function(iceCandidate) {
+      return/typ srflx/.test(iceCandidate.candidate);
+    }, isTurn:function(iceCandidate) {
+      return/typ relay/.test(iceCandidate.candidate);
     }};
-    function filterIceCandidate(iceCandidate, regexp) {
-      return regexp.test(iceCandidate.candidate);
-    }
-    function getTurnIp() {
-      if (iceServers) {
-        for (var i = 0;i < iceServers.length;i++) {
-          var server = iceServers[i];
-          if ("credential" in server) {
-            return server.url.split("@")[1];
+    function getIceServersTurnIP(iceServersArray) {
+      var turnIpAddress = null;
+      if (iceServersArray) {
+        for (var i = 0;i < iceServersArray.length;i++) {
+          var server = iceServersArray[i];
+          if (server.url.indexOf("turn:") === 0) {
+            if (server.url.indexOf("@") !== -1) {
+              turnIpAddress = server.url.split("@")[1];
+            } else {
+              turnIpAddress = server.url.split("turn:")[1];
+            }
           }
         }
       }
-      return null;
+      return turnIpAddress;
     }
-    var iceCandidateConverters = {turn2turn:function(iceCandidate) {
-      iceCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, iceCandidate.candidate.match(ipRegexp)[0]);
-    }, stun2turn:function(iceCandidate) {
-      var turnIp = getTurnIp();
-      if (turnIp) {
-        iceCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, turnIp);
-      } else {
-        iceCandidateConverters.turn2turn(iceCandidate);
+    function stun2Turn(iceCandidate) {
+      var resultTurnCandidate = null;
+      var turnIpAddress = getIceServersTurnIP(iceServers);
+      if (turnIpAddress) {
+        resultTurnCandidate = iceCandidate;
+        resultTurnCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, turnIpAddress);
+        resultTurnCandidate.candidate = iceCandidate.candidate.replace("typ srflx", "typ relay");
       }
-    }};
+      return resultTurnCandidate;
+    }
   });
   xrtc.Class(xrtc, "Connection", function Connection(connId, ud, remoteUser, hc, am, data) {
     var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), userData = ud, authManager = am || new xRtc.AuthManager, localStreams = [], remoteStreams = [], dataChannels = [], dataChannelNames = [], peerConnection = null, checkConnectionStateIntervalId = null, checkDisconnectedIceStateTimeoutId = null, handshakeController = hc, iceFilter = null, iceServers = null, connectionEstablished = false, iceCandidates = [], connectionId = connId, connectionData = data, connectionIsOpened = 
@@ -1012,9 +1010,11 @@ goog.require("xRtc.dataChannel");
         };
         function onIceCandidate(evt) {
           if (!!evt.candidate) {
+            logger.debug("peerConnection.onIceCandidate", evt.candidate);
             var ice = JSON.parse(JSON.stringify(evt.candidate));
-            if (iceFilter.isAllowed(ice)) {
-              handleIceCandidate.call(this, ice);
+            var filteredIce = iceFilter.filterCandidate(ice);
+            if (filteredIce !== null) {
+              handleIceCandidate.call(this, filteredIce);
             }
           }
         }

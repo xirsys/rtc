@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.0 ####
+﻿// #### Version 1.4.1 ####
 
 // `xRtc.Connection` is one of the main objects of **xRtc** library. This object can not be created manually.
 // For the creation of connection need to use `xRtc.Room` object.
@@ -28,11 +28,8 @@ goog.require('xRtc.dataChannel');
 		webrtc = xrtc.webrtc;
 
 	// `IceCandidateFilter` is internal object of `xRtc.Connection`. The object contains functionality which helps to filter webrtc ice candidates in case if `server` or `direct` connection is required.
-	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, is) {
-		var proxy = xrtc.Class.proxy(this),
-			logger = new xrtc.Logger(this.className),
-			connectionType = type || xrtc.Connection.connectionTypes.default,
-			iceServers = is && is.iceServers || null,
+	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, iceServers) {
+		var connectionType = type || xrtc.Connection.connectionTypes.default,
 			ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
 
 		xrtc.Class.extend(this, {
@@ -41,28 +38,28 @@ goog.require('xRtc.dataChannel');
 				return connectionType;
 			},
 
-			// Returns boolean value which means `ice` corresponds current connection type or not.
-			isAllowed: function (ice) {
-				var result = true;
-
-				switch (connectionType) {
-					case xrtc.Connection.connectionTypes.direct:
-						result = iceCandidatesFilters.local(ice) || iceCandidatesFilters.stun(ice);
-						break;
-					case xrtc.Connection.connectionTypes.server:
-						if (iceCandidatesFilters.stun(ice)) {
-							iceCandidateConverters.stun2turn(ice);
-						} else if (iceCandidatesFilters.turn(ice)) {
-							iceCandidateConverters.turn2turn(ice);
-						} else {
-							result = false;
-						}
-						break;
-					default:
-						break;
+			// Returns ice candidate corresponding to connection type.
+			filterCandidate: function (iceCandidate) {
+				var resultCandidate = null;
+				if (connectionType === xrtc.Connection.connectionTypes.default) {
+					resultCandidate = iceCandidate;
+				}
+				else if (connectionType === xrtc.Connection.connectionTypes.direct &&
+					(iceCandidateTypeDetector.isLocal(iceCandidate) || iceCandidateTypeDetector.isStun(iceCandidate))) {
+					resultCandidate = iceCandidate;
+				} else if (connectionType === xrtc.Connection.connectionTypes.server) {
+					if (iceCandidateTypeDetector.isTurn(iceCandidate)) {
+						resultCandidate = iceCandidate;
+					}
+					else if (iceCandidateTypeDetector.isStun(iceCandidate)) {
+						// In some situations if STUN connection is possible then WebRTC won't generate TURN candidates.
+						// As a result need to convert STUN candidates to TURN candidates.
+						// **Todo:** Need to check necessity of this logic
+						resultCandidate = stun2Turn(iceCandidate);
+					}
 				}
 
-				return result;
+				return resultCandidate;
 			},
 
 			// Returns `sdp` which corrected accordingly current connection type.
@@ -81,66 +78,54 @@ goog.require('xRtc.dataChannel');
 			}
 		});
 
-		// Internal candidate filters.
-		var iceCandidatesFilters = {
-			// Returns function which filters direct p2p `host` ice candidates.
-			local: function (iceCandidate) {
-				var regexp = /typ host/;
-
-				return filterIceCandidate(iceCandidate, regexp);
+		// Internal ice candidate type detector.
+		var iceCandidateTypeDetector = {
+			// Returns true if passed `iceCandidate` is LOCAL otherwise returns false.
+			isLocal: function (iceCandidate) {
+				return /typ host/.test(iceCandidate.candidate);
 			},
 
-			// Returns function which filters STUN `srflx` ice candidates.
-			stun: function (iceCandidate) {
-				var regexp = /typ srflx/;
-
-				return filterIceCandidate(iceCandidate, regexp);
+			// Returns true if passed `iceCandidate` is STUN otherwise returns false.
+			isStun: function (iceCandidate) {
+				return /typ srflx/.test(iceCandidate.candidate);
 			},
 
-			// Returns function which filters TURN `relay` ice candidates.
-			turn: function (iceCandidate) {
-				var regexp = /typ relay/;
-
-				return filterIceCandidate(iceCandidate, regexp);
+			// Returns true if passed `iceCandidate` is TURN otherwise returns false.
+			isTurn: function (iceCandidate) {
+				return /typ relay/.test(iceCandidate.candidate);
 			}
 		};
 
-		function filterIceCandidate(iceCandidate, regexp) {
-			return regexp.test(iceCandidate.candidate);
-		}
-
-		// Returns IP address of the TURN server which stores in the local variable `iceServers`.
-		function getTurnIp() {
-			if (iceServers) {
-				for (var i = 0; i < iceServers.length; i++) {
-					var server = iceServers[i];
-					if ('credential' in server) {
-						return server.url.split('@')[1];
+		// Returns IP address of the TURN server from array of ice servers.
+		function getIceServersTurnIP(iceServersArray) {
+			var turnIpAddress = null;
+			if (iceServersArray) {
+				for (var i = 0; i < iceServersArray.length; i++) {
+					var server = iceServersArray[i];
+					if (server.url.indexOf('turn:') === 0 /*if server is TURN server*/) {
+						if (server.url.indexOf('@') !== -1 /*if TURN address have old format. Old format is actual for Chrome < 28 version*/) {
+							turnIpAddress = server.url.split('@')[1];
+						} else {
+							turnIpAddress = server.url.split('turn:')[1];
+						}
 					}
-
 				}
 			}
-			return null;
+			return turnIpAddress;
 		}
 
-		// Internal ice candidate converters which can convert one ice candidates to another. Sometimes browser check connection with STUN and doesn't generate TURN ice candidates. In this case we create own TURN ice candidates using STUN ice candidates.
-		var iceCandidateConverters = {
-			// **Todo:** Need to clarify/test existence of this method.
-			turn2turn: function (iceCandidate) {
-				iceCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, iceCandidate.candidate.match(ipRegexp)[0]);
-			},
-
-			// Creates TURN ice candidate using STUN ice candidate.
-			stun2turn: function (iceCandidate) {
-				var turnIp = getTurnIp();
-				if (turnIp) {
-					iceCandidate.candidate = iceCandidate.candidate.replace(ipRegexp, turnIp);
-				} else {
-					//**Todo:** Is it right?
-					iceCandidateConverters.turn2turn(iceCandidate);
-				}
+		// Converts STUN ice candidate to TURN ice candidate.
+		function stun2Turn(iceCandidate) {
+			var resultTurnCandidate = null;
+			var turnIpAddress = getIceServersTurnIP(iceServers);
+			if (turnIpAddress) {
+				resultTurnCandidate = iceCandidate;
+				resultTurnCandidate.candidate = /*change IP address*/ iceCandidate.candidate.replace(ipRegexp, turnIpAddress);
+				resultTurnCandidate.candidate = /*change candidate type*/ iceCandidate.candidate.replace('typ srflx', 'typ relay');
 			}
-		};
+
+			return resultTurnCandidate;
+		}
 	});
 
 	// **Todo:** Need to optimize the constructor sugnature of Connection object.
@@ -159,6 +144,7 @@ goog.require('xRtc.dataChannel');
 			checkDisconnectedIceStateTimeoutId = null,
 			handshakeController = hc,
 			iceFilter = null,
+			// Variable for caching ice servers which was requested from the server side.
 			iceServers = null,
 			// This field is used to determine whether the coonection was accepted and need to send ice candidates to remote application.
 			connectionEstablished = false,
@@ -546,11 +532,13 @@ goog.require('xRtc.dataChannel');
 
 				function onIceCandidate(evt) {
 					if (!!evt.candidate) {
+						logger.debug('peerConnection.onIceCandidate', evt.candidate);
 						// In the original `RTCIceCandidate` class `candidate` property is immutable.
 						var ice = JSON.parse(JSON.stringify(evt.candidate));
 
-						if (iceFilter.isAllowed(ice)) {
-							handleIceCandidate.call(this, ice);
+						var filteredIce = iceFilter.filterCandidate(ice);
+						if (filteredIce !== null) {
+							handleIceCandidate.call(this, filteredIce);
 						}
 					}
 				}

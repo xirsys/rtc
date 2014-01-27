@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.0 ####
+﻿// #### Version 1.4.1 ####
 
 // `xRtc.Stream` is one of the main objects of **xRtc** library. It is wrapper to native browser's `MediaStream`.
 // All instances of this object should be created by `xRtc.getUserMedia(options, successCallback, errorCallback)` method.

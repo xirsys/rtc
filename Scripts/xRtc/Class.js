@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.0 ####
+﻿// #### Version 1.4.1 ####
 
 // The base type of all classes for xRtc library.
 

@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.0 ####
+﻿// #### Version 1.4.1 ####
 
 // xRtc library uses this functionality for  performing Ajax requets to the server.
 
