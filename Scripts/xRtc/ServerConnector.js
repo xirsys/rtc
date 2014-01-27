@@ -8,7 +8,6 @@
 // * Implementation of the protocol to communicate with the server (For XirSys is custom protocol).
 
 // `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-// During minification this calls will be removed automatically.
 goog.provide('xRtc.serverConnector');
 
 goog.require('xRtc.baseClass');
