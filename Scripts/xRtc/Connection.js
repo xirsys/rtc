@@ -27,6 +27,7 @@ goog.require('xRtc.dataChannel');
 		webrtc = xrtc.webrtc;
 
 	// `IceCandidateFilter` is internal object of `xRtc.Connection`. The object contains functionality which helps to filter webrtc ice candidates in case if `server` or `direct` connection is required.
+	// **Note:** Detailed information about SDP you can found here <http://webrtchacks.com/sdp-anatomy/>
 	xrtc.Class(internal, 'IceCandidateFilter', function IceCandidateFilter(type, iceServers) {
 		var connectionType = type || xrtc.Connection.connectionTypes.default,
 			ipRegexp = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g;
