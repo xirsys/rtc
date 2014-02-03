@@ -34,6 +34,47 @@ goog.provide('xRtc.common');
 		? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
 		: parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
 
+	// Features which supported by current browser.
+	xrtc.webrtc.supports = function() {
+		if (typeof xrtc.webrtc.RTCPeerConnection === 'undefined') {
+			return {};
+		}
+
+		var media = false;
+		var data = false;
+		var sctp = false;
+
+		var pc;
+		try {
+			pc = new xrtc.webrtc.RTCPeerConnection(null, { optional: [{ RtpDataChannels: true }] });
+			media = true;
+			try {
+				pc.createDataChannel('_XRTCTEST', {reliable: false});
+				data = true;
+
+				var reliablePC = new xrtc.webrtc.RTCPeerConnection(null, {});
+				try {
+					var reliableDC = reliablePC.createDataChannel('_XRTCRELIABLETEST', { reliable: true });
+					sctp = reliableDC.reliable;
+				} catch (e) {
+				}
+				reliablePC.close();
+			} catch (ignore) {
+			}
+		} catch (ignore) {
+		}
+
+		if (pc) {
+			pc.close();
+		}
+
+		return {
+			media: media,
+			data: data,
+			sctp: sctp
+		};
+	}();
+
 	xRtc.utils = {
 		newGuid: function() {
 			var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

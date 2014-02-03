@@ -43,24 +43,24 @@ goog.require('xRtc.commonError');
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			// **[Public API]:** Sends a message to remote user where `mesage` is message to send.
+			// **[Public API]:** Sends a message to remote user where `data` is message to send.
 
-			// **Note:** `mesage` can be as a `object` and as a `string`. In any case it is will be serialized to JSON and transferre to remote side
-			// using p2p connection.
-			send: function (message) {
+			// **Note:** `data` can be as a `string`. If you want to send a file then it should be serialized to binary string before.
+			send: function (data) {
 				var self = this;
 				logger.info('send', arguments);
 
-				// **Note:** Sometimes data channel state is closed but it is works fine. So no need to check data channel status before sending.
 				try {
-					var messageContainer = { message: message };
-					dataChannel.send(JSON.stringify(messageContainer));
-					self.trigger(events.sentMessage, messageContainer);
+					dataChannel.send(data);
+
+					
 				} catch (ex) {
 					var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
 					logger.error('error', sendingError);
 					self.trigger(events.error, sendingError);
 				}
+
+				self.trigger(events.sentMessage, data);
 			},
 
 			// **[Public API]:** Returns remote user for this data channel.
@@ -96,10 +96,8 @@ goog.require('xRtc.commonError');
 		};
 
 		function channelOnMessage(evt) {
-			var messageContainer = JSON.parse(evt.data);
-
-			logger.debug('message', messageContainer);
-			this.trigger(events.receivedMessage, messageContainer);
+			logger.debug('message', evt.data);
+			this.trigger(events.receivedMessage, evt.data);
 		}
 
 		function channelOnClose(evt) {

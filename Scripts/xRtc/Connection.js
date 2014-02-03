@@ -138,7 +138,7 @@ goog.require('xRtc.dataChannel');
 			localStreams = [],
 			remoteStreams = [],
 			dataChannels = [],
-			dataChannelNames = [],
+			dataChannelConfigs = [],
 			peerConnection = null,
 			checkConnectionStateIntervalId = null,
 			checkDisconnectedIceStateTimeoutId = null,
@@ -270,12 +270,19 @@ goog.require('xRtc.dataChannel');
 			// **[Public API]:** It is public method of `connection` object. This method should be used for creating `xRtc.DataChannel` for the `connection`.
 			// Names of the data channels should be unique in context of any `connection`.
 			// **Note: ** This method can be used only on `connectionCreated` (`xRtc.Room.events.connectionCreated`) event of the `xRtc.Room` object otherwise exception will be thrown.
-			createDataChannel: function (name) {
+			// It take following parameters:
+
+			// * `name`. Name of the data channel. Name of the data channel should be unique among all data channels of the `xrtc.Connection` object.
+			// * `config`. This configuration properties can be used to configure properties of the underlying channel such as binaryType , etc. It is optional parameter.
+			createDataChannel: function (name, config) {
 				if (connectionIsOpened) {
 					throwExceptionOfWrongmethodCall('createDataChannel');
 				}
 
-				dataChannelNames.push(name);
+				//binaryType === 'blob'
+				// binaryType = webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? "arraybuffer" : "blob";
+
+				dataChannelConfigs.push({ name: name, config: config });
 			},
 
 			// **[Public API]:** It is public method of `connection` object. This method should be used for accessing 'specific user data' of the connection.
@@ -600,16 +607,16 @@ goog.require('xRtc.dataChannel');
 				}
 
 				// Create data channnels which were created(registered for creation) before.
-				for (var i = 0, len = dataChannelNames.length; i < len; i++) {
-					createDataChannel.call(this, dataChannelNames[i]);
+				for (var i = 0, len = dataChannelConfigs.length; i < len; i++) {
+					createDataChannel.call(this, dataChannelConfigs[i]);
 				}
 
 				callCallback();
 			}
 		}
 
-		// Internal helper method which creates new instance of DataChannel by channel name.
-		function createDataChannel(name) {
+		// Internal helper method which creates new instance of DataChannel by channel source `{name, config}`.
+		function createDataChannel(dataChannelConfig) {
 			var self = this;
 			try {
 				// *FF 19-21(and 18 maybe)*: Data channels should be created after connection establishment.
@@ -624,10 +631,25 @@ goog.require('xRtc.dataChannel');
 				// for earlier versions exception will be thrown: Component returned failure code:
 				// 0x80004005 (NS_ERROR_FAILURE) [IPeerConnection.createDataChannel]" nsresult: "0x80004005 (NS_ERROR_FAILURE)"
 
-				// Reliable channel is analogous to a TCP socket and unreliable channel is analogous to a UDP socket.
-				// Reliable data channels currently supports only by *FF*. It is default value.
-				// In *Chrome* reliable channels doesn't implemented yet: <https://code.google.com/p/webrtc/issues/detail?id=1430>
-				var dc = peerConnection.createDataChannel(name, webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? { reliable: false } : {});
+				// Reliable channel is chanel which works using RTCP protocol, unreliable channels uses UDP protocol.
+				// RTCP data channels supported only in *FF* and *Chrome 31+*.
+
+				// Data channels works in following cases:
+
+				// * FireFox 22+ to FireFox 22+;
+				// * Chrome 31+ to Chrome 31+ (Note: Chrome 32+ data channels can work only with Chrome 32+);
+				// * FireFox 26+ to Chrome 32+;
+				// * Chrome 32+ to FireFox 26+.
+
+				var dc;
+				if (xrtc.webrtc.supports.sctp) {
+					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
+					// Default value of `binaryType` for Chrome is `'arraybuffer'`, for FireFox is `'blob'` and `'blob'` doesn't supported by Chrome at now (Chrome 32).
+					dc.binaryType = 'arraybuffer';
+				} else {
+					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+				}
+
 				var newDataChannel = new xrtc.DataChannel(dc, remoteUser);
 				dataChannels.push(newDataChannel);
 				// **Note:** `peerConnection.ondatachannel` fires only for the remote side. So this event is required.
@@ -635,7 +657,7 @@ goog.require('xRtc.dataChannel');
 			} catch (ex) {
 				var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel.", ex);
 				logger.error('createDataChannel', error);
-				self.trigger(xrtc.Connection.events.dataChannelCreationError, { connection: self, channelName: name, error: error });
+				self.trigger(xrtc.Connection.events.dataChannelCreationError, { connection: self, channelConfig: dataChannelConfig, error: error });
 			}
 		}
 
@@ -922,7 +944,7 @@ goog.require('xRtc.dataChannel');
 			// *Chrome* does not yet do DTLS-SRTP by default whereas *Firefox* only does DTLS-SRTP. In order to get interop,
 			// you must supply Chrome with a PC constructor constraint to enable DTLS: `{ 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}`
 			peerConnectionOptions: {
-				optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
+				optional: [{ RtpDataChannels: !xrtc.webrtc.supports.sctp }, { DtlsSrtpKeyAgreement: true }]
 			}
 		}
 	});

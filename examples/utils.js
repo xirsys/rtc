@@ -93,10 +93,10 @@ var utils = {};
 				.on( xrtc.Connection.events.dataChannelCreated, function (data) {
 					_textChannel = data.channel;
 					utils.subscribe(_textChannel, xrtc.DataChannel.events);
-					_textChannel.on(xrtc.DataChannel.events.sentMessage, function (msgData) {
-						utils.addMessage(_userName, msgData.message, true);
-					}).on(xrtc.DataChannel.events.receivedMessage, function (msgData) {
-						utils.addMessage(_textChannel.getRemoteUser().name, msgData.message);
+					_textChannel.on(xrtc.DataChannel.events.sentMessage, function (data) {
+						utils.addMessage(_userName, data, true);
+					}).on(xrtc.DataChannel.events.receivedMessage, function (data) {
+						utils.addMessage(_textChannel.getRemoteUser().name, data);
 					});
 					utils.addMessage("SYSTEM", "You are now connected.");
 
@@ -120,10 +120,12 @@ var utils = {};
 
 			var video = (data.isLocalStream) ? $('#vid1').get(0) : $('#vid2').get(0);
 
-			stream.assignTo(video);
+			if (video) {
+				stream.assignTo(video);
 
-			if ( data.isLocalStream ) {
-				video.volume = 0;
+				if (data.isLocalStream) {
+					video.volume = 0;
+				}
 			}
 		},
 
@@ -199,7 +201,5 @@ var utils = {};
 				}
 			}
 		}
-
 	});
-
 })(utils, xRtc);

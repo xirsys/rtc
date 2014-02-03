@@ -133,6 +133,36 @@ goog.provide("xRtc.common");
   MediaStream:exports.mozMediaStream || (exports.webkitMediaStream || exports.MediaStream), supportedBrowsers:{chrome:"chrome", firefox:"firefox"}};
   xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : xrtc.webrtc.supportedBrowsers.chrome;
   xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox ? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]) : parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+  xrtc.webrtc.supports = function() {
+    if (typeof xrtc.webrtc.RTCPeerConnection === "undefined") {
+      return{};
+    }
+    var media = false;
+    var data = false;
+    var sctp = false;
+    var pc;
+    try {
+      pc = new xrtc.webrtc.RTCPeerConnection(null, {optional:[{RtpDataChannels:true}]});
+      media = true;
+      try {
+        pc.createDataChannel("_XRTCTEST", {reliable:false});
+        data = true;
+        var reliablePC = new xrtc.webrtc.RTCPeerConnection(null, {});
+        try {
+          var reliableDC = reliablePC.createDataChannel("_XRTCRELIABLETEST", {reliable:true});
+          sctp = reliableDC.reliable;
+        } catch (e) {
+        }
+        reliablePC.close();
+      } catch (ignore) {
+      }
+    } catch (ignore) {
+    }
+    if (pc) {
+      pc.close();
+    }
+    return{media:media, data:data, sctp:sctp};
+  }();
   xRtc.utils = {newGuid:function() {
     var guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
       var r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
@@ -381,18 +411,17 @@ goog.require("xRtc.commonError");
     dataChannel.onclose = proxy(channelOnClose);
     dataChannel.onerror = proxy(channelOnError);
     dataChannel.ondatachannel = proxy(channelOnDatachannel);
-    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, send:function(message) {
+    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, send:function(data) {
       var self = this;
       logger.info("send", arguments);
       try {
-        var messageContainer = {message:message};
-        dataChannel.send(JSON.stringify(messageContainer));
-        self.trigger(events.sentMessage, messageContainer);
+        dataChannel.send(data);
       } catch (ex) {
         var sendingError = new xrtc.CommonError("onerror", 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
         logger.error("error", sendingError);
         self.trigger(events.error, sendingError);
       }
+      self.trigger(events.sentMessage, data);
     }, getRemoteUser:function() {
       return remoteUser;
     }, getName:function() {
@@ -406,9 +435,8 @@ goog.require("xRtc.commonError");
       this.trigger(events.open, data);
     }
     function channelOnMessage(evt) {
-      var messageContainer = JSON.parse(evt.data);
-      logger.debug("message", messageContainer);
-      this.trigger(events.receivedMessage, messageContainer);
+      logger.debug("message", evt.data);
+      this.trigger(events.receivedMessage, evt.data);
     }
     function channelOnClose(evt) {
       var data = {event:evt};
@@ -824,7 +852,7 @@ goog.require("xRtc.dataChannel");
     }
   });
   xrtc.Class(xrtc, "Connection", function Connection(connId, ud, remoteUser, hc, am, data) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), userData = ud, authManager = am || new xRtc.AuthManager, localStreams = [], remoteStreams = [], dataChannels = [], dataChannelNames = [], peerConnection = null, checkConnectionStateIntervalId = null, checkDisconnectedIceStateTimeoutId = null, handshakeController = hc, iceFilter = null, iceServers = null, connectionEstablished = false, iceCandidates = [], connectionId = connId, connectionData = data, connectionIsOpened = 
+    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), userData = ud, authManager = am || new xRtc.AuthManager, localStreams = [], remoteStreams = [], dataChannels = [], dataChannelConfigs = [], peerConnection = null, checkConnectionStateIntervalId = null, checkDisconnectedIceStateTimeoutId = null, handshakeController = hc, iceFilter = null, iceServers = null, connectionEstablished = false, iceCandidates = [], connectionId = connId, connectionData = data, connectionIsOpened = 
     false;
     subscribeToHandshakeControllerEvents.call(this);
     xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, getId:function() {
@@ -878,11 +906,11 @@ goog.require("xRtc.dataChannel");
       var streamData = {connection:this, stream:xrtcStream, user:{id:userData.name, name:userData.name}};
       logger.debug("addLocalStream", streamData);
       this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
-    }, createDataChannel:function(name) {
+    }, createDataChannel:function(name, config) {
       if (connectionIsOpened) {
         throwExceptionOfWrongmethodCall("createDataChannel");
       }
-      dataChannelNames.push(name);
+      dataChannelConfigs.push({name:name, config:config});
     }, getData:function() {
       return connectionData;
     }, getState:function() {
@@ -1053,23 +1081,29 @@ goog.require("xRtc.dataChannel");
         for (var i = 0, len = localStreams.length;i < len;i++) {
           peerConnection.addStream(localStreams[i].getStream());
         }
-        for (var i = 0, len = dataChannelNames.length;i < len;i++) {
-          createDataChannel.call(this, dataChannelNames[i]);
+        for (var i = 0, len = dataChannelConfigs.length;i < len;i++) {
+          createDataChannel.call(this, dataChannelConfigs[i]);
         }
         callCallback();
       }
     }
-    function createDataChannel(name) {
+    function createDataChannel(dataChannelConfig) {
       var self = this;
       try {
-        var dc = peerConnection.createDataChannel(name, webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? {reliable:false} : {});
+        var dc;
+        if (xrtc.webrtc.supports.sctp) {
+          dc = peerConnection.createDataChannel(dataChannelConfig.name, {reliable:true});
+          dc.binaryType = "arraybuffer";
+        } else {
+          dc = peerConnection.createDataChannel(dataChannelConfig.name, {reliable:false});
+        }
         var newDataChannel = new xrtc.DataChannel(dc, remoteUser);
         dataChannels.push(newDataChannel);
         self.trigger(xrtc.Connection.events.dataChannelCreated, {connection:self, channel:newDataChannel});
       } catch (ex) {
         var error = new xrtc.CommonError("createDataChannel", "Can't create DataChannel.", ex);
         logger.error("createDataChannel", error);
-        self.trigger(xrtc.Connection.events.dataChannelCreationError, {connection:self, channelName:name, error:error});
+        self.trigger(xrtc.Connection.events.dataChannelCreationError, {connection:self, channelConfig:dataChannelConfig, error:error});
       }
     }
     function handleIceCandidate(ice) {
@@ -1189,7 +1223,7 @@ goog.require("xRtc.dataChannel");
     }
   });
   xrtc.Connection.extend({events:{connectionOpening:"connectionopening", connectionEstablishing:"connectionestablishing", connectionEstablished:"connectionestablished", connectionClosed:"connectionclosed", localStreamAdded:"localstreamadded", remoteStreamAdded:"remotestreamadded", dataChannelCreated:"datachannelcreated", dataChannelCreationError:"datachannelcreationerror", stateChanged:"statechanged", createOfferError:"createoffererror", offerSent:"offersent", offerReceived:"offerreceived", createAnswerError:"createanswererror", 
-  answerSent:"answersent", answerReceived:"answerreceived", iceSent:"icesent", iceAdded:"iceadded"}, connectionTypes:{"default":"default", direct:"direct", server:"server"}, settings:{offerOptions:{optional:[], mandatory:{OfferToReceiveAudio:true, OfferToReceiveVideo:true}}, answerOptions:{optional:[], mandatory:{OfferToReceiveAudio:true, OfferToReceiveVideo:true}}, peerConnectionOptions:{optional:[{RtpDataChannels:true}, {DtlsSrtpKeyAgreement:true}]}}});
+  answerSent:"answersent", answerReceived:"answerreceived", iceSent:"icesent", iceAdded:"iceadded"}, connectionTypes:{"default":"default", direct:"direct", server:"server"}, settings:{offerOptions:{optional:[], mandatory:{OfferToReceiveAudio:true, OfferToReceiveVideo:true}}, answerOptions:{optional:[], mandatory:{OfferToReceiveAudio:true, OfferToReceiveVideo:true}}, peerConnectionOptions:{optional:[{RtpDataChannels:!xrtc.webrtc.supports.sctp}, {DtlsSrtpKeyAgreement:true}]}}});
   if (webrtc.RTCPeerConnection.prototype && !webrtc.RTCPeerConnection.prototype.getLocalStreams) {
     xrtc.Class.extend(webrtc.RTCPeerConnection.prototype, {getLocalStreams:function() {
       return this.localStreams;
