@@ -52,15 +52,13 @@ goog.require('xRtc.commonError');
 
 				try {
 					dataChannel.send(data);
-
-					
 				} catch (ex) {
 					var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
 					logger.error('error', sendingError);
 					self.trigger(events.error, sendingError);
 				}
 
-				self.trigger(events.sentMessage, data);
+				self.trigger(events.sentMessage, { data: data });
 			},
 
 			// **[Public API]:** Returns remote user for this data channel.
@@ -97,7 +95,7 @@ goog.require('xRtc.commonError');
 
 		function channelOnMessage(evt) {
 			logger.debug('message', evt.data);
-			this.trigger(events.receivedMessage, evt.data);
+			this.trigger(events.receivedMessage, { data: evt.data });
 		}
 
 		function channelOnClose(evt) {

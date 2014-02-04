@@ -93,10 +93,10 @@ var utils = {};
 				.on( xrtc.Connection.events.dataChannelCreated, function (data) {
 					_textChannel = data.channel;
 					utils.subscribe(_textChannel, xrtc.DataChannel.events);
-					_textChannel.on(xrtc.DataChannel.events.sentMessage, function (data) {
-						utils.addMessage(_userName, data, true);
-					}).on(xrtc.DataChannel.events.receivedMessage, function (data) {
-						utils.addMessage(_textChannel.getRemoteUser().name, data);
+					_textChannel.on(xrtc.DataChannel.events.sentMessage, function (evt) {
+						utils.addMessage(_userName, evt.data, true);
+					}).on(xrtc.DataChannel.events.receivedMessage, function (evt) {
+						utils.addMessage(_textChannel.getRemoteUser().name, evt.data);
 					});
 					utils.addMessage("SYSTEM", "You are now connected.");
 

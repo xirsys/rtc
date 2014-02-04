@@ -179,10 +179,10 @@ var chat = {};
 
 							textChannel.on(xrtc.DataChannel.events.error, function (error) {
 								chat.addSystemMessage(error.message + " Please, see log.");
-							}).on(xrtc.DataChannel.events.sentMessage, function (data) {
-								chat.addMessage(roomInfo.user.name, data, true);
-							}).on(xrtc.DataChannel.events.receivedMessage, function (data) {
-								chat.addMessage(textChannel.getRemoteUser().name, data);
+							}).on(xrtc.DataChannel.events.sentMessage, function (evt) {
+								chat.addMessage(roomInfo.user.name, evt.data, true);
+							}).on(xrtc.DataChannel.events.receivedMessage, function (evt) {
+								chat.addMessage(textChannel.getRemoteUser().name, evt.data);
 							});
 						})
 						.on(xrtc.Connection.events.dataChannelCreationError, function (data) {

@@ -485,6 +485,8 @@ goog.require('xRtc.dataChannel');
 				// <http://stackoverflow.com/questions/15484729/why-doesnt-onicecandidate-work>.
 				peerConnection.onicecandidate = proxy(onIceCandidate);
 
+				//peerConnection.onnegotiationneeded = function(evt) {};
+
 				peerConnection.onstatechange = // M25-M26
 					// *FF* 20.0.1 (*FF* 21+ works fine): during assigning `peerConnection.onsignalingstatechange` field *FF* throw following error:
 					// NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative
@@ -944,6 +946,7 @@ goog.require('xRtc.dataChannel');
 			// *Chrome* does not yet do DTLS-SRTP by default whereas *Firefox* only does DTLS-SRTP. In order to get interop,
 			// you must supply Chrome with a PC constructor constraint to enable DTLS: `{ 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}`
 			peerConnectionOptions: {
+				//optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 				optional: [{ RtpDataChannels: !xrtc.webrtc.supports.sctp }, { DtlsSrtpKeyAgreement: true }]
 			}
 		}

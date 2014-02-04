@@ -421,7 +421,7 @@ goog.require("xRtc.commonError");
         logger.error("error", sendingError);
         self.trigger(events.error, sendingError);
       }
-      self.trigger(events.sentMessage, data);
+      self.trigger(events.sentMessage, {data:data});
     }, getRemoteUser:function() {
       return remoteUser;
     }, getName:function() {
@@ -436,7 +436,7 @@ goog.require("xRtc.commonError");
     }
     function channelOnMessage(evt) {
       logger.debug("message", evt.data);
-      this.trigger(events.receivedMessage, evt.data);
+      this.trigger(events.receivedMessage, {data:evt.data});
     }
     function channelOnClose(evt) {
       var data = {event:evt};

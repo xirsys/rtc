@@ -221,15 +221,13 @@ goog.require(&#39;xRtc.commonError&#39;);
 
 				try {
 					dataChannel.send(data);
-
-					
 				} catch (ex) {
 					var sendingError = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel sending error. Channel state is &quot;&#39; + self.getState() + &#39;&quot;&#39;, ex);
 					logger.error(&#39;error&#39;, sendingError);
 					self.trigger(events.error, sendingError);
 				}
 
-				self.trigger(events.sentMessage, data);
+				self.trigger(events.sentMessage, { data: data });
 			},
 
 </code></pre>
@@ -299,7 +297,7 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 
 		function channelOnMessage(evt) {
 			logger.debug(&#39;message&#39;, evt.data);
-			this.trigger(events.receivedMessage, evt.data);
+			this.trigger(events.receivedMessage, { data: evt.data });
 		}
 
 		function channelOnClose(evt) {
