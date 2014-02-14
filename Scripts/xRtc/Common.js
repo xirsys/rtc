@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.1 ####
+﻿// #### Version 1.5.0####
 
 // Some common information. E.g. current browser, current browser version, etc.
 

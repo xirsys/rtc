@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.1 ####
+﻿// #### Version 1.5.0####
 
 // Special class which used for all unhandled errors in the xRtc library.
 

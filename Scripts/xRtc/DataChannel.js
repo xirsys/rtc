@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.1 ####
+﻿// #### Version 1.5.0####
 
 // `xRtc.DataChannel` is one of the main objects of **xRtc** library. This object can be used for trenferring any information to remote side.
 
@@ -27,7 +27,7 @@ goog.require('xRtc.commonError');
 
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, 'DataChannel', function (dataChannel, remoteUser) {
+	xrtc.Class(xrtc, 'DataChannel', function (dataChannel, connection) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			events = xrtc.DataChannel.events;
@@ -43,27 +43,19 @@ goog.require('xRtc.commonError');
 		xrtc.Class.extend(this, xrtc.EventDispatcher, {
 			_logger: logger,
 
-			// **[Public API]:** Sends a message to remote user where `data` is message to send.
-
-			// **Note:** `data` can be as a `string`. If you want to send a file then it should be serialized to binary string before.
-			send: function (data) {
-				var self = this;
-				logger.info('send', arguments);
-
-				try {
-					dataChannel.send(data);
-				} catch (ex) {
-					var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
-					logger.error('error', sendingError);
-					self.trigger(events.error, sendingError);
-				}
-
-				self.trigger(events.sentMessage, { data: data });
+			// **[Public API]:** Returns unique data channel id.
+			getId: function() {
+				return connection.getId() + this.getName();
 			},
 
 			// **[Public API]:** Returns remote user for this data channel.
 			getRemoteUser: function () {
-				return remoteUser;
+				return connection.getRemoteUser();
+			},
+
+			// **[Public API]:** Returns parent connection.
+			getConnection: function() {
+				return connection;
 			},
 
 			// **[Public API]:** Returns unique `name` of the data channel.
@@ -84,6 +76,24 @@ goog.require('xRtc.commonError');
 				*/
 
 				return dataChannel.readyState.toLowerCase();
+			},
+
+			// **[Public API]:** Sends a message to remote user where `data` is message to send.
+
+			// **Note:** `data` can be as a `string`. If you want to send a file then it should be serialized to binary string before.
+			send: function (data) {
+				var self = this;
+				logger.info('send', arguments);
+
+				try {
+					dataChannel.send(data);
+				} catch (ex) {
+					var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
+					logger.error('error', sendingError);
+					self.trigger(events.error, sendingError);
+				}
+
+				self.trigger(events.sentMessage, { data: data });
 			}
 		});
 

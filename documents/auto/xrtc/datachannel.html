@@ -74,7 +74,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_1">&#182;</a>
 							</div>
-							<h4>Version 1.4.1</h4>
+							<h4>Version 1.5.0</h4>
 
 						</td>
 						<td class="code">
@@ -163,7 +163,7 @@ goog.require(&#39;xRtc.commonError&#39;);
 
 	var xrtc = exports.xRtc;
 
-	xrtc.Class(xrtc, &#39;DataChannel&#39;, function (dataChannel, remoteUser) {
+	xrtc.Class(xrtc, &#39;DataChannel&#39;, function (dataChannel, connection) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
 			events = xrtc.DataChannel.events;
@@ -198,11 +198,14 @@ goog.require(&#39;xRtc.commonError&#39;);
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_8">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> Sends a message to remote user where <code>data</code> is message to send.</p>
+							<p><strong>[Public API]:</strong> Returns unique data channel id.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>
+							<pre><code class='prettyprint'>			getId: function() {
+				return connection.getId() + this.getName();
+			},
+
 </code></pre>
 						</td>
 					</tr>
@@ -211,23 +214,12 @@ goog.require(&#39;xRtc.commonError&#39;);
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
-							<p><strong>Note:</strong> <code>data</code> can be as a <code>string</code>. If you want to send a file then it should be serialized to binary string before.</p>
+							<p><strong>[Public API]:</strong> Returns remote user for this data channel.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			send: function (data) {
-				var self = this;
-				logger.info(&#39;send&#39;, arguments);
-
-				try {
-					dataChannel.send(data);
-				} catch (ex) {
-					var sendingError = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel sending error. Channel state is &quot;&#39; + self.getState() + &#39;&quot;&#39;, ex);
-					logger.error(&#39;error&#39;, sendingError);
-					self.trigger(events.error, sendingError);
-				}
-
-				self.trigger(events.sentMessage, { data: data });
+							<pre><code class='prettyprint'>			getRemoteUser: function () {
+				return connection.getRemoteUser();
 			},
 
 </code></pre>
@@ -238,12 +230,12 @@ goog.require(&#39;xRtc.commonError&#39;);
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> Returns remote user for this data channel.</p>
+							<p><strong>[Public API]:</strong> Returns parent connection.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			getRemoteUser: function () {
-				return remoteUser;
+							<pre><code class='prettyprint'>			getConnection: function() {
+				return connection;
 			},
 
 </code></pre>
@@ -286,6 +278,46 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 				*/
 
 				return dataChannel.readyState.toLowerCase();
+			},
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_13">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_13">&#182;</a>
+							</div>
+							<p><strong>[Public API]:</strong> Sends a message to remote user where <code>data</code> is message to send.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_14">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_14">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> <code>data</code> can be as a <code>string</code>. If you want to send a file then it should be serialized to binary string before.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			send: function (data) {
+				var self = this;
+				logger.info(&#39;send&#39;, arguments);
+
+				try {
+					dataChannel.send(data);
+				} catch (ex) {
+					var sendingError = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel sending error. Channel state is &quot;&#39; + self.getState() + &#39;&quot;&#39;, ex);
+					logger.error(&#39;error&#39;, sendingError);
+					self.trigger(events.error, sendingError);
+				}
+
+				self.trigger(events.sentMessage, { data: data });
 			}
 		});
 
@@ -323,10 +355,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_15">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_15">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.DataChannel</code> object.</p>
 
@@ -344,10 +376,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_16">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_16">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of states of the <code>xRtc.DataChannel</code> object.</p>
 

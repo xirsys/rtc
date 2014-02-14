@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.1 ####
+﻿// #### Version 1.5.0####
 
 // `xRtc.getUserMedia` is the special functions for accessing media data:
 

@@ -404,14 +404,24 @@ goog.require("xRtc.commonError");
     exports.xRtc = {};
   }
   var xrtc = exports.xRtc;
-  xrtc.Class(xrtc, "DataChannel", function(dataChannel, remoteUser) {
+  xrtc.Class(xrtc, "DataChannel", function(dataChannel, connection) {
     var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events;
     dataChannel.onopen = proxy(channelOnOpen);
     dataChannel.onmessage = proxy(channelOnMessage);
     dataChannel.onclose = proxy(channelOnClose);
     dataChannel.onerror = proxy(channelOnError);
     dataChannel.ondatachannel = proxy(channelOnDatachannel);
-    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, send:function(data) {
+    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, getId:function() {
+      return connection.getId() + this.getName();
+    }, getRemoteUser:function() {
+      return connection.getRemoteUser();
+    }, getConnection:function() {
+      return connection;
+    }, getName:function() {
+      return dataChannel.label;
+    }, getState:function() {
+      return dataChannel.readyState.toLowerCase();
+    }, send:function(data) {
       var self = this;
       logger.info("send", arguments);
       try {
@@ -422,12 +432,6 @@ goog.require("xRtc.commonError");
         self.trigger(events.error, sendingError);
       }
       self.trigger(events.sentMessage, {data:data});
-    }, getRemoteUser:function() {
-      return remoteUser;
-    }, getName:function() {
-      return dataChannel.label;
-    }, getState:function() {
-      return dataChannel.readyState.toLowerCase();
     }});
     function channelOnOpen(evt) {
       var data = {event:evt};
@@ -1027,7 +1031,7 @@ goog.require("xRtc.dataChannel");
         }
         peerConnection.onicechange = peerConnection.oniceconnectionstatechange = proxy(onIceStateChange);
         peerConnection.ondatachannel = function(channelData) {
-          var newDataChannel = new xrtc.DataChannel(channelData.channel, remoteUser);
+          var newDataChannel = new xrtc.DataChannel(channelData.channel, self);
           dataChannels.push(newDataChannel);
           self.trigger(xrtc.Connection.events.dataChannelCreated, {connection:self, channel:newDataChannel});
         };
@@ -1097,7 +1101,7 @@ goog.require("xRtc.dataChannel");
         } else {
           dc = peerConnection.createDataChannel(dataChannelConfig.name, {reliable:false});
         }
-        var newDataChannel = new xrtc.DataChannel(dc, remoteUser);
+        var newDataChannel = new xrtc.DataChannel(dc, self);
         dataChannels.push(newDataChannel);
         self.trigger(xrtc.Connection.events.dataChannelCreated, {connection:self, channel:newDataChannel});
       } catch (ex) {

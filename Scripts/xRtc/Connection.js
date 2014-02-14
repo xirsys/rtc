@@ -1,4 +1,4 @@
-﻿// #### Version 1.4.1 ####
+﻿// #### Version 1.5.0 ####
 
 // `xRtc.Connection` is one of the main objects of **xRtc** library. This object can not be created manually.
 // For the creation of connection need to use `xRtc.Room` object.
@@ -513,7 +513,7 @@ goog.require('xRtc.dataChannel');
 					proxy(onIceStateChange);
 
 				peerConnection.ondatachannel = function (channelData) {
-					var newDataChannel = new xrtc.DataChannel(channelData.channel, remoteUser);
+					var newDataChannel = new xrtc.DataChannel(channelData.channel, self);
 					dataChannels.push(newDataChannel);
 					self.trigger(xrtc.Connection.events.dataChannelCreated, { connection: self, channel: newDataChannel });
 				};
@@ -652,7 +652,7 @@ goog.require('xRtc.dataChannel');
 					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
 				}
 
-				var newDataChannel = new xrtc.DataChannel(dc, remoteUser);
+				var newDataChannel = new xrtc.DataChannel(dc, self);
 				dataChannels.push(newDataChannel);
 				// **Note:** `peerConnection.ondatachannel` fires only for the remote side. So this event is required.
 				self.trigger(xrtc.Connection.events.dataChannelCreated, { connection: self, channel: newDataChannel });

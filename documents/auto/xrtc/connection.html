@@ -74,7 +74,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_1">&#182;</a>
 							</div>
-							<h4>Version 1.4.1</h4>
+							<h4>Version 1.5.0</h4>
 
 						</td>
 						<td class="code">
@@ -1324,7 +1324,7 @@ NS<em>ERROR</em>XPC<em>CANT</em>MODIFY<em>PROP</em>ON_WN: Cannot modify properti
 					proxy(onIceStateChange);
 
 				peerConnection.ondatachannel = function (channelData) {
-					var newDataChannel = new xrtc.DataChannel(channelData.channel, remoteUser);
+					var newDataChannel = new xrtc.DataChannel(channelData.channel, self);
 					dataChannels.push(newDataChannel);
 					self.trigger(xrtc.Connection.events.dataChannelCreated, { connection: self, channel: newDataChannel });
 				};
@@ -1641,7 +1641,7 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
 				}
 
-				var newDataChannel = new xrtc.DataChannel(dc, remoteUser);
+				var newDataChannel = new xrtc.DataChannel(dc, self);
 				dataChannels.push(newDataChannel);
 </code></pre>
 						</td>
