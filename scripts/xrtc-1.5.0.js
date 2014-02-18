@@ -1314,8 +1314,9 @@ goog.require("xRtc.serverConnector");
         var error = xrtc.CommonError("connect", "Target user not found.");
         this.trigger(xrtc.Room.events.error, {userId:targetUserId, error:error});
       } else {
-        var connectionDataContainer = connectionOptions && connectionOptions.data ? connectionOptions.data : null;
-        createConnection.call(this, xrtc.utils.newGuid(), currentUserData, targetUser, connectionDataContainer, function(connectionData) {
+        var connectionMetadata = connectionOptions && connectionOptions.data ? connectionOptions.data : null;
+        var connectionId = connectionOptions && connectionOptions.id ? connectionOptions.id : xrtc.utils.newGuid();
+        createConnection.call(this, connectionId, currentUserData, targetUser, connectionMetadata, function(connectionData) {
           var connection = connectionData.connection;
           if (connectionOptions && connectionOptions.createDataChannel === "auto") {
             connection.createDataChannel("autoDataChannel");

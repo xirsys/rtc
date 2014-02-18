@@ -591,6 +591,7 @@ on <code>the xRtc.Connection</code> <strong>one</strong> data channel with name 
 <li><code>room.connect("My friend name", { data: { customField: "Hello World!" } });</code></li>
 <li><code>room.connect("My friend name", { data: "Hello World!", createDataChannel : "auto" });</code></li>
 <li><code>room.connect("My friend name", { createDataChannel : "auto" });</code></li>
+<li><code>room.connect("My friend name", { id: "customConnectionId", data: "Hello World!", createDataChannel : "auto" });</code></li>
 </ul>
 
 						</td>
@@ -605,9 +606,10 @@ on <code>the xRtc.Connection</code> <strong>one</strong> data channel with name 
 					var error = xrtc.CommonError(&#39;connect&#39;, &#39;Target user not found.&#39;);
 					this.trigger(xrtc.Room.events.error, { userId: targetUserId, error: error });
 				} else {
-					var connectionDataContainer = (connectionOptions &amp;&amp; connectionOptions.data) ? connectionOptions.data : null;
+					var connectionMetadata = (connectionOptions &amp;&amp; connectionOptions.data) ? connectionOptions.data : null;
+					var connectionId = (connectionOptions &amp;&amp; connectionOptions.id) ? connectionOptions.id : xrtc.utils.newGuid();
 
-					createConnection.call(this, xrtc.utils.newGuid(), currentUserData, targetUser, connectionDataContainer, function (connectionData) {
+					createConnection.call(this, connectionId, currentUserData, targetUser, connectionMetadata, function (connectionData) {
 						var connection = connectionData.connection;
 
 						if (connectionOptions &amp;&amp; connectionOptions.createDataChannel === &#39;auto&#39;) {

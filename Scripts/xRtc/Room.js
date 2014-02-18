@@ -192,6 +192,7 @@ goog.require('xRtc.serverConnector');
 			// * `room.connect("My friend name", { data: { customField: "Hello World!" } });`
 			// * `room.connect("My friend name", { data: "Hello World!", createDataChannel : "auto" });`
 			// * `room.connect("My friend name", { createDataChannel : "auto" });`
+			// * `room.connect("My friend name", { id: "customConnectionId", data: "Hello World!", createDataChannel : "auto" });`
 			connect: function (targetUserId, connectionOptions) {
 				if (!roomInfo.user) {
 					throw new xrtc.CommonError('connect', 'Need to enter the room before you connect someone.');
@@ -202,9 +203,10 @@ goog.require('xRtc.serverConnector');
 					var error = xrtc.CommonError('connect', 'Target user not found.');
 					this.trigger(xrtc.Room.events.error, { userId: targetUserId, error: error });
 				} else {
-					var connectionDataContainer = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
+					var connectionMetadata = (connectionOptions && connectionOptions.data) ? connectionOptions.data : null;
+					var connectionId = (connectionOptions && connectionOptions.id) ? connectionOptions.id : xrtc.utils.newGuid();
 
-					createConnection.call(this, xrtc.utils.newGuid(), currentUserData, targetUser, connectionDataContainer, function (connectionData) {
+					createConnection.call(this, connectionId, currentUserData, targetUser, connectionMetadata, function (connectionData) {
 						var connection = connectionData.connection;
 
 						if (connectionOptions && connectionOptions.createDataChannel === 'auto') {
