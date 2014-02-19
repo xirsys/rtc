@@ -348,11 +348,12 @@ goog.require('xRtc.serverConnector');
 			var self = this;
 
 			var incomingConnectionData = {
-				user: getUserById(data.senderId)
+				user: getUserById(data.senderId),
+				connectionId: data.connectionId,
+				data: data.connectionData
 			};
 
 			if (!roomOptions.autoReply) {
-				incomingConnectionData.data = data.connectionData;
 				incomingConnectionData.accept = proxy(onAcceptCall);
 				incomingConnectionData.decline = proxy(onDeclineCall);
 			}

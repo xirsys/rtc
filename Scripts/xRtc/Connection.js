@@ -15,6 +15,8 @@ goog.require('xRtc.commonError');
 goog.require('xRtc.stream');
 goog.require('xRtc.dataChannel');
 
+// **Todo:** need to think of unsubscribing from all events after connection will be closed. The same for all XTC objects.
+
 (function (exports) {
 	'use strict';
 
