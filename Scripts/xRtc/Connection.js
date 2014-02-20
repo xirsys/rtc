@@ -813,8 +813,8 @@ goog.require('xRtc.dataChannel');
 				connectionIsOpened = false;
 
 				var closeConnectionData = {
-					connection: self,
-					user: remoteUser
+					user: remoteUser,
+					connection: self
 				};
 
 				remoteUser = null;

@@ -1212,7 +1212,7 @@ goog.require("xRtc.dataChannel");
         iceServers = null;
         connectionEstablished = false;
         connectionIsOpened = false;
-        var closeConnectionData = {connection:self, user:remoteUser};
+        var closeConnectionData = {user:remoteUser, connection:self};
         remoteUser = null;
         this.trigger(xrtc.Connection.events.connectionClosed, closeConnectionData);
       }
@@ -1428,7 +1428,10 @@ goog.require("xRtc.serverConnector");
         if (targetHcObject) {
           if (targetHcObject.userId === sender.id) {
             if (data.byeData && data.byeData.type === byeTypes.decline || !targetHcObject.hc) {
-              this.trigger(xrtc.Room.events.connectionDeclined, {user:sender, connection:getConnectionById(data.connectionId), data:data.byeData});
+              var declinedConnection = getConnectionById(data.connectionId);
+              if (declinedConnection) {
+                this.trigger(xrtc.Room.events.connectionDeclined, {user:sender, connection:declinedConnection, data:data.byeData});
+              }
             }
             if (targetHcObject.hc) {
               targetHcObject.hc.trigger(hcEvents.receiveBye);
