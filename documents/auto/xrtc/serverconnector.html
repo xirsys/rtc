@@ -263,7 +263,7 @@ goog.require(&#39;xRtc.logger&#39;);
 					}
 				};
 
-				send(request);
+				send(request, true);
 			}
 		});
 
@@ -279,19 +279,20 @@ goog.require(&#39;xRtc.logger&#39;);
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>		function send(request) {
-			if (!socket) {
+							<pre><code class='prettyprint'>		function send(request, ignore) {
+			var requestObject = formatRequest.call(this, request);
+			var requestJson = JSON.stringify(requestObject);
+			if (socket) {
+				logger.debug(&#39;send&#39;, requestObject, requestJson);
+				socket.send(requestJson);
+			} else if (!ignore) {
 				var error = new xrtc.CommonError(&#39;send&#39;, &#39;Trying to call method without established connection&#39;, &#39;WebSocket is not connected!&#39;);
 				logger.error(&#39;send&#39;, error);
 
 				throw error;
+			} else {
+				logger.debug(&#39;send&#39;, &#39;The call was ignored because no server connection.&#39;, requestObject, requestJson);
 			}
-
-			var requestObject = formatRequest.call(this, request);
-			var requestJson = JSON.stringify(requestObject);
-
-			logger.debug(&#39;send&#39;, requestObject, requestJson);
-			socket.send(requestJson);
 		}
 
 		function getWebSocketUrl(callback) {

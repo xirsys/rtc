@@ -518,18 +518,23 @@ goog.require("xRtc.logger");
       send(request);
     }, sendBye:function(targetUserId, connectionId, byeData) {
       var request = {eventName:scEvents.receiveBye, targetUserId:targetUserId, data:{connectionId:connectionId, byeData:byeData || {}}};
-      send(request);
+      send(request, true);
     }});
-    function send(request) {
-      if (!socket) {
-        var error = new xrtc.CommonError("send", "Trying to call method without established connection", "WebSocket is not connected!");
-        logger.error("send", error);
-        throw error;
-      }
+    function send(request, ignore) {
       var requestObject = formatRequest.call(this, request);
       var requestJson = JSON.stringify(requestObject);
-      logger.debug("send", requestObject, requestJson);
-      socket.send(requestJson);
+      if (socket) {
+        logger.debug("send", requestObject, requestJson);
+        socket.send(requestJson);
+      } else {
+        if (!ignore) {
+          var error = new xrtc.CommonError("send", "Trying to call method without established connection", "WebSocket is not connected!");
+          logger.error("send", error);
+          throw error;
+        } else {
+          logger.debug("send", "The call was ignored because no server connection.", requestObject, requestJson);
+        }
+      }
     }
     function getWebSocketUrl(callback) {
       this.ajax(xrtc.ServerConnector.settings.URL, "POST", "", proxy(getWebSocketUrlSuccess, callback));

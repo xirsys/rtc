@@ -105,24 +105,25 @@ goog.require('xRtc.logger');
 					}
 				};
 
-				send(request);
+				send(request, true);
 			}
 		});
 
 		// Sends message to server.
-		function send(request) {
-			if (!socket) {
+		function send(request, ignore) {
+			var requestObject = formatRequest.call(this, request);
+			var requestJson = JSON.stringify(requestObject);
+			if (socket) {
+				logger.debug('send', requestObject, requestJson);
+				socket.send(requestJson);
+			} else if (!ignore) {
 				var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
 				logger.error('send', error);
 
 				throw error;
+			} else {
+				logger.debug('send', 'The call was ignored because no server connection.', requestObject, requestJson);
 			}
-
-			var requestObject = formatRequest.call(this, request);
-			var requestJson = JSON.stringify(requestObject);
-
-			logger.debug('send', requestObject, requestJson);
-			socket.send(requestJson);
 		}
 
 		function getWebSocketUrl(callback) {
