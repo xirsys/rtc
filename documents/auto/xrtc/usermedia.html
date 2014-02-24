@@ -117,17 +117,29 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_4">&#182;</a>
 							</div>
-							<p><code>goog.provide</code>, <code>goog.require</code> defined in <strong>Google Closure Library</strong>. It is used by <strong>Google Closure Compiler</strong> for the determination of the file order.</p>
+							<p><strong>Dependencies:</strong></p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>goog.provide(&#39;xRtc.userMedia&#39;);
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_5">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_5">&#182;</a>
+							</div>
+							<ul>
+<li>common.js;</li>
+<li>commonError.js;</li>
+<li>logger.js;</li>
+<li>stream.js.</li>
+</ul>
 
-goog.require(&#39;xRtc.common&#39;);
-goog.require(&#39;xRtc.commonError&#39;);
-goog.require(&#39;xRtc.logger&#39;);
-goog.require(&#39;xRtc.stream&#39;);
-
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
 (function (exports) {
 	&#39;use strict&#39;;
 
@@ -157,26 +169,12 @@ goog.require(&#39;xRtc.stream&#39;);
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_5">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
-							</div>
-							<p><strong>[Public API]:</strong> Asks user to allow use local devices, e.g. <strong>camera</strong>, <strong>microphone</strong>, <strong>screen</strong>.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>
-</code></pre>
-						</td>
-					</tr>
 					<tr id="section_6">
 						<td class="docs">
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
-							<p><strong>Note:</strong> Screen sharing available only for <em>Chrome 25+</em> with special flag <code>#enable-usermedia-screen-capture</code> and only in case
-when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> protocol.</p>
+							<p><strong>[Public API]:</strong> Asks user to allow use local devices, e.g. <strong>camera</strong>, <strong>microphone</strong>, <strong>screen</strong>.</p>
 
 						</td>
 						<td class="code">
@@ -189,7 +187,8 @@ when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> prot
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_7">&#182;</a>
 							</div>
-							<p><strong>Simple examples:</strong></p>
+							<p><strong>Note:</strong> Screen sharing available only for <em>Chrome 25+</em> with special flag <code>#enable-usermedia-screen-capture</code> and only in case
+when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> protocol.</p>
 
 						</td>
 						<td class="code">
@@ -201,6 +200,19 @@ when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> prot
 						<td class="docs">
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_8">&#182;</a>
+							</div>
+							<p><strong>Simple examples:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_9">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
 							<ul>
 <li><code>xRtc.getUserMedia({ audio: true, video: true }, function(stream){}, function(error){});</code></li>
@@ -217,10 +229,10 @@ when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> prot
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> xRtc.getUserMedia uses the same option as native browser's getUserMedia. Some examples of otions you can find here:
 <a href="http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html">http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html</a></p>
@@ -240,10 +252,10 @@ when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> prot
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_10">
+					<tr id="section_11">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
 							<p><em>FF 20.0.1: (Not shure about other version, FF 21 works fine)</em>
 reduces the overall sound of the computer (playing using <em>Chrome</em> and maybe another <em>FF</em>) after calling this functionality.</p>
@@ -260,10 +272,10 @@ reduces the overall sound of the computer (playing using <em>Chrome</em> and may
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p>Combine audio and video components of different streams in one stream.</p>
 

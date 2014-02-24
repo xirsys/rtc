@@ -7,14 +7,13 @@
 // * Establish and handle server connection (For XirSys realization is WebSockets).
 // * Implementation of the protocol to communicate with the server (For XirSys is custom protocol).
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.serverConnector');
+// **Dependencies:**
 
-goog.require('xRtc.baseClass');
-goog.require('xRtc.eventDispatcher');
-goog.require('xRtc.commonError');
-goog.require('xRtc.ajax');
-goog.require('xRtc.logger');
+// * class.js;
+// * eventDispatcher.js;
+// * commonError.js;
+// * ajax.js;
+// * logger.js.
 
 (function (exports) {
 	'use strict';

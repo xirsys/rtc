@@ -101,18 +101,30 @@ All instances of this object should be created by <code>xRtc.getUserMedia(option
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_3">&#182;</a>
 							</div>
-							<p><code>goog.provide</code>, <code>goog.require</code> defined in <strong>Google Closure Library</strong>. It is used by <strong>Google Closure Compiler</strong> for the determination of the file order.</p>
+							<p><strong>Dependencies:</strong></p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>goog.provide(&#39;xRtc.stream&#39;);
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<ul>
+<li>class.js;</li>
+<li>eventDispatcher.js;</li>
+<li>logger.js;</li>
+<li>common.js;</li>
+<li>commonError.js.</li>
+</ul>
 
-goog.require(&#39;xRtc.baseClass&#39;);
-goog.require(&#39;xRtc.eventDispatcher&#39;);
-goog.require(&#39;xRtc.logger&#39;);
-goog.require(&#39;xRtc.common&#39;);
-goog.require(&#39;xRtc.commonError&#39;);
-
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
 (function (exports, xrtc) {
 	&#39;use strict&#39;;
 
@@ -121,10 +133,10 @@ goog.require(&#39;xRtc.commonError&#39;);
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_4">
+					<tr id="section_5">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
+								<a class="pilcrow" href="#section_5">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Possible we should wrap Video and Audio Tracks.</p>
 
@@ -149,10 +161,10 @@ goog.require(&#39;xRtc.commonError&#39;);
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_5">
+					<tr id="section_6">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
+								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns native instanse of browser's <code>MediaStream</code>.
 It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functionality but this functionality exists in <code>MediaStream</code>.</p>
@@ -166,10 +178,10 @@ It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functiona
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_6">
+					<tr id="section_7">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
+								<a class="pilcrow" href="#section_7">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Stops the stream. After stopping some native resources will be released and the stream can't be used further.</p>
 
@@ -182,10 +194,10 @@ It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functiona
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_7">
+					<tr id="section_8">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_7">&#182;</a>
+								<a class="pilcrow" href="#section_8">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns unique <code>id</code> of the stream.</p>
 
@@ -202,10 +214,10 @@ It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functiona
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_8">
+					<tr id="section_9">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_8">&#182;</a>
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
 							<p><em>*[Public API]: *</em> Returns <code>URL</code> of the stream which provides access to the stream.
 E.g. The <code>URL</code> can be used for assigning to any html 'video' element.</p>
@@ -219,10 +231,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> The method will be helpful if you want to assign the stream to html 'video' element.</p>
 
@@ -232,10 +244,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_10">
+					<tr id="section_11">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
 							<p>Stream could not be started if it has not been downloaded yet.</p>
 
@@ -247,10 +259,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p>This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.</p>
 
@@ -267,10 +279,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_12">
+					<tr id="section_13">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
+								<a class="pilcrow" href="#section_13">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> <code>id</code> property is actual only for <em>Chrome M26+</em>. At the current moment FireFOxe doesn't support it.</p>
 
@@ -288,10 +300,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_14">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_14">&#182;</a>
 							</div>
 							<p>Currently for <em>FireFox</em> <code>src</code> does not work, in future it can be removed.</p>
 
@@ -359,10 +371,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_15">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_15">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.Stream</code> object.</p>
 

@@ -9,14 +9,13 @@
 // * Message should be less then ~1000 symbols.
 // * Interoperablity between *FireFox* and *Chrome* doesn't supported.
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.dataChannel');
+// **Dependencies:**
 
-goog.require('xRtc.baseClass');
-goog.require('xRtc.eventDispatcher');
-goog.require('xRtc.logger');
-goog.require('xRtc.common');
-goog.require('xRtc.commonError');
+// * class.js;
+// * eventDispatcher.js;
+// * logger.js;
+// * common.js;
+// * commonError.js.
 
 (function (exports) {
 	'use strict';
@@ -44,7 +43,7 @@ goog.require('xRtc.commonError');
 			_logger: logger,
 
 			// **[Public API]:** Returns unique data channel id.
-			getId: function() {
+			getId: function () {
 				return connection.getId() + this.getName();
 			},
 
@@ -54,7 +53,7 @@ goog.require('xRtc.commonError');
 			},
 
 			// **[Public API]:** Returns parent connection.
-			getConnection: function() {
+			getConnection: function () {
 				return connection;
 			},
 
@@ -86,7 +85,16 @@ goog.require('xRtc.commonError');
 				logger.info('send', arguments);
 
 				try {
-					dataChannel.send(data);
+					xrtc.binarySerializer.pack(
+						data,
+						function (arrayBuffer) {
+							dataChannel.send(arrayBuffer);
+						},
+					function (evt) {
+						var error = new xrtc.CommonError('onerror', 'DataChannel error.', evt);
+						logger.error('error', error);
+						self.trigger(events.error, error);
+					});
 				} catch (ex) {
 					var sendingError = new xrtc.CommonError('onerror', 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
 					logger.error('error', sendingError);
@@ -105,7 +113,9 @@ goog.require('xRtc.commonError');
 
 		function channelOnMessage(evt) {
 			logger.debug('message', evt.data);
-			this.trigger(events.receivedMessage, { data: evt.data });
+			var desrializedMessage = xrtc.binarySerializer.unpack(evt.data);
+			logger.debug('deserialized message', desrializedMessage);
+			this.trigger(events.receivedMessage, { data: desrializedMessage });
 		}
 
 		function channelOnClose(evt) {

@@ -2,18 +2,17 @@
 
 // `xRtc.Room` is one of the main objects of **xRtc** library.
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.room');
+// **Dependencies:**
 
-goog.require('xRtc.baseClass');
-goog.require('xRtc.eventDispatcher');
-goog.require('xRtc.logger');
-goog.require('xRtc.common');
-goog.require('xRtc.commonError');
-goog.require('xRtc.handshakeController');
-goog.require('xRtc.connection');
-goog.require('xRtc.authManager');
-goog.require('xRtc.serverConnector');
+// * class.js;
+// * eventDispatcher.js;
+// * logger.js;
+// * common.js;
+// * commonError.js;
+// * handshakeController.js;
+// * connection.js;
+// * authManager.js;
+// * serverConnector.js.
 
 (function (exports) {
 	'use strict';

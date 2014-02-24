@@ -121,20 +121,6 @@
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_5">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_5">&#182;</a>
-							</div>
-							<p><code>goog.provide</code>, <code>goog.require</code> defined in <strong>Google Closure Library</strong>. It is used by <strong>Google Closure Compiler</strong> for the determination of the file order.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>goog.provide(&#39;xRtc.common&#39;);
-
 (function (exports) {
 	&#39;use strict&#39;;
 
@@ -162,10 +148,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_6">
+					<tr id="section_5">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
+								<a class="pilcrow" href="#section_5">&#182;</a>
 							</div>
 							<p>Features which supported by current browser.</p>
 
@@ -210,6 +196,53 @@
 			sctp: sctp
 		};
 	}();
+
+	xrtc.binarySerializer = {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_6">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_6">&#182;</a>
+							</div>
+							<p><strong>Note:</strong> External reference to BinaryPack library.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>		pack: function(data, successCallback, errorCallback) {
+			toArrayBuffer(BinaryPack.pack(data), successCallback, errorCallback);
+		},
+		unpack: BinaryPack.unpack
+	};
+
+	function toArrayBuffer(source, successCallback, errorCallback) {
+		if (source instanceof ArrayBuffer) {
+			if (typeof successCallback === &#39;function&#39;) {
+				successCallback(source);
+			}
+		} else if (source instanceof Blob /*Blob or File*/) {
+			var reader = new FileReader();
+
+			reader.onerror = function (evt) {
+				if (typeof errorCallback === &#39;function&#39;) {
+					errorCallback(evt.target.error);
+				}
+			};
+
+			reader.onloadend = function (loadedEvt) {
+				if (loadedEvt.target.readyState == FileReader.DONE
+					&amp;&amp; !loadedEvt.target.error
+					&amp;&amp; typeof successCallback === &#39;function&#39;) {
+					successCallback(loadedEvt.target.result);
+				}
+			};
+
+			reader.readAsArrayBuffer(source);
+		} else if (typeof errorCallback === &#39;function&#39;) {
+			errorCallback(&quot;Can&#39;t parse &#39;source&#39; to ArrayBuffer. &#39;source&#39; should be from following list: Blob, File, ArrayBuffer.&quot;);
+		}
+	}
 
 	xRtc.utils = {
 		newGuid: function() {

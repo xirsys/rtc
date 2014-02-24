@@ -6,13 +6,12 @@
 // * video
 // * screen sharing
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.userMedia');
+// **Dependencies:**
 
-goog.require('xRtc.common');
-goog.require('xRtc.commonError');
-goog.require('xRtc.logger');
-goog.require('xRtc.stream');
+// * common.js;
+// * commonError.js;
+// * logger.js;
+// * stream.js.
 
 (function (exports) {
 	'use strict';

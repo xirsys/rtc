@@ -2,10 +2,9 @@
 
 // Special class which used for all unhandled errors in the xRtc library.
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.commonError');
+// **Dependencies:**
 
-goog.require('xRtc.baseClass');
+// class.js.
 
 (function (exports) {
 	'use strict';

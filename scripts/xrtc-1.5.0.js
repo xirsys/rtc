@@ -1,16 +1,575 @@
-if (typeof goog === "undefined") {
-  goog = {};
-}
-if (!goog.provide) {
-  goog.provide = function() {
+(function(exports) {
+  var binaryFeatures = {};
+  binaryFeatures.useBlobBuilder = function() {
+    try {
+      new Blob([]);
+      return false;
+    } catch (e) {
+      return true;
+    }
+  }();
+  binaryFeatures.useArrayBufferView = !binaryFeatures.useBlobBuilder && function() {
+    try {
+      return(new Blob([new Uint8Array([])])).size === 0;
+    } catch (e) {
+      return true;
+    }
+  }();
+  exports.binaryFeatures = binaryFeatures;
+  exports.BlobBuilder = window.WebKitBlobBuilder || (window.MozBlobBuilder || (window.MSBlobBuilder || window.BlobBuilder));
+  function BufferBuilder() {
+    this._pieces = [];
+    this._parts = [];
+  }
+  BufferBuilder.prototype.append = function(data) {
+    if (typeof data === "number") {
+      this._pieces.push(data);
+    } else {
+      this.flush();
+      this._parts.push(data);
+    }
   };
-}
-if (!goog.require) {
-  goog.require = function() {
+  BufferBuilder.prototype.flush = function() {
+    if (this._pieces.length > 0) {
+      var buf = new Uint8Array(this._pieces);
+      if (!binaryFeatures.useArrayBufferView) {
+        buf = buf.buffer;
+      }
+      this._parts.push(buf);
+      this._pieces = [];
+    }
   };
-}
-goog.provide("closureStub");
-goog.provide("xRtc.ajax");
+  BufferBuilder.prototype.getBuffer = function() {
+    this.flush();
+    if (binaryFeatures.useBlobBuilder) {
+      var builder = new BlobBuilder;
+      for (var i = 0, ii = this._parts.length;i < ii;i++) {
+        builder.append(this._parts[i]);
+      }
+      return builder.getBlob();
+    } else {
+      return new Blob(this._parts);
+    }
+  };
+  exports.BinaryPack = {unpack:function(data) {
+    var unpacker = new Unpacker(data);
+    return unpacker.unpack();
+  }, pack:function(data) {
+    var packer = new Packer;
+    packer.pack(data);
+    var buffer = packer.getBuffer();
+    return buffer;
+  }};
+  function Unpacker(data) {
+    this.index = 0;
+    this.dataBuffer = data;
+    this.dataView = new Uint8Array(this.dataBuffer);
+    this.length = this.dataBuffer.byteLength;
+  }
+  Unpacker.prototype.unpack = function() {
+    var type = this.unpack_uint8();
+    if (type < 128) {
+      var positive_fixnum = type;
+      return positive_fixnum;
+    } else {
+      if ((type ^ 224) < 32) {
+        var negative_fixnum = (type ^ 224) - 32;
+        return negative_fixnum;
+      }
+    }
+    var size;
+    if ((size = type ^ 160) <= 15) {
+      return this.unpack_raw(size);
+    } else {
+      if ((size = type ^ 176) <= 15) {
+        return this.unpack_string(size);
+      } else {
+        if ((size = type ^ 144) <= 15) {
+          return this.unpack_array(size);
+        } else {
+          if ((size = type ^ 128) <= 15) {
+            return this.unpack_map(size);
+          }
+        }
+      }
+    }
+    switch(type) {
+      case 192:
+        return null;
+      case 193:
+        return undefined;
+      case 194:
+        return false;
+      case 195:
+        return true;
+      case 202:
+        return this.unpack_float();
+      case 203:
+        return this.unpack_double();
+      case 204:
+        return this.unpack_uint8();
+      case 205:
+        return this.unpack_uint16();
+      case 206:
+        return this.unpack_uint32();
+      case 207:
+        return this.unpack_uint64();
+      case 208:
+        return this.unpack_int8();
+      case 209:
+        return this.unpack_int16();
+      case 210:
+        return this.unpack_int32();
+      case 211:
+        return this.unpack_int64();
+      case 212:
+        return undefined;
+      case 213:
+        return undefined;
+      case 214:
+        return undefined;
+      case 215:
+        return undefined;
+      case 216:
+        size = this.unpack_uint16();
+        return this.unpack_string(size);
+      case 217:
+        size = this.unpack_uint32();
+        return this.unpack_string(size);
+      case 218:
+        size = this.unpack_uint16();
+        return this.unpack_raw(size);
+      case 219:
+        size = this.unpack_uint32();
+        return this.unpack_raw(size);
+      case 220:
+        size = this.unpack_uint16();
+        return this.unpack_array(size);
+      case 221:
+        size = this.unpack_uint32();
+        return this.unpack_array(size);
+      case 222:
+        size = this.unpack_uint16();
+        return this.unpack_map(size);
+      case 223:
+        size = this.unpack_uint32();
+        return this.unpack_map(size);
+    }
+  };
+  Unpacker.prototype.unpack_uint8 = function() {
+    var byteVariable = this.dataView[this.index] & 255;
+    this.index++;
+    return byteVariable;
+  };
+  Unpacker.prototype.unpack_uint16 = function() {
+    var bytes = this.read(2);
+    var uint16 = (bytes[0] & 255) * 256 + (bytes[1] & 255);
+    this.index += 2;
+    return uint16;
+  };
+  Unpacker.prototype.unpack_uint32 = function() {
+    var bytes = this.read(4);
+    var uint32 = ((bytes[0] * 256 + bytes[1]) * 256 + bytes[2]) * 256 + bytes[3];
+    this.index += 4;
+    return uint32;
+  };
+  Unpacker.prototype.unpack_uint64 = function() {
+    var bytes = this.read(8);
+    var uint64 = ((((((bytes[0] * 256 + bytes[1]) * 256 + bytes[2]) * 256 + bytes[3]) * 256 + bytes[4]) * 256 + bytes[5]) * 256 + bytes[6]) * 256 + bytes[7];
+    this.index += 8;
+    return uint64;
+  };
+  Unpacker.prototype.unpack_int8 = function() {
+    var uint8 = this.unpack_uint8();
+    return uint8 < 128 ? uint8 : uint8 - (1 << 8);
+  };
+  Unpacker.prototype.unpack_int16 = function() {
+    var uint16 = this.unpack_uint16();
+    return uint16 < 32768 ? uint16 : uint16 - (1 << 16);
+  };
+  Unpacker.prototype.unpack_int32 = function() {
+    var uint32 = this.unpack_uint32();
+    return uint32 < Math.pow(2, 31) ? uint32 : uint32 - Math.pow(2, 32);
+  };
+  Unpacker.prototype.unpack_int64 = function() {
+    var uint64 = this.unpack_uint64();
+    return uint64 < Math.pow(2, 63) ? uint64 : uint64 - Math.pow(2, 64);
+  };
+  Unpacker.prototype.unpack_raw = function(size) {
+    if (this.length < this.index + size) {
+      throw new Error("BinaryPackFailure: index is out of range" + " " + this.index + " " + size + " " + this.length);
+    }
+    var buf = this.dataBuffer.slice(this.index, this.index + size);
+    this.index += size;
+    return buf;
+  };
+  Unpacker.prototype.unpack_string = function(size) {
+    var bytes = this.read(size);
+    var i = 0, str = "", c, code;
+    while (i < size) {
+      c = bytes[i];
+      if (c < 128) {
+        str += String.fromCharCode(c);
+        i++;
+      } else {
+        if ((c ^ 192) < 32) {
+          code = (c ^ 192) << 6 | bytes[i + 1] & 63;
+          str += String.fromCharCode(code);
+          i += 2;
+        } else {
+          code = (c & 15) << 12 | (bytes[i + 1] & 63) << 6 | bytes[i + 2] & 63;
+          str += String.fromCharCode(code);
+          i += 3;
+        }
+      }
+    }
+    this.index += size;
+    return str;
+  };
+  Unpacker.prototype.unpack_array = function(size) {
+    var objects = new Array(size);
+    for (var i = 0;i < size;i++) {
+      objects[i] = this.unpack();
+    }
+    return objects;
+  };
+  Unpacker.prototype.unpack_map = function(size) {
+    var map = {};
+    for (var i = 0;i < size;i++) {
+      var key = this.unpack();
+      var value = this.unpack();
+      map[key] = value;
+    }
+    return map;
+  };
+  Unpacker.prototype.unpack_float = function() {
+    var uint32 = this.unpack_uint32();
+    var sign = uint32 >> 31;
+    var exp = (uint32 >> 23 & 255) - 127;
+    var fraction = uint32 & 8388607 | 8388608;
+    return(sign == 0 ? 1 : -1) * fraction * Math.pow(2, exp - 23);
+  };
+  Unpacker.prototype.unpack_double = function() {
+    var h32 = this.unpack_uint32();
+    var l32 = this.unpack_uint32();
+    var sign = h32 >> 31;
+    var exp = (h32 >> 20 & 2047) - 1023;
+    var hfrac = h32 & 1048575 | 1048576;
+    var frac = hfrac * Math.pow(2, exp - 20) + l32 * Math.pow(2, exp - 52);
+    return(sign == 0 ? 1 : -1) * frac;
+  };
+  Unpacker.prototype.read = function(length) {
+    var j = this.index;
+    if (j + length <= this.length) {
+      return this.dataView.subarray(j, j + length);
+    } else {
+      throw new Error("BinaryPackFailure: read index out of range");
+    }
+  };
+  function Packer() {
+    this.bufferBuilder = new BufferBuilder;
+  }
+  Packer.prototype.getBuffer = function() {
+    return this.bufferBuilder.getBuffer();
+  };
+  Packer.prototype.pack = function(value) {
+    var type = typeof value;
+    if (type == "string") {
+      this.pack_string(value);
+    } else {
+      if (type == "number") {
+        if (Math.floor(value) === value) {
+          this.pack_integer(value);
+        } else {
+          this.pack_double(value);
+        }
+      } else {
+        if (type == "boolean") {
+          if (value === true) {
+            this.bufferBuilder.append(195);
+          } else {
+            if (value === false) {
+              this.bufferBuilder.append(194);
+            }
+          }
+        } else {
+          if (type == "undefined") {
+            this.bufferBuilder.append(192);
+          } else {
+            if (type == "object") {
+              if (value === null) {
+                this.bufferBuilder.append(192);
+              } else {
+                var constructor = value.constructor;
+                if (constructor == Array) {
+                  this.pack_array(value);
+                } else {
+                  if (constructor == Blob || constructor == File) {
+                    this.pack_bin(value);
+                  } else {
+                    if (constructor == ArrayBuffer) {
+                      if (binaryFeatures.useArrayBufferView) {
+                        this.pack_bin(new Uint8Array(value));
+                      } else {
+                        this.pack_bin(value);
+                      }
+                    } else {
+                      if ("BYTES_PER_ELEMENT" in value) {
+                        if (binaryFeatures.useArrayBufferView) {
+                          this.pack_bin(new Uint8Array(value.buffer));
+                        } else {
+                          this.pack_bin(value.buffer);
+                        }
+                      } else {
+                        if (constructor == Object) {
+                          this.pack_object(value);
+                        } else {
+                          if (constructor == Date) {
+                            this.pack_string(value.toString());
+                          } else {
+                            if (typeof value.toBinaryPack == "function") {
+                              this.bufferBuilder.append(value.toBinaryPack());
+                            } else {
+                              throw new Error('Type "' + constructor.toString() + '" not yet supported');
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            } else {
+              throw new Error('Type "' + type + '" not yet supported');
+            }
+          }
+        }
+      }
+    }
+    this.bufferBuilder.flush();
+  };
+  Packer.prototype.pack_bin = function(blob) {
+    var length = blob.length || (blob.byteLength || blob.size);
+    if (length <= 15) {
+      this.pack_uint8(160 + length);
+    } else {
+      if (length <= 65535) {
+        this.bufferBuilder.append(218);
+        this.pack_uint16(length);
+      } else {
+        if (length <= 4294967295) {
+          this.bufferBuilder.append(219);
+          this.pack_uint32(length);
+        } else {
+          throw new Error("Invalid length");return;
+        }
+      }
+    }
+    this.bufferBuilder.append(blob);
+  };
+  Packer.prototype.pack_string = function(str) {
+    var length = utf8Length(str);
+    if (length <= 15) {
+      this.pack_uint8(176 + length);
+    } else {
+      if (length <= 65535) {
+        this.bufferBuilder.append(216);
+        this.pack_uint16(length);
+      } else {
+        if (length <= 4294967295) {
+          this.bufferBuilder.append(217);
+          this.pack_uint32(length);
+        } else {
+          throw new Error("Invalid length");return;
+        }
+      }
+    }
+    this.bufferBuilder.append(str);
+  };
+  Packer.prototype.pack_array = function(ary) {
+    var length = ary.length;
+    if (length <= 15) {
+      this.pack_uint8(144 + length);
+    } else {
+      if (length <= 65535) {
+        this.bufferBuilder.append(220);
+        this.pack_uint16(length);
+      } else {
+        if (length <= 4294967295) {
+          this.bufferBuilder.append(221);
+          this.pack_uint32(length);
+        } else {
+          throw new Error("Invalid length");
+        }
+      }
+    }
+    for (var i = 0;i < length;i++) {
+      this.pack(ary[i]);
+    }
+  };
+  Packer.prototype.pack_integer = function(num) {
+    if (-32 <= num && num <= 127) {
+      this.bufferBuilder.append(num & 255);
+    } else {
+      if (0 <= num && num <= 255) {
+        this.bufferBuilder.append(204);
+        this.pack_uint8(num);
+      } else {
+        if (-128 <= num && num <= 127) {
+          this.bufferBuilder.append(208);
+          this.pack_int8(num);
+        } else {
+          if (0 <= num && num <= 65535) {
+            this.bufferBuilder.append(205);
+            this.pack_uint16(num);
+          } else {
+            if (-32768 <= num && num <= 32767) {
+              this.bufferBuilder.append(209);
+              this.pack_int16(num);
+            } else {
+              if (0 <= num && num <= 4294967295) {
+                this.bufferBuilder.append(206);
+                this.pack_uint32(num);
+              } else {
+                if (-2147483648 <= num && num <= 2147483647) {
+                  this.bufferBuilder.append(210);
+                  this.pack_int32(num);
+                } else {
+                  if (-9223372036854775E3 <= num && num <= 9223372036854775E3) {
+                    this.bufferBuilder.append(211);
+                    this.pack_int64(num);
+                  } else {
+                    if (0 <= num && num <= 1.8446744073709552E19) {
+                      this.bufferBuilder.append(207);
+                      this.pack_uint64(num);
+                    } else {
+                      throw new Error("Invalid integer");
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+  Packer.prototype.pack_double = function(num) {
+    var sign = 0;
+    if (num < 0) {
+      sign = 1;
+      num = -num;
+    }
+    var exp = Math.floor(Math.log(num) / Math.LN2);
+    var frac0 = num / Math.pow(2, exp) - 1;
+    var frac1 = Math.floor(frac0 * Math.pow(2, 52));
+    var b32 = Math.pow(2, 32);
+    var h32 = sign << 31 | exp + 1023 << 20 | frac1 / b32 & 1048575;
+    var l32 = frac1 % b32;
+    this.bufferBuilder.append(203);
+    this.pack_int32(h32);
+    this.pack_int32(l32);
+  };
+  Packer.prototype.pack_object = function(obj) {
+    var keys = Object.keys(obj);
+    var length = keys.length;
+    if (length <= 15) {
+      this.pack_uint8(128 + length);
+    } else {
+      if (length <= 65535) {
+        this.bufferBuilder.append(222);
+        this.pack_uint16(length);
+      } else {
+        if (length <= 4294967295) {
+          this.bufferBuilder.append(223);
+          this.pack_uint32(length);
+        } else {
+          throw new Error("Invalid length");
+        }
+      }
+    }
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        this.pack(prop);
+        this.pack(obj[prop]);
+      }
+    }
+  };
+  Packer.prototype.pack_uint8 = function(num) {
+    this.bufferBuilder.append(num);
+  };
+  Packer.prototype.pack_uint16 = function(num) {
+    this.bufferBuilder.append(num >> 8);
+    this.bufferBuilder.append(num & 255);
+  };
+  Packer.prototype.pack_uint32 = function(num) {
+    var n = num & 4294967295;
+    this.bufferBuilder.append((n & 4278190080) >>> 24);
+    this.bufferBuilder.append((n & 16711680) >>> 16);
+    this.bufferBuilder.append((n & 65280) >>> 8);
+    this.bufferBuilder.append(n & 255);
+  };
+  Packer.prototype.pack_uint64 = function(num) {
+    var high = num / Math.pow(2, 32);
+    var low = num % Math.pow(2, 32);
+    this.bufferBuilder.append((high & 4278190080) >>> 24);
+    this.bufferBuilder.append((high & 16711680) >>> 16);
+    this.bufferBuilder.append((high & 65280) >>> 8);
+    this.bufferBuilder.append(high & 255);
+    this.bufferBuilder.append((low & 4278190080) >>> 24);
+    this.bufferBuilder.append((low & 16711680) >>> 16);
+    this.bufferBuilder.append((low & 65280) >>> 8);
+    this.bufferBuilder.append(low & 255);
+  };
+  Packer.prototype.pack_int8 = function(num) {
+    this.bufferBuilder.append(num & 255);
+  };
+  Packer.prototype.pack_int16 = function(num) {
+    this.bufferBuilder.append((num & 65280) >> 8);
+    this.bufferBuilder.append(num & 255);
+  };
+  Packer.prototype.pack_int32 = function(num) {
+    this.bufferBuilder.append(num >>> 24 & 255);
+    this.bufferBuilder.append((num & 16711680) >>> 16);
+    this.bufferBuilder.append((num & 65280) >>> 8);
+    this.bufferBuilder.append(num & 255);
+  };
+  Packer.prototype.pack_int64 = function(num) {
+    var high = Math.floor(num / Math.pow(2, 32));
+    var low = num % Math.pow(2, 32);
+    this.bufferBuilder.append((high & 4278190080) >>> 24);
+    this.bufferBuilder.append((high & 16711680) >>> 16);
+    this.bufferBuilder.append((high & 65280) >>> 8);
+    this.bufferBuilder.append(high & 255);
+    this.bufferBuilder.append((low & 4278190080) >>> 24);
+    this.bufferBuilder.append((low & 16711680) >>> 16);
+    this.bufferBuilder.append((low & 65280) >>> 8);
+    this.bufferBuilder.append(low & 255);
+  };
+  function _utf8Replace(m) {
+    var code = m.charCodeAt(0);
+    if (code <= 2047) {
+      return "00";
+    }
+    if (code <= 65535) {
+      return "000";
+    }
+    if (code <= 2097151) {
+      return "0000";
+    }
+    if (code <= 67108863) {
+      return "00000";
+    }
+    return "000000";
+  }
+  function utf8Length(str) {
+    if (str.length > 600) {
+      return(new Blob([str])).size;
+    } else {
+      return str.replace(/[^\u0000-\u007F]/g, _utf8Replace).length;
+    }
+  }
+})(this);
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -72,7 +631,120 @@ goog.provide("xRtc.ajax");
     }
   }};
 })(window);
-goog.provide("xRtc.baseClass");
+(function(exports) {
+  if (typeof exports.xRtc === "undefined") {
+    exports.xRtc = {};
+  }
+  var xrtc = exports.xRtc;
+  xrtc.EventDispatcher = {on:function(eventName, callback) {
+    if (this._logger) {
+      this._logger.info("on", arguments);
+    }
+    this._events = this._events || {};
+    this._events[eventName] = this._events[eventName] || [];
+    this._events[eventName].push(callback);
+    return this;
+  }, off:function(eventName) {
+    if (this._logger) {
+      this._logger.info("off", arguments);
+    }
+    this._events = this._events || {};
+    this._events[eventName] = this._events[eventName] || [];
+    delete this._events[eventName];
+    return this;
+  }, trigger:function(eventName) {
+    if (this._logger) {
+      this._logger.info("trigger", arguments);
+    }
+    this._events = this._events || {};
+    var events = this._events[eventName];
+    if (!events) {
+      this._logger.warning("trigger", "Trying to call event which is not listening. Event name is '" + eventName + "'");
+      return this;
+    }
+    var args = Array.prototype.slice.call(arguments, 1);
+    for (var i = 0, len = events.length;i < len;i++) {
+      events[i].apply(null, args);
+    }
+    return this;
+  }};
+})(window);
+(function(exports) {
+  if (typeof exports.xRtc === "undefined") {
+    exports.xRtc = {};
+  }
+  var xrtc = exports.xRtc;
+  xrtc.webrtc = {getUserMedia:(navigator.webkitGetUserMedia || (navigator.mozGetUserMedia || (navigator.msGetUserMedia || navigator.getUserMedia))).bind(navigator), RTCPeerConnection:exports.mozRTCPeerConnection || (exports.webkitRTCPeerConnection || exports.RTCPeerConnection), RTCIceCandidate:exports.mozRTCIceCandidate || exports.RTCIceCandidate, RTCSessionDescription:exports.mozRTCSessionDescription || exports.RTCSessionDescription, URL:exports.webkitURL || (exports.msURL || (exports.oURL || exports.URL)), 
+  MediaStream:exports.mozMediaStream || (exports.webkitMediaStream || exports.MediaStream), supportedBrowsers:{chrome:"chrome", firefox:"firefox"}};
+  xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : xrtc.webrtc.supportedBrowsers.chrome;
+  xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox ? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]) : parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+  xrtc.webrtc.supports = function() {
+    if (typeof xrtc.webrtc.RTCPeerConnection === "undefined") {
+      return{};
+    }
+    var media = false;
+    var data = false;
+    var sctp = false;
+    var pc;
+    try {
+      pc = new xrtc.webrtc.RTCPeerConnection(null, {optional:[{RtpDataChannels:true}]});
+      media = true;
+      try {
+        pc.createDataChannel("_XRTCTEST", {reliable:false});
+        data = true;
+        var reliablePC = new xrtc.webrtc.RTCPeerConnection(null, {});
+        try {
+          var reliableDC = reliablePC.createDataChannel("_XRTCRELIABLETEST", {reliable:true});
+          sctp = reliableDC.reliable;
+        } catch (e) {
+        }
+        reliablePC.close();
+      } catch (ignore) {
+      }
+    } catch (ignore) {
+    }
+    if (pc) {
+      pc.close();
+    }
+    return{media:media, data:data, sctp:sctp};
+  }();
+  xrtc.binarySerializer = {pack:function(data, successCallback, errorCallback) {
+    toArrayBuffer(BinaryPack.pack(data), successCallback, errorCallback);
+  }, unpack:BinaryPack.unpack};
+  function toArrayBuffer(source, successCallback, errorCallback) {
+    if (source instanceof ArrayBuffer) {
+      if (typeof successCallback === "function") {
+        successCallback(source);
+      }
+    } else {
+      if (source instanceof Blob) {
+        var reader = new FileReader;
+        reader.onerror = function(evt) {
+          if (typeof errorCallback === "function") {
+            errorCallback(evt.target.error);
+          }
+        };
+        reader.onloadend = function(loadedEvt) {
+          if (loadedEvt.target.readyState == FileReader.DONE && (!loadedEvt.target.error && typeof successCallback === "function")) {
+            successCallback(loadedEvt.target.result);
+          }
+        };
+        reader.readAsArrayBuffer(source);
+      } else {
+        if (typeof errorCallback === "function") {
+          errorCallback("Can't parse 'source' to ArrayBuffer. 'source' should be from following list: Blob, File, ArrayBuffer.");
+        }
+      }
+    }
+  }
+  xRtc.utils = {newGuid:function() {
+    var guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
+      return v.toString(16);
+    });
+    return guid;
+  }};
+})(window);
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -123,56 +795,6 @@ goog.provide("xRtc.baseClass");
     };
   };
 })(window);
-goog.provide("xRtc.common");
-(function(exports) {
-  if (typeof exports.xRtc === "undefined") {
-    exports.xRtc = {};
-  }
-  var xrtc = exports.xRtc;
-  xrtc.webrtc = {getUserMedia:(navigator.webkitGetUserMedia || (navigator.mozGetUserMedia || (navigator.msGetUserMedia || navigator.getUserMedia))).bind(navigator), RTCPeerConnection:exports.mozRTCPeerConnection || (exports.webkitRTCPeerConnection || exports.RTCPeerConnection), RTCIceCandidate:exports.mozRTCIceCandidate || exports.RTCIceCandidate, RTCSessionDescription:exports.mozRTCSessionDescription || exports.RTCSessionDescription, URL:exports.webkitURL || (exports.msURL || (exports.oURL || exports.URL)), 
-  MediaStream:exports.mozMediaStream || (exports.webkitMediaStream || exports.MediaStream), supportedBrowsers:{chrome:"chrome", firefox:"firefox"}};
-  xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : xrtc.webrtc.supportedBrowsers.chrome;
-  xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox ? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]) : parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
-  xrtc.webrtc.supports = function() {
-    if (typeof xrtc.webrtc.RTCPeerConnection === "undefined") {
-      return{};
-    }
-    var media = false;
-    var data = false;
-    var sctp = false;
-    var pc;
-    try {
-      pc = new xrtc.webrtc.RTCPeerConnection(null, {optional:[{RtpDataChannels:true}]});
-      media = true;
-      try {
-        pc.createDataChannel("_XRTCTEST", {reliable:false});
-        data = true;
-        var reliablePC = new xrtc.webrtc.RTCPeerConnection(null, {});
-        try {
-          var reliableDC = reliablePC.createDataChannel("_XRTCRELIABLETEST", {reliable:true});
-          sctp = reliableDC.reliable;
-        } catch (e) {
-        }
-        reliablePC.close();
-      } catch (ignore) {
-      }
-    } catch (ignore) {
-    }
-    if (pc) {
-      pc.close();
-    }
-    return{media:media, data:data, sctp:sctp};
-  }();
-  xRtc.utils = {newGuid:function() {
-    var guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
-      return v.toString(16);
-    });
-    return guid;
-  }};
-})(window);
-goog.provide("xRtc.commonError");
-goog.require("xRtc.baseClass");
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -184,47 +806,6 @@ goog.require("xRtc.baseClass");
     this.error = error;
   });
 })(window);
-goog.provide("xRtc.eventDispatcher");
-(function(exports) {
-  if (typeof exports.xRtc === "undefined") {
-    exports.xRtc = {};
-  }
-  var xrtc = exports.xRtc;
-  xrtc.EventDispatcher = {on:function(eventName, callback) {
-    if (this._logger) {
-      this._logger.info("on", arguments);
-    }
-    this._events = this._events || {};
-    this._events[eventName] = this._events[eventName] || [];
-    this._events[eventName].push(callback);
-    return this;
-  }, off:function(eventName) {
-    if (this._logger) {
-      this._logger.info("off", arguments);
-    }
-    this._events = this._events || {};
-    this._events[eventName] = this._events[eventName] || [];
-    delete this._events[eventName];
-    return this;
-  }, trigger:function(eventName) {
-    if (this._logger) {
-      this._logger.info("trigger", arguments);
-    }
-    this._events = this._events || {};
-    var events = this._events[eventName];
-    if (!events) {
-      this._logger.warning("trigger", "Trying to call event which is not listening. Event name is '" + eventName + "'");
-      return this;
-    }
-    var args = Array.prototype.slice.call(arguments, 1);
-    for (var i = 0, len = events.length;i < len;i++) {
-      events[i].apply(null, args);
-    }
-    return this;
-  }};
-})(window);
-goog.provide("xRtc.logger");
-goog.require("xRtc.baseClass");
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -294,12 +875,6 @@ goog.require("xRtc.baseClass");
     this.level = false;
   }});
 })(window);
-goog.provide("xRtc.authManager");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.eventDispatcher");
-goog.require("xRtc.commonError");
-goog.require("xRtc.ajax");
-goog.require("xRtc.logger");
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -393,306 +968,6 @@ goog.require("xRtc.logger");
   });
   xrtc.AuthManager.extend({events:{serverError:"servererror"}, settings:{unsuccessfulRequestRepeatTimeout:5E3, tokenHandler:"https://api.xirsys.com/getToken", iceHandler:"https://api.xirsys.com/getIceServers"}});
 })(window);
-goog.provide("xRtc.dataChannel");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.eventDispatcher");
-goog.require("xRtc.logger");
-goog.require("xRtc.common");
-goog.require("xRtc.commonError");
-(function(exports) {
-  if (typeof exports.xRtc === "undefined") {
-    exports.xRtc = {};
-  }
-  var xrtc = exports.xRtc;
-  xrtc.Class(xrtc, "DataChannel", function(dataChannel, connection) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events;
-    dataChannel.onopen = proxy(channelOnOpen);
-    dataChannel.onmessage = proxy(channelOnMessage);
-    dataChannel.onclose = proxy(channelOnClose);
-    dataChannel.onerror = proxy(channelOnError);
-    dataChannel.ondatachannel = proxy(channelOnDatachannel);
-    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, getId:function() {
-      return connection.getId() + this.getName();
-    }, getRemoteUser:function() {
-      return connection.getRemoteUser();
-    }, getConnection:function() {
-      return connection;
-    }, getName:function() {
-      return dataChannel.label;
-    }, getState:function() {
-      return dataChannel.readyState.toLowerCase();
-    }, send:function(data) {
-      var self = this;
-      logger.info("send", arguments);
-      try {
-        dataChannel.send(data);
-      } catch (ex) {
-        var sendingError = new xrtc.CommonError("onerror", 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
-        logger.error("error", sendingError);
-        self.trigger(events.error, sendingError);
-      }
-      self.trigger(events.sentMessage, {data:data});
-    }});
-    function channelOnOpen(evt) {
-      var data = {event:evt};
-      logger.debug("open", data);
-      this.trigger(events.open, data);
-    }
-    function channelOnMessage(evt) {
-      logger.debug("message", evt.data);
-      this.trigger(events.receivedMessage, {data:evt.data});
-    }
-    function channelOnClose(evt) {
-      var data = {event:evt};
-      logger.debug("close", data);
-      this.trigger(events.close, data);
-    }
-    function channelOnError(evt) {
-      var error = new xrtc.CommonError("onerror", "DataChannel error.", evt);
-      logger.error("error", error);
-      this.trigger(events.error, error);
-    }
-    function channelOnDatachannel(evt) {
-      var data = {event:evt};
-      logger.debug("datachannel", data);
-      this.trigger(events.dataChannel, data);
-    }
-  });
-  xrtc.DataChannel.extend({events:{open:"open", sentMessage:"sentMessage", receivedMessage:"receivedMessage", close:"close", error:"error", dataChannel:"datachannel"}, states:{connecting:"connecting", open:"open", closing:"closing", closed:"closed"}});
-})(window);
-goog.provide("xRtc.handshakeController");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.logger");
-(function(exports) {
-  if (typeof exports.xRtc === "undefined") {
-    exports.xRtc = {};
-  }
-  var xrtc = exports.xRtc;
-  xrtc.Class(xrtc, "HandshakeController", function HandshakeController() {
-    var logger = new xrtc.Logger(this.className);
-    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, sendIce:function(targetUserId, connectionId, iceCandidateData) {
-      this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, connectionId, iceCandidateData);
-    }, sendOffer:function(targetUserId, connectionId, offerData) {
-      this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, connectionId, offerData);
-    }, sendAnswer:function(targetUserId, connectionId, answerData) {
-      this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, connectionId, answerData);
-    }, sendBye:function(targetUserId, connectionId, byeData) {
-      this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, connectionId, byeData);
-    }});
-  });
-  xrtc.HandshakeController.extend({events:{sendIce:"sendice", sendOffer:"sendoffer", sendAnswer:"sendanswer", sendBye:"sendbye", receiveIce:"receiveice", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveBye:"receivebye"}});
-})(window);
-goog.provide("xRtc.serverConnector");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.eventDispatcher");
-goog.require("xRtc.commonError");
-goog.require("xRtc.ajax");
-goog.require("xRtc.logger");
-(function(exports) {
-  if (typeof exports.xRtc === "undefined") {
-    exports.xRtc = {};
-  }
-  var xrtc = exports.xRtc;
-  xrtc.Class(xrtc, "ServerConnector", function ServerConnector(options) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), socket = null, currentToken = null, pingInterval = options ? options.pingInterval : 5E3, pingIntervalId = null, scEvents = xrtc.ServerConnector.events;
-    xrtc.Class.extend(this, xrtc.EventDispatcher, xrtc.Ajax, {_logger:logger, connect:function(token) {
-      currentToken = token;
-      getWebSocketUrl.call(this, proxy(connect, token));
-    }, disconnect:function() {
-      if (socket) {
-        socket.close();
-        socket = null;
-        currentToken = null;
-        logger.info("disconnect", "Connection with WS has been broken");
-      } else {
-        logger.debug("disconnect", "Connection with WS has not been established yet");
-      }
-    }, sendOffer:function(targetUserId, connectionId, offerData) {
-      var request = {eventName:scEvents.receiveOffer, targetUserId:targetUserId, data:{connectionId:connectionId, offer:offerData || {}}};
-      send(request);
-    }, sendAnswer:function(targetUserId, connectionId, answerData) {
-      var request = {eventName:scEvents.receiveAnswer, targetUserId:targetUserId, data:{connectionId:connectionId, answer:answerData || {}}};
-      send(request);
-    }, sendIce:function(targetUserId, connectionId, iceCandidate) {
-      var request = {eventName:scEvents.receiveIce, targetUserId:targetUserId, data:{connectionId:connectionId, iceCandidate:iceCandidate}};
-      send(request);
-    }, sendBye:function(targetUserId, connectionId, byeData) {
-      var request = {eventName:scEvents.receiveBye, targetUserId:targetUserId, data:{connectionId:connectionId, byeData:byeData || {}}};
-      send(request, true);
-    }});
-    function send(request, ignore) {
-      var requestObject = formatRequest.call(this, request);
-      var requestJson = JSON.stringify(requestObject);
-      if (socket) {
-        logger.debug("send", requestObject, requestJson);
-        socket.send(requestJson);
-      } else {
-        if (!ignore) {
-          var error = new xrtc.CommonError("send", "Trying to call method without established connection", "WebSocket is not connected!");
-          logger.error("send", error);
-          throw error;
-        } else {
-          logger.debug("send", "The call was ignored because no server connection.", requestObject, requestJson);
-        }
-      }
-    }
-    function getWebSocketUrl(callback) {
-      this.ajax(xrtc.ServerConnector.settings.URL, "POST", "", proxy(getWebSocketUrlSuccess, callback));
-    }
-    function getWebSocketUrlSuccess(response, callback) {
-      try {
-        response = JSON.parse(response);
-        logger.debug("getWebSocketURL", response);
-        if (!!response && (!!response.e && response.e != "")) {
-          var error = new xrtc.CommonError("getWebSocketURL", "Error occured while getting the URL of WebSockets", response.e);
-          logger.error("getWebSocketURL", error);
-          this.trigger(scEvents.serverError, {error:error});
-        } else {
-          var url = response.d.value;
-          logger.info("getWebSocketURL", url);
-          if (typeof callback === "function") {
-            callback(url);
-          }
-        }
-      } catch (e) {
-        getWebSocketUrl.call(this, callback);
-      }
-    }
-    function connect(url, token) {
-      socket = new WebSocket(url + "/ws/" + encodeURIComponent(token));
-      socket.onopen = proxy(socketOnOpen);
-      socket.onclose = proxy(socketOnClose);
-      socket.onerror = proxy(socketOnError);
-      socket.onmessage = proxy(socketOnMessage);
-    }
-    function socketOnOpen(evt) {
-      var data = {event:evt};
-      logger.debug("open", data);
-      if (pingInterval) {
-        pingIntervalId = pingServer.call(this, pingInterval);
-      }
-      this.trigger(scEvents.connectionOpen, data);
-    }
-    function socketOnClose(evt) {
-      if (pingIntervalId) {
-        exports.clearInterval(pingIntervalId);
-        pingIntervalId = null;
-      }
-      var data = {event:evt};
-      logger.debug("close", data);
-      this.trigger(scEvents.connectionClose, data);
-      socket = null;
-    }
-    function socketOnError(evt) {
-      var error = new xrtc.CommonError("onerror", "WebSocket has got an error", evt);
-      logger.error("error", error);
-      this.trigger(scEvents.connectionError, {error:error});
-    }
-    function socketOnMessage(msg) {
-      var data = {message:msg};
-      logger.debug("message", data);
-      this.trigger(scEvents.message, data);
-      handleServerMessage.call(this, msg);
-    }
-    function validateServerMessage(msg) {
-      var validationResult = true;
-      if (msg.data === '"Token invalid"') {
-        validationResult = false;
-        this.trigger(scEvents.tokenInvalid, {token:currentToken});
-      }
-      return validationResult;
-    }
-    function parseServerMessage(msg) {
-      var resultObject;
-      try {
-        resultObject = JSON.parse(msg.data);
-      } catch (e) {
-        resultObject = null;
-        var error = new xrtc.CommonError("parseServerMessage", "Message format error", e);
-        logger.error("parseServerMessage", error, msg);
-        this.trigger(scEvents.messageFormatError, {error:error});
-      }
-      return resultObject;
-    }
-    function handleRoomEvents(eventName, data) {
-      if (eventName == scEvents.usersUpdated) {
-        var users = [];
-        for (var i = 0, len = data.message.users.length;i < len;i++) {
-          users.push({id:data.message.users[i], name:data.message.users[i]});
-        }
-        var usersData = {users:users};
-        this.trigger(scEvents.usersUpdated, usersData);
-      } else {
-        if (eventName == scEvents.userConnected) {
-          var connectedData = {user:{id:data.message, name:data.message}};
-          this.trigger(scEvents.userConnected, connectedData);
-        } else {
-          if (eventName == scEvents.userDisconnected) {
-            var disconnectedData = {user:{id:data.message, name:data.message}};
-            this.trigger(scEvents.userDisconnected, disconnectedData);
-          }
-        }
-      }
-    }
-    function handleHandshakeEvents(eventName, data) {
-      if (eventName == scEvents.receiveOffer) {
-        var offerData = {senderId:data.userid, receiverId:data.message.targetUserId, connectionId:data.message.data.connectionId, offer:data.message.data.offer.offer, iceServers:data.message.data.offer.iceServers, connectionType:data.message.data.offer.connectionType, connectionData:data.message.data.offer.connectionData};
-        this.trigger(scEvents.receiveOffer, offerData);
-      } else {
-        if (eventName == scEvents.receiveAnswer) {
-          var answerData = {senderId:data.userid, connectionId:data.message.data.connectionId, answer:data.message.data.answer.answer, acceptData:data.message.data.answer.acceptData};
-          this.trigger(scEvents.receiveAnswer, answerData);
-        } else {
-          if (eventName == scEvents.receiveIce) {
-            var iceData = {senderId:data.userid, connectionId:data.message.data.connectionId, iceCandidate:data.message.data.iceCandidate};
-            this.trigger(scEvents.receiveIce, iceData);
-          } else {
-            if (eventName == scEvents.receiveBye) {
-              var byeData = {senderId:data.userid, connectionId:data.message.data.connectionId, byeData:data.message.data.byeData};
-              this.trigger(scEvents.receiveBye, byeData);
-            }
-          }
-        }
-      }
-    }
-    function handleServerMessage(msg) {
-      if (validateServerMessage(msg)) {
-        var data = parseServerMessage(msg);
-        var eventName = data.type;
-        if (eventName == scEvents.usersUpdated || (eventName == scEvents.userConnected || eventName == scEvents.userDisconnected)) {
-          handleRoomEvents.call(this, eventName, data);
-        } else {
-          if (eventName == scEvents.receiveOffer || (eventName == scEvents.receiveAnswer || (eventName == scEvents.receiveIce || eventName == scEvents.receiveBye))) {
-            handleHandshakeEvents.call(this, eventName, data);
-          }
-        }
-      }
-    }
-    function formatRequest(request) {
-      var result = {eventName:request.eventName};
-      if (typeof request.data !== "undefined") {
-        result.data = request.data;
-      }
-      if (typeof request.targetUserId !== "undefined") {
-        result.targetUserId = request.targetUserId.toString();
-      }
-      return result;
-    }
-    function pingServer(interval) {
-      return exports.setInterval(function() {
-        var pingRequest = {};
-        send.call(this, pingRequest);
-      }, interval);
-    }
-  });
-  xrtc.ServerConnector.extend({events:{connectionOpen:"connectionopen", connectionClose:"connectionclose", connectionError:"connectionerror", message:"message", messageFormatError:"messageformaterror", serverError:"servererror", tokenInvalid:"tokeninvalid", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveIce:"receiveice", receiveBye:"receivebye", usersUpdated:"peers", userConnected:"peer_connected", userDisconnected:"peer_removed"}, settings:{URL:"https://api.xirsys.com/wsList"}});
-})(window);
-goog.provide("xRtc.stream");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.eventDispatcher");
-goog.require("xRtc.logger");
-goog.require("xRtc.common");
-goog.require("xRtc.commonError");
 (function(exports, xrtc) {
   var webrtc = xrtc.webrtc;
   xrtc.Class(xrtc, "Stream", function Stream(stream) {
@@ -778,14 +1053,75 @@ goog.require("xRtc.commonError");
   });
   xrtc.Stream.extend({events:{ended:"ended"}});
 })(window, xRtc);
-goog.provide("xRtc.connection");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.eventDispatcher");
-goog.require("xRtc.logger");
-goog.require("xRtc.common");
-goog.require("xRtc.commonError");
-goog.require("xRtc.stream");
-goog.require("xRtc.dataChannel");
+(function(exports) {
+  if (typeof exports.xRtc === "undefined") {
+    exports.xRtc = {};
+  }
+  var xrtc = exports.xRtc;
+  xrtc.Class(xrtc, "DataChannel", function(dataChannel, connection) {
+    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events;
+    dataChannel.onopen = proxy(channelOnOpen);
+    dataChannel.onmessage = proxy(channelOnMessage);
+    dataChannel.onclose = proxy(channelOnClose);
+    dataChannel.onerror = proxy(channelOnError);
+    dataChannel.ondatachannel = proxy(channelOnDatachannel);
+    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, getId:function() {
+      return connection.getId() + this.getName();
+    }, getRemoteUser:function() {
+      return connection.getRemoteUser();
+    }, getConnection:function() {
+      return connection;
+    }, getName:function() {
+      return dataChannel.label;
+    }, getState:function() {
+      return dataChannel.readyState.toLowerCase();
+    }, send:function(data) {
+      var self = this;
+      logger.info("send", arguments);
+      try {
+        xrtc.binarySerializer.pack(data, function(arrayBuffer) {
+          dataChannel.send(arrayBuffer);
+        }, function(evt) {
+          var error = new xrtc.CommonError("onerror", "DataChannel error.", evt);
+          logger.error("error", error);
+          self.trigger(events.error, error);
+        });
+      } catch (ex) {
+        var sendingError = new xrtc.CommonError("onerror", 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
+        logger.error("error", sendingError);
+        self.trigger(events.error, sendingError);
+      }
+      self.trigger(events.sentMessage, {data:data});
+    }});
+    function channelOnOpen(evt) {
+      var data = {event:evt};
+      logger.debug("open", data);
+      this.trigger(events.open, data);
+    }
+    function channelOnMessage(evt) {
+      logger.debug("message", evt.data);
+      var desrializedMessage = xrtc.binarySerializer.unpack(evt.data);
+      logger.debug("deserialized message", desrializedMessage);
+      this.trigger(events.receivedMessage, {data:desrializedMessage});
+    }
+    function channelOnClose(evt) {
+      var data = {event:evt};
+      logger.debug("close", data);
+      this.trigger(events.close, data);
+    }
+    function channelOnError(evt) {
+      var error = new xrtc.CommonError("onerror", "DataChannel error.", evt);
+      logger.error("error", error);
+      this.trigger(events.error, error);
+    }
+    function channelOnDatachannel(evt) {
+      var data = {event:evt};
+      logger.debug("datachannel", data);
+      this.trigger(events.dataChannel, data);
+    }
+  });
+  xrtc.DataChannel.extend({events:{open:"open", sentMessage:"sentMessage", receivedMessage:"receivedMessage", close:"close", error:"error", dataChannel:"datachannel"}, states:{connecting:"connecting", open:"open", closing:"closing", closed:"closed"}});
+})(window);
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -1256,16 +1592,224 @@ goog.require("xRtc.dataChannel");
     }
   }
 })(window);
-goog.provide("xRtc.room");
-goog.require("xRtc.baseClass");
-goog.require("xRtc.eventDispatcher");
-goog.require("xRtc.logger");
-goog.require("xRtc.common");
-goog.require("xRtc.commonError");
-goog.require("xRtc.handshakeController");
-goog.require("xRtc.connection");
-goog.require("xRtc.authManager");
-goog.require("xRtc.serverConnector");
+(function(exports) {
+  if (typeof exports.xRtc === "undefined") {
+    exports.xRtc = {};
+  }
+  var xrtc = exports.xRtc;
+  xrtc.Class(xrtc, "HandshakeController", function HandshakeController() {
+    var logger = new xrtc.Logger(this.className);
+    xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, sendIce:function(targetUserId, connectionId, iceCandidateData) {
+      this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, connectionId, iceCandidateData);
+    }, sendOffer:function(targetUserId, connectionId, offerData) {
+      this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, connectionId, offerData);
+    }, sendAnswer:function(targetUserId, connectionId, answerData) {
+      this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, connectionId, answerData);
+    }, sendBye:function(targetUserId, connectionId, byeData) {
+      this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, connectionId, byeData);
+    }});
+  });
+  xrtc.HandshakeController.extend({events:{sendIce:"sendice", sendOffer:"sendoffer", sendAnswer:"sendanswer", sendBye:"sendbye", receiveIce:"receiveice", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveBye:"receivebye"}});
+})(window);
+(function(exports) {
+  if (typeof exports.xRtc === "undefined") {
+    exports.xRtc = {};
+  }
+  var xrtc = exports.xRtc;
+  xrtc.Class(xrtc, "ServerConnector", function ServerConnector(options) {
+    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), socket = null, currentToken = null, pingInterval = options ? options.pingInterval : 5E3, pingIntervalId = null, scEvents = xrtc.ServerConnector.events;
+    xrtc.Class.extend(this, xrtc.EventDispatcher, xrtc.Ajax, {_logger:logger, connect:function(token) {
+      currentToken = token;
+      getWebSocketUrl.call(this, proxy(connect, token));
+    }, disconnect:function() {
+      if (socket) {
+        socket.close();
+        socket = null;
+        currentToken = null;
+        logger.info("disconnect", "Connection with WS has been broken");
+      } else {
+        logger.debug("disconnect", "Connection with WS has not been established yet");
+      }
+    }, sendOffer:function(targetUserId, connectionId, offerData) {
+      var request = {eventName:scEvents.receiveOffer, targetUserId:targetUserId, data:{connectionId:connectionId, offer:offerData || {}}};
+      send(request);
+    }, sendAnswer:function(targetUserId, connectionId, answerData) {
+      var request = {eventName:scEvents.receiveAnswer, targetUserId:targetUserId, data:{connectionId:connectionId, answer:answerData || {}}};
+      send(request);
+    }, sendIce:function(targetUserId, connectionId, iceCandidate) {
+      var request = {eventName:scEvents.receiveIce, targetUserId:targetUserId, data:{connectionId:connectionId, iceCandidate:iceCandidate}};
+      send(request);
+    }, sendBye:function(targetUserId, connectionId, byeData) {
+      var request = {eventName:scEvents.receiveBye, targetUserId:targetUserId, data:{connectionId:connectionId, byeData:byeData || {}}};
+      send(request, true);
+    }});
+    function send(request, ignore) {
+      var requestObject = formatRequest.call(this, request);
+      var requestJson = JSON.stringify(requestObject);
+      if (socket) {
+        logger.debug("send", requestObject, requestJson);
+        socket.send(requestJson);
+      } else {
+        if (!ignore) {
+          var error = new xrtc.CommonError("send", "Trying to call method without established connection", "WebSocket is not connected!");
+          logger.error("send", error);
+          throw error;
+        } else {
+          logger.debug("send", "The call was ignored because no server connection.", requestObject, requestJson);
+        }
+      }
+    }
+    function getWebSocketUrl(callback) {
+      this.ajax(xrtc.ServerConnector.settings.URL, "POST", "", proxy(getWebSocketUrlSuccess, callback));
+    }
+    function getWebSocketUrlSuccess(response, callback) {
+      try {
+        response = JSON.parse(response);
+        logger.debug("getWebSocketURL", response);
+        if (!!response && (!!response.e && response.e != "")) {
+          var error = new xrtc.CommonError("getWebSocketURL", "Error occured while getting the URL of WebSockets", response.e);
+          logger.error("getWebSocketURL", error);
+          this.trigger(scEvents.serverError, {error:error});
+        } else {
+          var url = response.d.value;
+          logger.info("getWebSocketURL", url);
+          if (typeof callback === "function") {
+            callback(url);
+          }
+        }
+      } catch (e) {
+        getWebSocketUrl.call(this, callback);
+      }
+    }
+    function connect(url, token) {
+      socket = new WebSocket(url + "/ws/" + encodeURIComponent(token));
+      socket.onopen = proxy(socketOnOpen);
+      socket.onclose = proxy(socketOnClose);
+      socket.onerror = proxy(socketOnError);
+      socket.onmessage = proxy(socketOnMessage);
+    }
+    function socketOnOpen(evt) {
+      var data = {event:evt};
+      logger.debug("open", data);
+      if (pingInterval) {
+        pingIntervalId = pingServer.call(this, pingInterval);
+      }
+      this.trigger(scEvents.connectionOpen, data);
+    }
+    function socketOnClose(evt) {
+      if (pingIntervalId) {
+        exports.clearInterval(pingIntervalId);
+        pingIntervalId = null;
+      }
+      var data = {event:evt};
+      logger.debug("close", data);
+      this.trigger(scEvents.connectionClose, data);
+      socket = null;
+    }
+    function socketOnError(evt) {
+      var error = new xrtc.CommonError("onerror", "WebSocket has got an error", evt);
+      logger.error("error", error);
+      this.trigger(scEvents.connectionError, {error:error});
+    }
+    function socketOnMessage(msg) {
+      var data = {message:msg};
+      logger.debug("message", data);
+      this.trigger(scEvents.message, data);
+      handleServerMessage.call(this, msg);
+    }
+    function validateServerMessage(msg) {
+      var validationResult = true;
+      if (msg.data === '"Token invalid"') {
+        validationResult = false;
+        this.trigger(scEvents.tokenInvalid, {token:currentToken});
+      }
+      return validationResult;
+    }
+    function parseServerMessage(msg) {
+      var resultObject;
+      try {
+        resultObject = JSON.parse(msg.data);
+      } catch (e) {
+        resultObject = null;
+        var error = new xrtc.CommonError("parseServerMessage", "Message format error", e);
+        logger.error("parseServerMessage", error, msg);
+        this.trigger(scEvents.messageFormatError, {error:error});
+      }
+      return resultObject;
+    }
+    function handleRoomEvents(eventName, data) {
+      if (eventName == scEvents.usersUpdated) {
+        var users = [];
+        for (var i = 0, len = data.message.users.length;i < len;i++) {
+          users.push({id:data.message.users[i], name:data.message.users[i]});
+        }
+        var usersData = {users:users};
+        this.trigger(scEvents.usersUpdated, usersData);
+      } else {
+        if (eventName == scEvents.userConnected) {
+          var connectedData = {user:{id:data.message, name:data.message}};
+          this.trigger(scEvents.userConnected, connectedData);
+        } else {
+          if (eventName == scEvents.userDisconnected) {
+            var disconnectedData = {user:{id:data.message, name:data.message}};
+            this.trigger(scEvents.userDisconnected, disconnectedData);
+          }
+        }
+      }
+    }
+    function handleHandshakeEvents(eventName, data) {
+      if (eventName == scEvents.receiveOffer) {
+        var offerData = {senderId:data.userid, receiverId:data.message.targetUserId, connectionId:data.message.data.connectionId, offer:data.message.data.offer.offer, iceServers:data.message.data.offer.iceServers, connectionType:data.message.data.offer.connectionType, connectionData:data.message.data.offer.connectionData};
+        this.trigger(scEvents.receiveOffer, offerData);
+      } else {
+        if (eventName == scEvents.receiveAnswer) {
+          var answerData = {senderId:data.userid, connectionId:data.message.data.connectionId, answer:data.message.data.answer.answer, acceptData:data.message.data.answer.acceptData};
+          this.trigger(scEvents.receiveAnswer, answerData);
+        } else {
+          if (eventName == scEvents.receiveIce) {
+            var iceData = {senderId:data.userid, connectionId:data.message.data.connectionId, iceCandidate:data.message.data.iceCandidate};
+            this.trigger(scEvents.receiveIce, iceData);
+          } else {
+            if (eventName == scEvents.receiveBye) {
+              var byeData = {senderId:data.userid, connectionId:data.message.data.connectionId, byeData:data.message.data.byeData};
+              this.trigger(scEvents.receiveBye, byeData);
+            }
+          }
+        }
+      }
+    }
+    function handleServerMessage(msg) {
+      if (validateServerMessage(msg)) {
+        var data = parseServerMessage(msg);
+        var eventName = data.type;
+        if (eventName == scEvents.usersUpdated || (eventName == scEvents.userConnected || eventName == scEvents.userDisconnected)) {
+          handleRoomEvents.call(this, eventName, data);
+        } else {
+          if (eventName == scEvents.receiveOffer || (eventName == scEvents.receiveAnswer || (eventName == scEvents.receiveIce || eventName == scEvents.receiveBye))) {
+            handleHandshakeEvents.call(this, eventName, data);
+          }
+        }
+      }
+    }
+    function formatRequest(request) {
+      var result = {eventName:request.eventName};
+      if (typeof request.data !== "undefined") {
+        result.data = request.data;
+      }
+      if (typeof request.targetUserId !== "undefined") {
+        result.targetUserId = request.targetUserId.toString();
+      }
+      return result;
+    }
+    function pingServer(interval) {
+      return exports.setInterval(function() {
+        var pingRequest = {};
+        send.call(this, pingRequest);
+      }, interval);
+    }
+  });
+  xrtc.ServerConnector.extend({events:{connectionOpen:"connectionopen", connectionClose:"connectionclose", connectionError:"connectionerror", message:"message", messageFormatError:"messageformaterror", serverError:"servererror", tokenInvalid:"tokeninvalid", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveIce:"receiveice", receiveBye:"receivebye", usersUpdated:"peers", userConnected:"peer_connected", userDisconnected:"peer_removed"}, settings:{URL:"https://api.xirsys.com/wsList"}});
+})(window);
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};
@@ -1526,11 +2070,6 @@ goog.require("xRtc.serverConnector");
   });
   xrtc.Room.extend({events:{enter:"enter", leave:"leave", incomingConnection:"incomingconnection", connectionCreated:"connectioncreated", connectionAccepted:"connectionaccepted", connectionDeclined:"connectiondeclined", usersUpdated:"usersupdated", userConnected:"userconnected", userDisconnected:"userdisconnected", tokenInvalid:"tokeninvalid", error:"error"}, settings:{info:{domain:exports.document.domain, application:"default", name:"default"}, enterOptions:{autoReply:true}}});
 })(window);
-goog.provide("xRtc.userMedia");
-goog.require("xRtc.common");
-goog.require("xRtc.commonError");
-goog.require("xRtc.logger");
-goog.require("xRtc.stream");
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
     exports.xRtc = {};

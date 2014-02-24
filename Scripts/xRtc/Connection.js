@@ -4,16 +4,16 @@
 // For the creation of connection need to use `xRtc.Room` object.
 // The main goal of this object is handling real p2p connection.
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.connection');
+// **Dependencies:**
 
-goog.require('xRtc.baseClass');
-goog.require('xRtc.eventDispatcher');
-goog.require('xRtc.logger');
-goog.require('xRtc.common');
-goog.require('xRtc.commonError');
-goog.require('xRtc.stream');
-goog.require('xRtc.dataChannel');
+// * class.js;
+// * eventDispatcher.js;
+// * logger.js;
+// * common.js;
+// * commonError.js;
+// * authManager.js;
+// * stream.js;
+// * dataChannel.js.
 
 // **Todo:** need to think of unsubscribing from all events after connection will be closed. The same for all XTC objects.
 

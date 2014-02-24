@@ -2,9 +2,6 @@
 
 // The base type of all classes for xRtc library.
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.baseClass');
-
 (function (exports) {
 	'use strict';
 

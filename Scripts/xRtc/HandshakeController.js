@@ -2,11 +2,10 @@
 
 // It is internal object of xRtc library.
 
-// `goog.provide`, `goog.require` defined in **Google Closure Library**. It is used by **Google Closure Compiler** for the determination of the file order.
-goog.provide('xRtc.handshakeController');
+// **Dependencies:**
 
-goog.require('xRtc.baseClass');
-goog.require('xRtc.logger');
+// class.js;
+// logger.js.
 
 (function (exports) {
 	'use strict';

@@ -142,18 +142,30 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_6">&#182;</a>
 							</div>
-							<p><code>goog.provide</code>, <code>goog.require</code> defined in <strong>Google Closure Library</strong>. It is used by <strong>Google Closure Compiler</strong> for the determination of the file order.</p>
+							<p><strong>Dependencies:</strong></p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>goog.provide(&#39;xRtc.dataChannel&#39;);
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_7">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_7">&#182;</a>
+							</div>
+							<ul>
+<li>class.js;</li>
+<li>eventDispatcher.js;</li>
+<li>logger.js;</li>
+<li>common.js;</li>
+<li>commonError.js.</li>
+</ul>
 
-goog.require(&#39;xRtc.baseClass&#39;);
-goog.require(&#39;xRtc.eventDispatcher&#39;);
-goog.require(&#39;xRtc.logger&#39;);
-goog.require(&#39;xRtc.common&#39;);
-goog.require(&#39;xRtc.commonError&#39;);
-
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
 (function (exports) {
 	&#39;use strict&#39;;
 
@@ -173,10 +185,10 @@ goog.require(&#39;xRtc.commonError&#39;);
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_7">
+					<tr id="section_8">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_7">&#182;</a>
+								<a class="pilcrow" href="#section_8">&#182;</a>
 							</div>
 							<p><code>dataChannel.onclose</code> tested in case of disconnect(close browser tab) of remote browser for <em>Chrome M29</em>
 <strong>Todo:</strong> Need to test onclose event in case of remote client disconnection for <em>Chrome M25-28</em>.</p>
@@ -193,26 +205,26 @@ goog.require(&#39;xRtc.commonError&#39;);
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_8">
+					<tr id="section_9">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_8">&#182;</a>
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns unique data channel id.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			getId: function() {
+							<pre><code class='prettyprint'>			getId: function () {
 				return connection.getId() + this.getName();
 			},
 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns remote user for this data channel.</p>
 
@@ -225,26 +237,26 @@ goog.require(&#39;xRtc.commonError&#39;);
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_10">
+					<tr id="section_11">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns parent connection.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			getConnection: function() {
+							<pre><code class='prettyprint'>			getConnection: function () {
 				return connection;
 			},
 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns unique <code>name</code> of the data channel.
 This <code>name</code> should be specified on <code>createDataChannel(name)</code> method of <code>xRtc.Connection</code> object.</p>
@@ -258,10 +270,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_12">
+					<tr id="section_13">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
+								<a class="pilcrow" href="#section_13">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns the <code>state</code> of the data channel. Full list of states you can see below.</p>
 
@@ -283,10 +295,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_14">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_14">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Sends a message to remote user where <code>data</code> is message to send.</p>
 
@@ -296,10 +308,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_15">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_15">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> <code>data</code> can be as a <code>string</code>. If you want to send a file then it should be serialized to binary string before.</p>
 
@@ -310,7 +322,16 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 				logger.info(&#39;send&#39;, arguments);
 
 				try {
-					dataChannel.send(data);
+					xrtc.binarySerializer.pack(
+						data,
+						function (arrayBuffer) {
+							dataChannel.send(arrayBuffer);
+						},
+					function (evt) {
+						var error = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel error.&#39;, evt);
+						logger.error(&#39;error&#39;, error);
+						self.trigger(events.error, error);
+					});
 				} catch (ex) {
 					var sendingError = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel sending error. Channel state is &quot;&#39; + self.getState() + &#39;&quot;&#39;, ex);
 					logger.error(&#39;error&#39;, sendingError);
@@ -329,7 +350,9 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 
 		function channelOnMessage(evt) {
 			logger.debug(&#39;message&#39;, evt.data);
-			this.trigger(events.receivedMessage, { data: evt.data });
+			var desrializedMessage = xrtc.binarySerializer.unpack(evt.data);
+			logger.debug(&#39;deserialized message&#39;, desrializedMessage);
+			this.trigger(events.receivedMessage, { data: desrializedMessage });
 		}
 
 		function channelOnClose(evt) {
@@ -355,10 +378,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_15">
+					<tr id="section_16">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_15">&#182;</a>
+								<a class="pilcrow" href="#section_16">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.DataChannel</code> object.</p>
 
@@ -376,10 +399,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_16">
+					<tr id="section_17">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_16">&#182;</a>
+								<a class="pilcrow" href="#section_17">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of states of the <code>xRtc.DataChannel</code> object.</p>
 
