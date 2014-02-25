@@ -708,35 +708,7 @@
     }
     return{media:media, data:data, sctp:sctp};
   }();
-  xrtc.binarySerializer = {pack:function(data, successCallback, errorCallback) {
-    toArrayBuffer(BinaryPack.pack(data), successCallback, errorCallback);
-  }, unpack:BinaryPack.unpack};
-  function toArrayBuffer(source, successCallback, errorCallback) {
-    if (source instanceof ArrayBuffer) {
-      if (typeof successCallback === "function") {
-        successCallback(source);
-      }
-    } else {
-      if (source instanceof Blob) {
-        var reader = new FileReader;
-        reader.onerror = function(evt) {
-          if (typeof errorCallback === "function") {
-            errorCallback(evt.target.error);
-          }
-        };
-        reader.onloadend = function(loadedEvt) {
-          if (loadedEvt.target.readyState == FileReader.DONE && (!loadedEvt.target.error && typeof successCallback === "function")) {
-            successCallback(loadedEvt.target.result);
-          }
-        };
-        reader.readAsArrayBuffer(source);
-      } else {
-        if (typeof errorCallback === "function") {
-          errorCallback("Can't parse 'source' to ArrayBuffer. 'source' should be from following list: Blob, File, ArrayBuffer.");
-        }
-      }
-    }
-  }
+  xrtc.blobSerializer = {pack:BinaryPack.pack, unpack:BinaryPack.unpack};
   xRtc.utils = {newGuid:function() {
     var guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
       var r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
@@ -1059,7 +1031,7 @@
   }
   var xrtc = exports.xRtc;
   xrtc.Class(xrtc, "DataChannel", function(dataChannel, connection) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events;
+    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events, chunkSize = 16300, sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel))), chunkSize)), receivedChunks = {};
     dataChannel.onopen = proxy(channelOnOpen);
     dataChannel.onmessage = proxy(channelOnMessage);
     dataChannel.onclose = proxy(channelOnClose);
@@ -1077,20 +1049,14 @@
       return dataChannel.readyState.toLowerCase();
     }, send:function(data) {
       var self = this;
-      logger.info("send", arguments);
-      try {
-        xrtc.binarySerializer.pack(data, function(arrayBuffer) {
-          dataChannel.send(arrayBuffer);
-        }, function(evt) {
-          var error = new xrtc.CommonError("onerror", "DataChannel error.", evt);
-          logger.error("error", error);
-          self.trigger(events.error, error);
-        });
-      } catch (ex) {
-        var sendingError = new xrtc.CommonError("onerror", 'DataChannel sending error. Channel state is "' + self.getState() + '"', ex);
-        logger.error("error", sendingError);
-        self.trigger(events.error, sendingError);
+      var currentState = self.getState();
+      if (currentState !== xrtc.DataChannel.states.open) {
+        var error = new xrtc.CommonError("send", 'DataChannel should be opened before sending some data. Current channel state is "' + currentState + '"');
+        logger.error("error", error);
+        self.trigger(events.error, error);
       }
+      logger.info("send", data);
+      sender.send(data);
       self.trigger(events.sentMessage, {data:data});
     }});
     function channelOnOpen(evt) {
@@ -1099,10 +1065,38 @@
       this.trigger(events.open, data);
     }
     function channelOnMessage(evt) {
+      var self = this;
       logger.debug("message", evt.data);
-      var desrializedMessage = xrtc.binarySerializer.unpack(evt.data);
-      logger.debug("deserialized message", desrializedMessage);
-      this.trigger(events.receivedMessage, {data:desrializedMessage});
+      var dataType = evt.data.constructor;
+      if (dataType === exports.ArrayBuffer) {
+        handleIncomingArrayBuffer.call(self, evt.data);
+      } else {
+        if (dataType === exports.Blob) {
+          blobToArrayBufer(evt.data, function(arrayBuffer) {
+            handleIncomingArrayBuffer.call(self, arrayBuffer);
+          });
+        }
+      }
+    }
+    function handleIncomingArrayBuffer(arrayBuffer) {
+      var self = this;
+      var chunk = xrtc.blobSerializer.unpack(arrayBuffer);
+      if (chunk.total === 1) {
+        self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(chunk.data)});
+      } else {
+        if (!receivedChunks[chunk.blobId]) {
+          receivedChunks[chunk.blobId] = {data:[], count:0, total:chunk.total};
+        }
+        var blobChunks = receivedChunks[chunk.blobId];
+        blobChunks.data[chunk.index] = chunk.data;
+        blobChunks.count += 1;
+        if (blobChunks.total === blobChunks.count) {
+          blobToArrayBufer(new Blob(blobChunks.data), function(arrayBuffer) {
+            self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(arrayBuffer)});
+            delete blobChunks[chunk.blobId];
+          });
+        }
+      }
     }
     function channelOnClose(evt) {
       var data = {event:evt};
@@ -1121,6 +1115,91 @@
     }
   });
   xrtc.DataChannel.extend({events:{open:"open", sentMessage:"sentMessage", receivedMessage:"receivedMessage", close:"close", error:"error", dataChannel:"datachannel"}, states:{connecting:"connecting", open:"open", closing:"closing", closed:"closed"}});
+  function BinarySender(sender) {
+    this._sender = sender;
+  }
+  BinarySender.prototype.send = function(message) {
+    this._sender.send(xrtc.blobSerializer.pack(message));
+  };
+  function blobToArrayBufer(blob, callback) {
+    var fileReader = new exports.FileReader;
+    fileReader.onload = function(evt) {
+      callback(evt.target.result);
+    };
+    fileReader.readAsArrayBuffer(blob);
+  }
+  function ArrayBufferSender(sender) {
+    this._sender = sender;
+  }
+  ArrayBufferSender.prototype.send = function(blob) {
+    var self = this;
+    blobToArrayBufer(blob, function(arrayBuffer) {
+      self._sender.send(arrayBuffer);
+    });
+  };
+  function ChunkedSender(sender, chunkSize) {
+    this._sender = sender;
+    this.chunkSize = chunkSize;
+  }
+  ChunkedSender.prototype.send = function(blob) {
+    this._sendChunks(this._splitToChunks(blob));
+  };
+  ChunkedSender.prototype._splitToChunks = function(blob) {
+    var blobId = xRtc.utils.newGuid(), chunks = [], size = blob.size, start = 0, index = 0, total = Math.ceil(size / this.chunkSize);
+    while (start < size) {
+      var end = Math.min(size, start + this.chunkSize);
+      var chunk = {blobId:blobId, index:index, data:blob.slice(start, end), total:total};
+      chunks.push(chunk);
+      start = end;
+      index += 1;
+    }
+    return chunks;
+  };
+  ChunkedSender.prototype._sendChunks = function(chunks) {
+    for (var i = 0, len = chunks.length;i < len;i += 1) {
+      this._sender.send(chunks[i]);
+    }
+  };
+  function BufferedSender(sender) {
+    this._sender = sender;
+    this._buffer = [];
+    this._sendImmediately = true;
+  }
+  BufferedSender.prototype.send = function(message) {
+    this._buffer.push(message);
+    this._sendBuffer(this._buffer);
+  };
+  BufferedSender.prototype._sendBuffer = function(buffer) {
+    var self = this;
+    if (self._sendImmediately) {
+      if (!self._trySendBuffer(buffer)) {
+        self._sendImmediately = false;
+        exports.setTimeout(function() {
+          self._sendImmediately = true;
+          self._sendBuffer(buffer);
+        }, 100);
+      }
+    }
+  };
+  BufferedSender.prototype._trySendBuffer = function(buffer) {
+    if (buffer.length === 0) {
+      return true;
+    }
+    if (this._trySend(buffer[0])) {
+      buffer.shift();
+      return this._trySendBuffer(buffer);
+    } else {
+      return false;
+    }
+  };
+  BufferedSender.prototype._trySend = function(message) {
+    try {
+      this._sender.send(message);
+      return true;
+    } catch (ex) {
+      return false;
+    }
+  };
 })(window);
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {

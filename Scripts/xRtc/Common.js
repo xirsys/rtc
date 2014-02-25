@@ -72,41 +72,11 @@
 		};
 	}();
 
-	xrtc.binarySerializer = {
+	xrtc.blobSerializer = {
 		// **Note:** External reference to BinaryPack library.
-		pack: function(data, successCallback, errorCallback) {
-			toArrayBuffer(BinaryPack.pack(data), successCallback, errorCallback);
-		},
+		pack: BinaryPack.pack,
 		unpack: BinaryPack.unpack
 	};
-
-	function toArrayBuffer(source, successCallback, errorCallback) {
-		if (source instanceof ArrayBuffer) {
-			if (typeof successCallback === 'function') {
-				successCallback(source);
-			}
-		} else if (source instanceof Blob /*Blob or File*/) {
-			var reader = new FileReader();
-
-			reader.onerror = function (evt) {
-				if (typeof errorCallback === 'function') {
-					errorCallback(evt.target.error);
-				}
-			};
-
-			reader.onloadend = function (loadedEvt) {
-				if (loadedEvt.target.readyState == FileReader.DONE
-					&& !loadedEvt.target.error
-					&& typeof successCallback === 'function') {
-					successCallback(loadedEvt.target.result);
-				}
-			};
-
-			reader.readAsArrayBuffer(source);
-		} else if (typeof errorCallback === 'function') {
-			errorCallback("Can't parse 'source' to ArrayBuffer. 'source' should be from following list: Blob, File, ArrayBuffer.");
-		}
-	}
 
 	xRtc.utils = {
 		newGuid: function() {

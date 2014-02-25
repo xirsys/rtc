@@ -178,10 +178,7 @@
 	xrtc.Class(xrtc, &#39;DataChannel&#39;, function (dataChannel, connection) {
 		var proxy = xrtc.Class.proxy(this),
 			logger = new xrtc.Logger(this.className),
-			events = xrtc.DataChannel.events;
-
-		dataChannel.onopen = proxy(channelOnOpen);
-		dataChannel.onmessage = proxy(channelOnMessage);
+			events = xrtc.DataChannel.events,
 </code></pre>
 						</td>
 					</tr>
@@ -189,6 +186,55 @@
 						<td class="docs">
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_8">&#182;</a>
+							</div>
+							<p>The original 60000 bytes setting does not work when sending data from Firefox to Chrome, which is "cut off" after 16384 bytes and delivered individually.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			chunkSize = 16300,
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_9">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_9">&#182;</a>
+							</div>
+							<p>Phases of data sending:</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_10">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_10">&#182;</a>
+							</div>
+							<ul>
+<li>Data will be serialized to binary format;</li>
+<li>Data will be chunked to small pieces because Chrome doesn't support large messages;</li>
+<li>Each chunk will be serialized to binary format;</li>
+<li>Each serilized chunk will be transformed to ArrayBuffer because only this data format supported by all browsers which supports WebRTC;</li>
+<li>Sending using buffer. If during sending error will be fired then sending will be repeated little bit later until it will be sent.</li>
+</ul>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel))), chunkSize)),
+			receivedChunks = {};
+
+		dataChannel.onopen = proxy(channelOnOpen);
+		dataChannel.onmessage = proxy(channelOnMessage);
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_11">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
 							<p><code>dataChannel.onclose</code> tested in case of disconnect(close browser tab) of remote browser for <em>Chrome M29</em>
 <strong>Todo:</strong> Need to test onclose event in case of remote client disconnection for <em>Chrome M25-28</em>.</p>
@@ -205,10 +251,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns unique data channel id.</p>
 
@@ -221,10 +267,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_10">
+					<tr id="section_13">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
+								<a class="pilcrow" href="#section_13">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns remote user for this data channel.</p>
 
@@ -237,10 +283,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_14">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_14">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns parent connection.</p>
 
@@ -253,10 +299,10 @@
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_12">
+					<tr id="section_15">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
+								<a class="pilcrow" href="#section_15">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns unique <code>name</code> of the data channel.
 This <code>name</code> should be specified on <code>createDataChannel(name)</code> method of <code>xRtc.Connection</code> object.</p>
@@ -270,10 +316,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_16">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_16">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns the <code>state</code> of the data channel. Full list of states you can see below.</p>
 
@@ -295,48 +341,28 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_17">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_17">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Sends a message to remote user where <code>data</code> is message to send.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_15">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_15">&#182;</a>
-							</div>
-							<p><strong>Note:</strong> <code>data</code> can be as a <code>string</code>. If you want to send a file then it should be serialized to binary string before.</p>
-
-						</td>
-						<td class="code">
 							<pre><code class='prettyprint'>			send: function (data) {
 				var self = this;
-				logger.info(&#39;send&#39;, arguments);
 
-				try {
-					xrtc.binarySerializer.pack(
-						data,
-						function (arrayBuffer) {
-							dataChannel.send(arrayBuffer);
-						},
-					function (evt) {
-						var error = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel error.&#39;, evt);
-						logger.error(&#39;error&#39;, error);
-						self.trigger(events.error, error);
-					});
-				} catch (ex) {
-					var sendingError = new xrtc.CommonError(&#39;onerror&#39;, &#39;DataChannel sending error. Channel state is &quot;&#39; + self.getState() + &#39;&quot;&#39;, ex);
-					logger.error(&#39;error&#39;, sendingError);
-					self.trigger(events.error, sendingError);
+				var currentState = self.getState();
+				if (currentState !== xrtc.DataChannel.states.open) {
+					var error = new xrtc.CommonError(&#39;send&#39;, &#39;DataChannel should be opened before sending some data. Current channel state is &quot;&#39; + currentState + &#39;&quot;&#39;);
+					logger.error(&#39;error&#39;, error);
+					self.trigger(events.error, error);
 				}
+
+				logger.info(&#39;send&#39;, data);
+
+				sender.send(data);
 
 				self.trigger(events.sentMessage, { data: data });
 			}
@@ -349,10 +375,42 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 		};
 
 		function channelOnMessage(evt) {
+			var self = this;
+
 			logger.debug(&#39;message&#39;, evt.data);
-			var desrializedMessage = xrtc.binarySerializer.unpack(evt.data);
-			logger.debug(&#39;deserialized message&#39;, desrializedMessage);
-			this.trigger(events.receivedMessage, { data: desrializedMessage });
+
+			var dataType = evt.data.constructor;
+			if (dataType === exports.ArrayBuffer) {
+				handleIncomingArrayBuffer.call(self, evt.data);
+			} else if (dataType === exports.Blob) {
+				blobToArrayBufer(evt.data, function(arrayBuffer) {
+					handleIncomingArrayBuffer.call(self, arrayBuffer);
+				});
+			}
+		}
+
+		function handleIncomingArrayBuffer(arrayBuffer) {
+			var self = this;
+
+			var chunk = xrtc.blobSerializer.unpack(arrayBuffer);
+			if (chunk.total === 1) {
+				self.trigger(events.receivedMessage, { data: xrtc.blobSerializer.unpack(chunk.data) });
+			} else {
+				if (!receivedChunks[chunk.blobId]) {
+					receivedChunks[chunk.blobId] = { data: [], count: 0, total: chunk.total };
+				}
+
+				var blobChunks = receivedChunks[chunk.blobId];
+				blobChunks.data[chunk.index] = chunk.data;
+				blobChunks.count += 1;
+
+				if (blobChunks.total === blobChunks.count) {
+					blobToArrayBufer(new Blob(blobChunks.data), function (arrayBuffer) {
+						self.trigger(events.receivedMessage, { data: xrtc.blobSerializer.unpack(arrayBuffer) });
+						delete blobChunks[chunk.blobId];
+					});
+				}
+			}
 		}
 
 		function channelOnClose(evt) {
@@ -372,16 +430,17 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 			logger.debug(&#39;datachannel&#39;, data);
 			this.trigger(events.dataChannel, data);
 		}
+
 	});
 
 	xrtc.DataChannel.extend({
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_16">
+					<tr id="section_18">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_16">&#182;</a>
+								<a class="pilcrow" href="#section_18">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.DataChannel</code> object.</p>
 
@@ -399,10 +458,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_17">
+					<tr id="section_19">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_17">&#182;</a>
+								<a class="pilcrow" href="#section_19">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of states of the <code>xRtc.DataChannel</code> object.</p>
 
@@ -415,7 +474,228 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 			closed: &quot;closed&quot;
 		}
 	});
-})(window);
+
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_20">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_20">&#182;</a>
+							</div>
+							<p>BEGIN Binary Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+	function BinarySender(sender) {
+		this._sender = sender;
+	}
+
+	BinarySender.prototype.send = function (message) {
+		this._sender.send(xrtc.blobSerializer.pack(message));
+	};
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_21">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_21">&#182;</a>
+							</div>
+							<p>END Binary Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+	function blobToArrayBufer(blob, callback) {
+		var fileReader = new exports.FileReader();
+		fileReader.onload = function (evt) {
+			callback(evt.target.result);
+		};
+
+		fileReader.readAsArrayBuffer(blob);
+	}
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_22">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_22">&#182;</a>
+							</div>
+							<p>BEGIN ArrayBuffer Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+	function ArrayBufferSender(sender) {
+		this._sender = sender;
+	}
+
+	ArrayBufferSender.prototype.send = function (blob) {
+		var self = this;
+		blobToArrayBufer(blob, function (arrayBuffer) {
+			self._sender.send(arrayBuffer);
+		});
+	};
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_23">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_23">&#182;</a>
+							</div>
+							<p>END ArrayBuffer Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_24">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_24">&#182;</a>
+							</div>
+							<p>BEGIN Chunked Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+	function ChunkedSender(sender, chunkSize) {
+		this._sender = sender;
+		this.chunkSize = chunkSize;
+	}
+
+	ChunkedSender.prototype.send = function (blob) {
+		this._sendChunks(this._splitToChunks(blob));
+	};
+
+	ChunkedSender.prototype._splitToChunks = function (blob) {
+		var blobId = xRtc.utils.newGuid(),
+			chunks = [],
+			size = blob.size,
+			start = 0,
+			index = 0,
+			total = Math.ceil(size / this.chunkSize);
+
+		while (start &lt; size) {
+			var end = Math.min(size, start + this.chunkSize);
+
+			var chunk = {
+				blobId: blobId,
+				index: index,
+				data: blob.slice(start, end),
+				total: total
+			};
+
+			chunks.push(chunk);
+
+			start = end;
+			index += 1;
+		}
+
+		return chunks;
+	};
+
+	ChunkedSender.prototype._sendChunks = function (chunks) {
+		for (var i = 0, len = chunks.length; i &lt; len; i += 1) {
+			this._sender.send(chunks[i]);
+		}
+	};
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_25">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_25">&#182;</a>
+							</div>
+							<p>END Chunked Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_26">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_26">&#182;</a>
+							</div>
+							<p>BEGIN Buffer Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+	function BufferedSender(sender) {
+		this._sender = sender;
+		this._buffer = [];
+		this._sendImmediately = true;
+	}
+
+	BufferedSender.prototype.send = function (message) {
+		this._buffer.push(message);
+		this._sendBuffer(this._buffer);
+	};
+
+	BufferedSender.prototype._sendBuffer = function (buffer) {
+		var self = this;
+		if (self._sendImmediately) {
+			if (!self._trySendBuffer(buffer)) {
+				self._sendImmediately = false;
+				exports.setTimeout(function () {
+					self._sendImmediately = true;
+					self._sendBuffer(buffer);
+				}, 100);
+			}
+		}
+	};
+
+	BufferedSender.prototype._trySendBuffer = function (buffer) {
+		if (buffer.length === 0) {
+			return true;
+		}
+
+		if (this._trySend(buffer[0])) {
+			buffer.shift();
+			return this._trySendBuffer(buffer);
+		} else {
+			return false;
+		}
+	};
+
+	BufferedSender.prototype._trySend = function (message) {
+		try {
+			this._sender.send(message);
+			return true;
+		} catch (ex) {
+			return false;
+		}
+	};
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_27">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_27">&#182;</a>
+							</div>
+							<p>END Buffer Sender</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>})(window);
 </code></pre>
 						</td>
 					</tr>
