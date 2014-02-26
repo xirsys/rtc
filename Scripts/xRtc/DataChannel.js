@@ -101,9 +101,9 @@
 
 				logger.info('send', data);
 
-				sender.send(data);
-
-				self.trigger(events.sentMessage, { data: data });
+				sender.send(data, function() {
+					self.trigger(events.sentMessage, { data: data });
+				});
 			}
 		});
 
@@ -199,8 +199,8 @@
 		this._sender = sender;
 	}
 
-	BinarySender.prototype.send = function (message) {
-		this._sender.send(xrtc.blobSerializer.pack(message));
+	BinarySender.prototype.send = function (message, successCallback) {
+		this._sender.send(xrtc.blobSerializer.pack(message), successCallback);
 	};
 
 	// END Binary Sender
@@ -220,10 +220,10 @@
 		this._sender = sender;
 	}
 
-	ArrayBufferSender.prototype.send = function (blob) {
+	ArrayBufferSender.prototype.send = function (blob, successCallback) {
 		var self = this;
 		blobToArrayBufer(blob, function (arrayBuffer) {
-			self._sender.send(arrayBuffer);
+			self._sender.send(arrayBuffer, successCallback);
 		});
 	};
 
@@ -236,8 +236,8 @@
 		this.chunkSize = chunkSize;
 	}
 
-	ChunkedSender.prototype.send = function (blob) {
-		this._sendChunks(this._splitToChunks(blob));
+	ChunkedSender.prototype.send = function (blob, successCallback) {
+		this._sendChunks(this._splitToChunks(blob), successCallback);
 	};
 
 	ChunkedSender.prototype._splitToChunks = function (blob) {
@@ -267,9 +267,9 @@
 		return chunks;
 	};
 
-	ChunkedSender.prototype._sendChunks = function (chunks) {
+	ChunkedSender.prototype._sendChunks = function (chunks, successCallback) {
 		for (var i = 0, len = chunks.length; i < len; i += 1) {
-			this._sender.send(chunks[i]);
+			this._sender.send(chunks[i], i === len - 1 ? successCallback : null);
 		}
 	};
 
@@ -283,40 +283,43 @@
 		this._sendImmediately = true;
 	}
 
-	BufferedSender.prototype.send = function (message) {
+	BufferedSender.prototype.send = function (message, successCallback) {
 		this._buffer.push(message);
-		this._sendBuffer(this._buffer);
+		this._sendBuffer(this._buffer, successCallback);
 	};
 
-	BufferedSender.prototype._sendBuffer = function (buffer) {
+	BufferedSender.prototype._sendBuffer = function (buffer, successCallback) {
 		var self = this;
 		if (self._sendImmediately) {
-			if (!self._trySendBuffer(buffer)) {
+			if (!self._trySendBuffer(buffer, successCallback)) {
 				self._sendImmediately = false;
 				exports.setTimeout(function () {
 					self._sendImmediately = true;
-					self._sendBuffer(buffer);
+					self._sendBuffer(buffer, successCallback);
 				}, 100);
 			}
 		}
 	};
 
-	BufferedSender.prototype._trySendBuffer = function (buffer) {
+	BufferedSender.prototype._trySendBuffer = function (buffer, successCallback) {
 		if (buffer.length === 0) {
 			return true;
 		}
 
-		if (this._trySend(buffer[0])) {
+		if (this._trySend(buffer[0], successCallback)) {
 			buffer.shift();
-			return this._trySendBuffer(buffer);
+			return this._trySendBuffer(buffer, successCallback);
 		} else {
 			return false;
 		}
 	};
 
-	BufferedSender.prototype._trySend = function (message) {
+	BufferedSender.prototype._trySend = function (message, successCallback) {
 		try {
 			this._sender.send(message);
+			if (typeof successCallback == "function") {
+				successCallback();
+			}
 			return true;
 		} catch (ex) {
 			return false;
