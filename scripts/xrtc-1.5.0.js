@@ -1073,7 +1073,7 @@
         handleIncomingArrayBuffer.call(self, evt.data);
       } else {
         if (dataType === exports.Blob) {
-          blobToArrayBufer(evt.data, function(arrayBuffer) {
+          blobToArrayBuffer(evt.data, function(arrayBuffer) {
             handleIncomingArrayBuffer.call(self, arrayBuffer);
           });
         }
@@ -1092,7 +1092,7 @@
         blobChunks.data[chunk.index] = chunk.data;
         blobChunks.count += 1;
         if (blobChunks.total === blobChunks.count) {
-          blobToArrayBufer(new Blob(blobChunks.data), function(arrayBuffer) {
+          blobToArrayBuffer(new Blob(blobChunks.data), function(arrayBuffer) {
             self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(arrayBuffer)});
             delete blobChunks[chunk.blobId];
           });
@@ -1122,7 +1122,7 @@
   BinarySender.prototype.send = function(message, successCallback) {
     this._sender.send(xrtc.blobSerializer.pack(message), successCallback);
   };
-  function blobToArrayBufer(blob, callback) {
+  function blobToArrayBuffer(blob, callback) {
     var fileReader = new exports.FileReader;
     fileReader.onload = function(evt) {
       callback(evt.target.result);
@@ -1134,7 +1134,7 @@
   }
   ArrayBufferSender.prototype.send = function(blob, successCallback) {
     var self = this;
-    blobToArrayBufer(blob, function(arrayBuffer) {
+    blobToArrayBuffer(blob, function(arrayBuffer) {
       self._sender.send(arrayBuffer, successCallback);
     });
   };
@@ -1157,9 +1157,16 @@
     return chunks;
   };
   ChunkedSender.prototype._sendChunks = function(chunks, successCallback) {
-    for (var i = 0, len = chunks.length;i < len;i += 1) {
-      this._sender.send(chunks[i], i === len - 1 ? successCallback : null);
+    var self = this;
+    if (chunks.length === 0) {
+      if (typeof successCallback === "function") {
+        successCallback();
+      }
+      return;
     }
+    this._sender.send(chunks.shift(), function() {
+      self._sendChunks(chunks, successCallback);
+    });
   };
   function BufferedSender(sender) {
     this._sender = sender;
@@ -1196,7 +1203,7 @@
   BufferedSender.prototype._trySend = function(message, successCallback) {
     try {
       this._sender.send(message);
-      if (typeof successCallback == "function") {
+      if (typeof successCallback === "function") {
         successCallback();
       }
       return true;
