@@ -645,13 +645,33 @@
 				// * FireFox 26+ to Chrome 32+;
 				// * Chrome 32+ to FireFox 26+.
 
+				var dataChannelName = null;
+				var isReliable = null;
+
+				if (dataChannelConfig) {
+					if (dataChannelConfig.constructor === exports.String) {
+						dataChannelName = dataChannelConfig;
+					} else {
+						dataChannelName = dataChannelConfig.name;
+						isReliable = dataChannelConfig.reliable;
+					}
+				}
+
+				if (!dataChannelName) {
+					throw "Data Channel name should be specified.";
+				}
+
 				var dc;
-				if (xrtc.webrtc.supports.sctp) {
-					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
-					// Default value of `binaryType` for Chrome is `'arraybuffer'`, for FireFox is `'blob'` and `'blob'` doesn't supported by Chrome at now (Chrome 32).
-					dc.binaryType = 'arraybuffer';
+				if (isReliable) {
+					dc = peerConnection.createDataChannel(dataChannelName, { reliable: isReliable });
 				} else {
-					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+					if (xrtc.webrtc.supports.sctp) {
+						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
+						// Default value of `binaryType` for Chrome is `'arraybuffer'`, for FireFox is `'blob'` and `'blob'` doesn't supported by Chrome at now (Chrome 32).
+						dc.binaryType = 'arraybuffer';
+					} else {
+						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+					}
 				}
 
 				var newDataChannel = new xrtc.DataChannel(dc, self);

@@ -1647,9 +1647,28 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>
+				var dataChannelName = null;
+				var isReliable = null;
+
+				if (dataChannelConfig) {
+					if (dataChannelConfig.constructor === exports.String) {
+						dataChannelName = dataChannelConfig;
+					} else {
+						dataChannelName = dataChannelConfig.name;
+						isReliable = dataChannelConfig.reliable;
+					}
+				}
+
+				if (!dataChannelName) {
+					throw &quot;Data Channel name should be specified.&quot;;
+				}
+
 				var dc;
-				if (xrtc.webrtc.supports.sctp) {
-					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
+				if (isReliable) {
+					dc = peerConnection.createDataChannel(dataChannelName, { reliable: isReliable });
+				} else {
+					if (xrtc.webrtc.supports.sctp) {
+						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
 </code></pre>
 						</td>
 					</tr>
@@ -1662,9 +1681,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>					dc.binaryType = &#39;arraybuffer&#39;;
-				} else {
-					dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+							<pre><code class='prettyprint'>						dc.binaryType = &#39;arraybuffer&#39;;
+					} else {
+						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+					}
 				}
 
 				var newDataChannel = new xrtc.DataChannel(dc, self);
