@@ -1342,6 +1342,9 @@
       logger.debug("addLocalStream", streamData);
       this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
     }, createDataChannel:function(name, config) {
+      if (!name || name.constructor !== exports.String) {
+        throw new xrtc.CommonError("DataChannel name is incorrect type or not defined.");
+      }
       if (connectionIsOpened) {
         throwExceptionOfWrongmethodCall("createDataChannel");
       }
@@ -1364,8 +1367,7 @@
       });
     }});
     function throwExceptionOfWrongmethodCall(methodName) {
-      var error = new xrtc.CommonError(methodName, "The method can be called on '" + xrtc.Room.events.connectionCreated + "' event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.");
-      logger.error(methodName, error);
+      throw new xrtc.CommonError(methodName, "The method can be called on '" + xrtc.Room.events.connectionCreated + "' event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.");
     }
     function subscribeToHandshakeControllerEvents() {
       var hcEvents = xrtc.HandshakeController.events;
@@ -1522,31 +1524,21 @@
         callCallback();
       }
     }
-    function createDataChannel(dataChannelConfig) {
+    function createDataChannel(dcData) {
       var self = this;
       try {
-        var dataChannelName = null;
-        var isReliable = null;
-        if (dataChannelConfig) {
-          if (dataChannelConfig.constructor === exports.String) {
-            dataChannelName = dataChannelConfig;
-          } else {
-            dataChannelName = dataChannelConfig.name;
-            isReliable = dataChannelConfig.reliable;
-          }
-        }
-        if (!dataChannelName) {
-          throw "Data Channel name should be specified.";
-        }
+        var dcName = dcData.name;
+        var dcConfig = dcData.config;
+        var isReliable = dcConfig ? dcConfig.reliable : null;
         var dc;
-        if (isReliable) {
-          dc = peerConnection.createDataChannel(dataChannelName, {reliable:isReliable});
+        if (typeof isReliable !== "undefined") {
+          dc = peerConnection.createDataChannel(dcName, {reliable:isReliable ? true : false});
         } else {
           if (xrtc.webrtc.supports.sctp) {
-            dc = peerConnection.createDataChannel(dataChannelConfig.name, {reliable:true});
+            dc = peerConnection.createDataChannel(dcData.name, {reliable:true});
             dc.binaryType = "arraybuffer";
           } else {
-            dc = peerConnection.createDataChannel(dataChannelConfig.name, {reliable:false});
+            dc = peerConnection.createDataChannel(dcData.name, {reliable:false});
           }
         }
         var newDataChannel = new xrtc.DataChannel(dc, self);
@@ -1555,7 +1547,7 @@
       } catch (ex) {
         var error = new xrtc.CommonError("createDataChannel", "Can't create DataChannel.", ex);
         logger.error("createDataChannel", error);
-        self.trigger(xrtc.Connection.events.dataChannelCreationError, {connection:self, channelConfig:dataChannelConfig, error:error});
+        self.trigger(xrtc.Connection.events.dataChannelCreationError, {connection:self, channelConfig:dcData, error:error});
       }
     }
     function handleIceCandidate(ice) {

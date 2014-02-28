@@ -723,6 +723,10 @@ It take following parameters:</p>
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>			createDataChannel: function (name, config) {
+				if (!name || name.constructor !== exports.String) {
+					throw new xrtc.CommonError(&#39;DataChannel name is incorrect type or not defined.&#39;);
+				}
+
 				if (connectionIsOpened) {
 					throwExceptionOfWrongmethodCall(&#39;createDataChannel&#39;);
 				}
@@ -918,10 +922,9 @@ List of possibly connection states:</p>
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>		function throwExceptionOfWrongmethodCall(methodName) {
-			var error = new xrtc.CommonError(methodName, &quot;The method can be called on &#39;&quot; +
-				xrtc.Room.events.connectionCreated +
-				&quot;&#39; event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.&quot;);
-			logger.error(methodName, error);
+			throw new xrtc.CommonError(
+				methodName,
+				&quot;The method can be called on &#39;&quot; + xrtc.Room.events.connectionCreated + &quot;&#39; event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.&quot;);
 		}
 
 </code></pre>
@@ -1565,7 +1568,7 @@ enum RTCIceGatheringState {
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>		function createDataChannel(dataChannelConfig) {
+							<pre><code class='prettyprint'>		function createDataChannel(dcData) {
 			var self = this;
 			try {
 </code></pre>
@@ -1647,28 +1650,16 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>
-				var dataChannelName = null;
-				var isReliable = null;
-
-				if (dataChannelConfig) {
-					if (dataChannelConfig.constructor === exports.String) {
-						dataChannelName = dataChannelConfig;
-					} else {
-						dataChannelName = dataChannelConfig.name;
-						isReliable = dataChannelConfig.reliable;
-					}
-				}
-
-				if (!dataChannelName) {
-					throw &quot;Data Channel name should be specified.&quot;;
-				}
+				var dcName = dcData.name;
+				var dcConfig = dcData.config;
+				var isReliable = dcConfig ? dcConfig.reliable : null;
 
 				var dc;
-				if (isReliable) {
-					dc = peerConnection.createDataChannel(dataChannelName, { reliable: isReliable });
+				if (typeof isReliable !== &quot;undefined&quot;) {
+					dc = peerConnection.createDataChannel(dcName, { reliable: isReliable ? true : false });
 				} else {
 					if (xrtc.webrtc.supports.sctp) {
-						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
+						dc = peerConnection.createDataChannel(dcData.name, { reliable: true });
 </code></pre>
 						</td>
 					</tr>
@@ -1683,7 +1674,7 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 						<td class="code">
 							<pre><code class='prettyprint'>						dc.binaryType = &#39;arraybuffer&#39;;
 					} else {
-						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+						dc = peerConnection.createDataChannel(dcData.name, { reliable: false });
 					}
 				}
 
@@ -1705,7 +1696,7 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 			} catch (ex) {
 				var error = new xrtc.CommonError(&#39;createDataChannel&#39;, &quot;Can&#39;t create DataChannel.&quot;, ex);
 				logger.error(&#39;createDataChannel&#39;, error);
-				self.trigger(xrtc.Connection.events.dataChannelCreationError, { connection: self, channelConfig: dataChannelConfig, error: error });
+				self.trigger(xrtc.Connection.events.dataChannelCreationError, { connection: self, channelConfig: dcData, error: error });
 			}
 		}
 
@@ -2137,19 +2128,7 @@ you must supply Chrome with a PC constructor constraint to enable DTLS: <code>{ 
 						</td>
 						<td class="code">
 							<pre><code class='prettyprint'>			peerConnectionOptions: {
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_100">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_100">&#182;</a>
-							</div>
-							<p>optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>				optional: [{ RtpDataChannels: !xrtc.webrtc.supports.sctp }, { DtlsSrtpKeyAgreement: true }]
+				optional: [{ RtpDataChannels: !xrtc.webrtc.supports.sctp }, { DtlsSrtpKeyAgreement: true }]
 			}
 		}
 	});
@@ -2157,10 +2136,10 @@ you must supply Chrome with a PC constructor constraint to enable DTLS: <code>{ 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_101">
+					<tr id="section_100">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_101">&#182;</a>
+								<a class="pilcrow" href="#section_100">&#182;</a>
 							</div>
 							<p>Cross-browser support: New syntax of <code>getXXXStreams</code> method in <em>Chrome M26</em>.
 For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undefined.</p>
@@ -2182,10 +2161,10 @@ For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undef
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_102">
+					<tr id="section_101">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_102">&#182;</a>
+								<a class="pilcrow" href="#section_101">&#182;</a>
 							</div>
 							<p>Cross-browser support: New syntax of <code>getXXXTracks</code> method in <em>Chrome M26</em>.</p>
 
@@ -2218,10 +2197,10 @@ For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undef
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_103">
+					<tr id="section_102">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_103">&#182;</a>
+								<a class="pilcrow" href="#section_102">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> No need to disable data channels in case of communication between <em>FireFox</em> and <em>Firefox</em>. These flags are necessary in case of interoperability between <em>FireFox</em> and <em>Chrome</em> only.
 Data channels does't supported in case of interoperability of <em>FireFox</em> and <em>Chrome</em>.</p>
@@ -2232,10 +2211,10 @@ Data channels does't supported in case of interoperability of <em>FireFox</em> a
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_104">
+					<tr id="section_103">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_104">&#182;</a>
+								<a class="pilcrow" href="#section_103">&#182;</a>
 							</div>
 							<p><em>Chrome M26b</em> and <em>Chrome Canary</em> with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between <em>FF</em> and <em>Chrome</em>.</p>
 

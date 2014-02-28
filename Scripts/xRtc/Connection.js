@@ -277,6 +277,10 @@
 			// * `name`. Name of the data channel. Name of the data channel should be unique among all data channels of the `xrtc.Connection` object.
 			// * `config`. This configuration properties can be used to configure properties of the underlying channel such as binaryType , etc. It is optional parameter.
 			createDataChannel: function (name, config) {
+				if (!name || name.constructor !== exports.String) {
+					throw new xrtc.CommonError('DataChannel name is incorrect type or not defined.');
+				}
+
 				if (connectionIsOpened) {
 					throwExceptionOfWrongmethodCall('createDataChannel');
 				}
@@ -338,10 +342,9 @@
 
 		// Internal helper method which throws appropriate exception in case when someone try to call `addStream` or `createDataChannel` methods at inappropriate time.
 		function throwExceptionOfWrongmethodCall(methodName) {
-			var error = new xrtc.CommonError(methodName, "The method can be called on '" +
-				xrtc.Room.events.connectionCreated +
-				"' event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.");
-			logger.error(methodName, error);
+			throw new xrtc.CommonError(
+				methodName,
+				"The method can be called on '" + xrtc.Room.events.connectionCreated + "' event of the xRtc.Room. Use xRtc.Room.events.connectionCreated for access the event name.");
 		}
 
 		// Internal method which helps to subscribe to all events of `handshakeController` object where `handshakeController` is internal object and bridge between `xRtc.Connection` and `xRtc.Room`.
@@ -620,7 +623,7 @@
 		}
 
 		// Internal helper method which creates new instance of DataChannel by channel source `{name, config}`.
-		function createDataChannel(dataChannelConfig) {
+		function createDataChannel(dcData) {
 			var self = this;
 			try {
 				// *FF 19-21(and 18 maybe)*: Data channels should be created after connection establishment.
@@ -645,32 +648,20 @@
 				// * FireFox 26+ to Chrome 32+;
 				// * Chrome 32+ to FireFox 26+.
 
-				var dataChannelName = null;
-				var isReliable = null;
-
-				if (dataChannelConfig) {
-					if (dataChannelConfig.constructor === exports.String) {
-						dataChannelName = dataChannelConfig;
-					} else {
-						dataChannelName = dataChannelConfig.name;
-						isReliable = dataChannelConfig.reliable;
-					}
-				}
-
-				if (!dataChannelName) {
-					throw "Data Channel name should be specified.";
-				}
+				var dcName = dcData.name;
+				var dcConfig = dcData.config;
+				var isReliable = dcConfig ? dcConfig.reliable : null;
 
 				var dc;
-				if (isReliable) {
-					dc = peerConnection.createDataChannel(dataChannelName, { reliable: isReliable });
+				if (typeof isReliable !== "undefined") {
+					dc = peerConnection.createDataChannel(dcName, { reliable: isReliable ? true : false });
 				} else {
 					if (xrtc.webrtc.supports.sctp) {
-						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: true });
+						dc = peerConnection.createDataChannel(dcData.name, { reliable: true });
 						// Default value of `binaryType` for Chrome is `'arraybuffer'`, for FireFox is `'blob'` and `'blob'` doesn't supported by Chrome at now (Chrome 32).
 						dc.binaryType = 'arraybuffer';
 					} else {
-						dc = peerConnection.createDataChannel(dataChannelConfig.name, { reliable: false });
+						dc = peerConnection.createDataChannel(dcData.name, { reliable: false });
 					}
 				}
 
@@ -681,7 +672,7 @@
 			} catch (ex) {
 				var error = new xrtc.CommonError('createDataChannel', "Can't create DataChannel.", ex);
 				logger.error('createDataChannel', error);
-				self.trigger(xrtc.Connection.events.dataChannelCreationError, { connection: self, channelConfig: dataChannelConfig, error: error });
+				self.trigger(xrtc.Connection.events.dataChannelCreationError, { connection: self, channelConfig: dcData, error: error });
 			}
 		}
 
@@ -968,7 +959,6 @@
 			// *Chrome* does not yet do DTLS-SRTP by default whereas *Firefox* only does DTLS-SRTP. In order to get interop,
 			// you must supply Chrome with a PC constructor constraint to enable DTLS: `{ 'optional': [{'DtlsSrtpKeyAgreement': 'true'}]}`
 			peerConnectionOptions: {
-				//optional: [{ RtpDataChannels: true }, { DtlsSrtpKeyAgreement: true }]
 				optional: [{ RtpDataChannels: !xrtc.webrtc.supports.sctp }, { DtlsSrtpKeyAgreement: true }]
 			}
 		}
