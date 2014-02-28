@@ -653,7 +653,7 @@
 				var isReliable = dcConfig ? dcConfig.reliable : null;
 
 				var dc;
-				if (typeof isReliable !== "undefined") {
+				if (isReliable === true || isReliable === false) {
 					dc = peerConnection.createDataChannel(dcName, { reliable: isReliable ? true : false });
 				} else {
 					if (xrtc.webrtc.supports.sctp) {

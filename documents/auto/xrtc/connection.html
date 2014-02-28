@@ -1655,7 +1655,7 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 				var isReliable = dcConfig ? dcConfig.reliable : null;
 
 				var dc;
-				if (typeof isReliable !== &quot;undefined&quot;) {
+				if (isReliable === true || isReliable === false) {
 					dc = peerConnection.createDataChannel(dcName, { reliable: isReliable ? true : false });
 				} else {
 					if (xrtc.webrtc.supports.sctp) {

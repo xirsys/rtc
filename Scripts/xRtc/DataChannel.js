@@ -32,6 +32,7 @@
 			events = xrtc.DataChannel.events,
 			// The original 60000 bytes setting does not work when sending data from Firefox to Chrome, which is "cut off" after 16384 bytes and delivered individually.
 			chunkSize = 16300,
+			attemptsMaxCount = 100,
 			// Phases of data sending:
 
 			// * Data will be serialized to binary format;
@@ -39,7 +40,7 @@
 			// * Each chunk will be serialized to binary format;
 			// * Each serilized chunk will be transformed to ArrayBuffer because only this data format supported by all browsers which supports WebRTC;
 			// * Sending using buffer. If during sending error will be fired then sending will be repeated little bit later until it will be sent.
-			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel))), chunkSize)),
+			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),
 			receivedChunks = {};
 
 		dataChannel.onopen = proxy(channelOnOpen);
@@ -89,21 +90,38 @@
 			},
 
 			// **[Public API]:** Sends a message to remote user where `data` is message to send.
-			send: function (data) {
+			send: function (data, successCallback, failCallback) {
 				var self = this;
 
 				var currentState = self.getState();
 				if (currentState !== xrtc.DataChannel.states.open) {
-					var error = new xrtc.CommonError('send', 'DataChannel should be opened before sending some data. Current channel state is "' + currentState + '"');
-					logger.error('error', error);
-					self.trigger(events.error, error);
+					var incorrectStateError = new xrtc.CommonError('send', 'DataChannel should be opened before sending some data. Current channel state is "' + currentState + '"');
+					logger.error('error', incorrectStateError);
+					self.trigger(events.error, incorrectStateError);
 				}
 
 				logger.info('send', data);
 
-				sender.send(data, function () {
-					self.trigger(events.sentMessage, { data: data });
-				});
+				sender.send(
+					data,
+					function () {
+						var evt = { data: data };
+						if (typeof successCallback === "function") {
+							successCallback(evt);
+						}
+
+						self.trigger(events.sentMessage, evt);
+					},
+					function (evt) {
+						var sendError = new xrtc.CommonError('send', 'DataChannel error.', evt);
+						logger.error('error', sendError);
+
+						if (typeof failCallback === "function") {
+							failCallback(sendError);
+						}
+
+						self.trigger(events.error, sendError);
+					});
 			}
 		});
 
@@ -199,8 +217,8 @@
 		this._sender = sender;
 	}
 
-	BinarySender.prototype.send = function (message, successCallback) {
-		this._sender.send(xrtc.blobSerializer.pack(message), successCallback);
+	BinarySender.prototype.send = function (message, successCallback, failCallback) {
+		this._sender.send(xrtc.blobSerializer.pack(message), successCallback, failCallback);
 	};
 
 	// END Binary Sender
@@ -220,10 +238,10 @@
 		this._sender = sender;
 	}
 
-	ArrayBufferSender.prototype.send = function (blob, successCallback) {
+	ArrayBufferSender.prototype.send = function (blob, successCallback, failCallback) {
 		var self = this;
 		blobToArrayBuffer(blob, function (arrayBuffer) {
-			self._sender.send(arrayBuffer, successCallback);
+			self._sender.send(arrayBuffer, successCallback, failCallback);
 		});
 	};
 
@@ -236,8 +254,8 @@
 		this.chunkSize = chunkSize;
 	}
 
-	ChunkedSender.prototype.send = function (blob, successCallback) {
-		this._sendChunks(this._splitToChunks(blob), successCallback);
+	ChunkedSender.prototype.send = function (blob, successCallback, failCallback) {
+		this._sendChunks(this._splitToChunks(blob), successCallback, failCallback);
 	};
 
 	ChunkedSender.prototype._splitToChunks = function (blob) {
@@ -267,7 +285,7 @@
 		return chunks;
 	};
 
-	ChunkedSender.prototype._sendChunks = function (chunks, successCallback) {
+	ChunkedSender.prototype._sendChunks = function (chunks, successCallback, failCallback) {
 		var self = this;
 
 		if (chunks.length === 0) {
@@ -278,53 +296,69 @@
 			return;
 		}
 
-		this._sender.send(chunks.shift(), function () {
-			self._sendChunks(chunks, successCallback);
-		});
+		this._sender.send(
+			chunks.shift(),
+			function () {
+				self._sendChunks(chunks, successCallback, failCallback);
+			},
+			failCallback);
 	};
 
 	// END Chunked Sender
 
 	// BEGIN Buffer Sender
 
-	function BufferedSender(sender) {
+	function BufferedSender(sender, attemptsMaxCount) {
 		this._sender = sender;
+		this._attemptsMaxCount = attemptsMaxCount;
 		this._buffer = [];
 		this._sendImmediately = true;
 	}
 
-	BufferedSender.prototype.send = function (message, successCallback) {
+	BufferedSender.prototype.send = function (message, successCallback, failCallback) {
 		this._buffer.push(message);
-		this._sendBuffer(this._buffer, successCallback);
+		this._sendBuffer(this._buffer, successCallback, failCallback, 0);
 	};
 
-	BufferedSender.prototype._sendBuffer = function (buffer, successCallback) {
+	BufferedSender.prototype._sendBuffer = function (buffer, successCallback, failCallback, attemptCounter) {
 		var self = this;
+
+		var attemptsExceeded = function (ex) {
+			if (attemptCounter === self._attemptsMaxCount && typeof failCallback === "function") {
+				failCallback(ex);
+			}
+		};
+
 		if (self._sendImmediately) {
-			if (!self._trySendBuffer(buffer, successCallback)) {
-				self._sendImmediately = false;
-				exports.setTimeout(function () {
-					self._sendImmediately = true;
-					self._sendBuffer(buffer, successCallback);
-				}, 100);
+			if (!self._trySendBuffer(buffer, successCallback, attemptsExceeded, attemptCounter)) {
+				if (attemptCounter < self._attemptsMaxCount) {
+					self._sendImmediately = false;
+
+					exports.setTimeout(function () {
+						self._sendImmediately = true;
+						self._sendBuffer(buffer, successCallback, failCallback, ++attemptCounter);
+					}, 100);
+				} else {
+
+				}
 			}
 		}
 	};
 
-	BufferedSender.prototype._trySendBuffer = function (buffer, successCallback) {
+	BufferedSender.prototype._trySendBuffer = function (buffer, successCallback, failCallback) {
 		if (buffer.length === 0) {
 			return true;
 		}
 
-		if (this._trySend(buffer[0], successCallback)) {
+		if (this._trySend(buffer[0], successCallback, failCallback)) {
 			buffer.shift();
-			return this._trySendBuffer(buffer, successCallback);
+			return this._trySendBuffer(buffer, successCallback, failCallback);
 		} else {
 			return false;
 		}
 	};
 
-	BufferedSender.prototype._trySend = function (message, successCallback) {
+	BufferedSender.prototype._trySend = function (message, successCallback, failCallback) {
 		try {
 			this._sender.send(message);
 			if (typeof successCallback === "function") {
@@ -332,6 +366,7 @@
 			}
 			return true;
 		} catch (ex) {
+			failCallback(ex);
 			return false;
 		}
 	};
