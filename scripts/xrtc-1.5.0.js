@@ -1031,7 +1031,7 @@
   }
   var xrtc = exports.xRtc;
   xrtc.Class(xrtc, "DataChannel", function(dataChannel, connection) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events, chunkSize = 16300, attemptsMaxCount = 100, sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)), receivedChunks = {};
+    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events, transferringStatusInterval = 50, chunkSize = 16300, attemptsMaxCount = 100, sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)), receivedChunks = {};
     dataChannel.onopen = proxy(channelOnOpen);
     dataChannel.onmessage = proxy(channelOnMessage);
     dataChannel.onclose = proxy(channelOnClose);
@@ -1047,7 +1047,7 @@
       return dataChannel.label;
     }, getState:function() {
       return dataChannel.readyState.toLowerCase();
-    }, send:function(data, successCallback, failCallback) {
+    }, send:function(msg, successCallback, failCallback, options) {
       var self = this;
       var currentState = self.getState();
       if (currentState !== xrtc.DataChannel.states.open) {
@@ -1055,9 +1055,9 @@
         logger.error("error", incorrectStateError);
         self.trigger(events.error, incorrectStateError);
       }
-      logger.info("send", data);
-      sender.send(data, function() {
-        var evt = {data:data};
+      logger.info("send", msg);
+      sender.send(msg, function() {
+        var evt = {data:msg};
         if (typeof successCallback === "function") {
           successCallback(evt);
         }
@@ -1069,7 +1069,11 @@
           failCallback(sendError);
         }
         self.trigger(events.error, sendError);
-      });
+      }, function(evt) {
+        if (evt.count % transferringStatusInterval === 0 || evt.count === evt.total) {
+          self.trigger(events.sendingMessageStatus, {messageId:evt.messageId, percent:100 * evt.count / evt.total});
+        }
+      }, options && options.messageId ? {messageId:options.messageId} : null);
     }});
     function channelOnOpen(evt) {
       var data = {event:evt};
@@ -1096,16 +1100,19 @@
       if (chunk.total === 1) {
         self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(chunk.data)});
       } else {
-        if (!receivedChunks[chunk.blobId]) {
-          receivedChunks[chunk.blobId] = {data:[], count:0, total:chunk.total};
+        if (!receivedChunks[chunk.messageId]) {
+          receivedChunks[chunk.messageId] = {data:[], count:0, total:chunk.total};
         }
-        var blobChunks = receivedChunks[chunk.blobId];
+        var blobChunks = receivedChunks[chunk.messageId];
         blobChunks.data[chunk.index] = chunk.data;
         blobChunks.count += 1;
+        if (blobChunks.count % transferringStatusInterval === 0 || blobChunks.total === blobChunks.count) {
+          self.trigger(events.receivingMessageStatus, {messageId:chunk.messageId, percent:100 * blobChunks.count / blobChunks.total});
+        }
         if (blobChunks.total === blobChunks.count) {
-          blobToArrayBuffer(new Blob(blobChunks.data), function(arrayBuffer) {
-            self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(arrayBuffer)});
-            delete blobChunks[chunk.blobId];
+          blobToArrayBuffer(new exports.Blob(blobChunks.data), function(ab) {
+            self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(ab)});
+            delete blobChunks[chunk.messageId];
           });
         }
       }
@@ -1126,12 +1133,12 @@
       this.trigger(events.dataChannel, data);
     }
   });
-  xrtc.DataChannel.extend({events:{open:"open", sentMessage:"sentMessage", receivedMessage:"receivedMessage", close:"close", error:"error", dataChannel:"datachannel"}, states:{connecting:"connecting", open:"open", closing:"closing", closed:"closed"}});
+  xrtc.DataChannel.extend({events:{open:"open", sentMessage:"sentMessage", sendingMessageStatus:"sendingMessageStatus", receivingMessageStatus:"receivingMessageStatus", receivedMessage:"receivedMessage", close:"close", error:"error", dataChannel:"datachannel"}, states:{connecting:"connecting", open:"open", closing:"closing", closed:"closed"}});
   function BinarySender(sender) {
     this._sender = sender;
   }
-  BinarySender.prototype.send = function(message, successCallback, failCallback) {
-    this._sender.send(xrtc.blobSerializer.pack(message), successCallback, failCallback);
+  BinarySender.prototype.send = function(message, successCallback, failCallback, statusCallback, options) {
+    this._sender.send(xrtc.blobSerializer.pack(message), successCallback, failCallback, statusCallback, options);
   };
   function blobToArrayBuffer(blob, callback) {
     var fileReader = new exports.FileReader;
@@ -1140,6 +1147,40 @@
     };
     fileReader.readAsArrayBuffer(blob);
   }
+  function ChunkedSender(sender, chunkSize) {
+    this._sender = sender;
+    this.chunkSize = chunkSize;
+  }
+  ChunkedSender.prototype.send = function(blob, successCallback, failCallback, statusCallback, options) {
+    this._sendChunks(this._splitToChunks(blob, options), successCallback, failCallback, statusCallback);
+  };
+  ChunkedSender.prototype._splitToChunks = function(blob, options) {
+    var messageId = options && options.messageId ? options.messageId : xRtc.utils.newGuid(), chunks = [], size = blob.size, start = 0, index = 0, total = Math.ceil(size / this.chunkSize);
+    while (start < size) {
+      var end = Math.min(size, start + this.chunkSize);
+      var chunk = {messageId:messageId, index:index, data:blob.slice(start, end), total:total};
+      chunks.push(chunk);
+      start = end;
+      index += 1;
+    }
+    return chunks;
+  };
+  ChunkedSender.prototype._sendChunks = function(chunks, successCallback, failCallback, statusCallback) {
+    var self = this;
+    if (chunks.length === 0) {
+      if (typeof successCallback === "function") {
+        successCallback();
+      }
+      return;
+    }
+    var firstChunk = chunks.shift();
+    this._sender.send(firstChunk, function() {
+      if (typeof statusCallback === "function") {
+        statusCallback({messageId:firstChunk.messageId, count:firstChunk.index + 1, total:firstChunk.total});
+      }
+      self._sendChunks(chunks, successCallback, failCallback);
+    }, failCallback);
+  };
   function ArrayBufferSender(sender) {
     this._sender = sender;
   }
@@ -1148,36 +1189,6 @@
     blobToArrayBuffer(blob, function(arrayBuffer) {
       self._sender.send(arrayBuffer, successCallback, failCallback);
     });
-  };
-  function ChunkedSender(sender, chunkSize) {
-    this._sender = sender;
-    this.chunkSize = chunkSize;
-  }
-  ChunkedSender.prototype.send = function(blob, successCallback, failCallback) {
-    this._sendChunks(this._splitToChunks(blob), successCallback, failCallback);
-  };
-  ChunkedSender.prototype._splitToChunks = function(blob) {
-    var blobId = xRtc.utils.newGuid(), chunks = [], size = blob.size, start = 0, index = 0, total = Math.ceil(size / this.chunkSize);
-    while (start < size) {
-      var end = Math.min(size, start + this.chunkSize);
-      var chunk = {blobId:blobId, index:index, data:blob.slice(start, end), total:total};
-      chunks.push(chunk);
-      start = end;
-      index += 1;
-    }
-    return chunks;
-  };
-  ChunkedSender.prototype._sendChunks = function(chunks, successCallback, failCallback) {
-    var self = this;
-    if (chunks.length === 0) {
-      if (typeof successCallback === "function") {
-        successCallback();
-      }
-      return;
-    }
-    this._sender.send(chunks.shift(), function() {
-      self._sendChunks(chunks, successCallback, failCallback);
-    }, failCallback);
   };
   function BufferedSender(sender, attemptsMaxCount) {
     this._sender = sender;

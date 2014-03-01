@@ -4,6 +4,12 @@
 // For the creation of connection need to use `xRtc.Room` object.
 // The main goal of this object is handling real p2p connection.
 
+//** Supported browsers:**
+
+// * Chrome 25+;
+// * FireFox 22+;
+// * Opera 17+ (Chromium).
+
 // **Dependencies:**
 
 // * class.js;
