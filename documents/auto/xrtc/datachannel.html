@@ -483,7 +483,28 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 					},
 					function (evt) {
 						if (evt.count % transferringProgressInterval === 0 || evt.count === evt.total) {
-							self.trigger(events.progress, { messageId: evt.messageId, percent: 100 * evt.count / evt.total });
+							var progressEvent = {
+								messageId: evt.messageId,
+								percent: 100 * evt.count / evt.total,
+								cancel: function () {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_24">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_24">&#182;</a>
+							</div>
+							<p><strong>Todo:</strong> Need to implement.
+<strong>Idea:</strong> Stop the chunks sending and send special message about stopping/cancelling.
+When special message about stopping/cancelling will be received by remote client then already received chunks should be deleted.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>									throw &quot;Not implemented yet.&quot;;
+								}
+							};
+							self.trigger(events.progress, progressEvent);
 						}
 					},
 					options &amp;&amp; options.messageId ? { messageId: options.messageId } : null);
@@ -527,7 +548,29 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 				blobChunks.count += 1;
 
 				if (blobChunks.count % transferringProgressInterval === 0 || blobChunks.total === blobChunks.count) {
-					self.trigger(events.progress, { messageId: chunk.messageId, percent: 100 * blobChunks.count / blobChunks.total });
+					var progressEvt = {
+						messageId: chunk.messageId,
+						percent: 100 * blobChunks.count / blobChunks.total,
+						cancel: function() {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_25">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_25">&#182;</a>
+							</div>
+							<p><strong>Todo:</strong> Need to implement.
+<strong>Idea:</strong> Send special 'cancellation' message to sender.
+Sendre will stop the chunks sending and send special message about stopping/cancelling.
+When special message about stopping/cancelling will be received then need to delted already received chunks.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>							throw &quot;Not implemented yet.&quot;;
+						}
+					};
+					self.trigger(events.progress, progressEvt);
 				}
 
 				if (blobChunks.total === blobChunks.count) {
@@ -563,10 +606,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_24">
+					<tr id="section_26">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_24">&#182;</a>
+								<a class="pilcrow" href="#section_26">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.DataChannel</code> object.</p>
 
@@ -574,7 +617,19 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 						<td class="code">
 							<pre><code class='prettyprint'>		events: {
 			open: &#39;open&#39;,
-			progress: &#39;progress&#39;,
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_27">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_27">&#182;</a>
+							</div>
+							<p><strong>Todo:</strong> Need to add possibility to cancel message sending/receiving on <code>progress</code> event.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>			progress: &#39;progress&#39;,
 			sentMessage: &#39;sentMessage&#39;,
 			receivedMessage: &#39;receivedMessage&#39;,
 			close: &#39;close&#39;,
@@ -585,10 +640,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_25">
+					<tr id="section_28">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_25">&#182;</a>
+								<a class="pilcrow" href="#section_28">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of states of the <code>xRtc.DataChannel</code> object.</p>
 
@@ -606,10 +661,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_26">
+					<tr id="section_29">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_26">&#182;</a>
+								<a class="pilcrow" href="#section_29">&#182;</a>
 							</div>
 							<p>BEGIN Binary Sender</p>
 
@@ -627,10 +682,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_27">
+					<tr id="section_30">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_27">&#182;</a>
+								<a class="pilcrow" href="#section_30">&#182;</a>
 							</div>
 							<p>END Binary Sender</p>
 
@@ -649,10 +704,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_28">
+					<tr id="section_31">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_28">&#182;</a>
+								<a class="pilcrow" href="#section_31">&#182;</a>
 							</div>
 							<p>BEGIN Chunked Sender</p>
 
@@ -723,10 +778,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_29">
+					<tr id="section_32">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_29">&#182;</a>
+								<a class="pilcrow" href="#section_32">&#182;</a>
 							</div>
 							<p>END Chunked Sender</p>
 
@@ -736,10 +791,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_30">
+					<tr id="section_33">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_30">&#182;</a>
+								<a class="pilcrow" href="#section_33">&#182;</a>
 							</div>
 							<p>BEGIN ArrayBuffer Sender</p>
 
@@ -760,10 +815,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_31">
+					<tr id="section_34">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_31">&#182;</a>
+								<a class="pilcrow" href="#section_34">&#182;</a>
 							</div>
 							<p>END ArrayBuffer Sender</p>
 
@@ -773,10 +828,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_32">
+					<tr id="section_35">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_32">&#182;</a>
+								<a class="pilcrow" href="#section_35">&#182;</a>
 							</div>
 							<p>BEGIN Buffered Sender</p>
 
@@ -850,10 +905,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_33">
+					<tr id="section_36">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_33">&#182;</a>
+								<a class="pilcrow" href="#section_36">&#182;</a>
 							</div>
 							<p>END Buffered Sender</p>
 

@@ -148,7 +148,17 @@
 					},
 					function (evt) {
 						if (evt.count % transferringProgressInterval === 0 || evt.count === evt.total) {
-							self.trigger(events.progress, { messageId: evt.messageId, percent: 100 * evt.count / evt.total });
+							var progressEvent = {
+								messageId: evt.messageId,
+								percent: 100 * evt.count / evt.total,
+								cancel: function () {
+									// **Todo:** Need to implement.
+									// **Idea:** Stop the chunks sending and send special message about stopping/cancelling.
+									// When special message about stopping/cancelling will be received by remote client then already received chunks should be deleted.
+									throw "Not implemented yet.";
+								}
+							};
+							self.trigger(events.progress, progressEvent);
 						}
 					},
 					options && options.messageId ? { messageId: options.messageId } : null);
@@ -192,7 +202,18 @@
 				blobChunks.count += 1;
 
 				if (blobChunks.count % transferringProgressInterval === 0 || blobChunks.total === blobChunks.count) {
-					self.trigger(events.progress, { messageId: chunk.messageId, percent: 100 * blobChunks.count / blobChunks.total });
+					var progressEvt = {
+						messageId: chunk.messageId,
+						percent: 100 * blobChunks.count / blobChunks.total,
+						cancel: function() {
+							// **Todo:** Need to implement.
+							// **Idea:** Send special 'cancellation' message to sender.
+							// Sendre will stop the chunks sending and send special message about stopping/cancelling.
+							// When special message about stopping/cancelling will be received then need to delted already received chunks.
+							throw "Not implemented yet.";
+						}
+					};
+					self.trigger(events.progress, progressEvt);
 				}
 
 				if (blobChunks.total === blobChunks.count) {
@@ -228,6 +249,7 @@
 		// **Note:** Full list of events for the `xRtc.DataChannel` object.
 		events: {
 			open: 'open',
+			// **Todo:** Need to add possibility to cancel message sending/receiving on `progress` event.
 			progress: 'progress',
 			sentMessage: 'sentMessage',
 			receivedMessage: 'receivedMessage',
