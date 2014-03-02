@@ -1071,7 +1071,10 @@
         self.trigger(events.error, sendError);
       }, function(evt) {
         if (evt.count % transferringProgressInterval === 0 || evt.count === evt.total) {
-          self.trigger(events.progress, {messageId:evt.messageId, percent:100 * evt.count / evt.total});
+          var progressEvent = {messageId:evt.messageId, percent:100 * evt.count / evt.total, cancel:function() {
+            throw "Not implemented yet.";
+          }};
+          self.trigger(events.progress, progressEvent);
         }
       }, options && options.messageId ? {messageId:options.messageId} : null);
     }});
@@ -1107,7 +1110,10 @@
         blobChunks.data[chunk.index] = chunk.data;
         blobChunks.count += 1;
         if (blobChunks.count % transferringProgressInterval === 0 || blobChunks.total === blobChunks.count) {
-          self.trigger(events.progress, {messageId:chunk.messageId, percent:100 * blobChunks.count / blobChunks.total});
+          var progressEvt = {messageId:chunk.messageId, percent:100 * blobChunks.count / blobChunks.total, cancel:function() {
+            throw "Not implemented yet.";
+          }};
+          self.trigger(events.progress, progressEvt);
         }
         if (blobChunks.total === blobChunks.count) {
           blobToArrayBuffer(new exports.Blob(blobChunks.data), function(ab) {
