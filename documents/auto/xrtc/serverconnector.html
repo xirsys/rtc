@@ -294,7 +294,7 @@
 							<pre><code class='prettyprint'>		function send(request, ignore) {
 			var requestObject = formatRequest.call(this, request);
 			var requestJson = JSON.stringify(requestObject);
-			if (socket) {
+			if (socket &amp;&amp; socket.readyState === 1) {
 				logger.debug(&#39;send&#39;, requestObject, requestJson);
 				socket.send(requestJson);
 			} else if (!ignore) {

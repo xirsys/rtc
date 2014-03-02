@@ -1777,7 +1777,7 @@
     function send(request, ignore) {
       var requestObject = formatRequest.call(this, request);
       var requestJson = JSON.stringify(requestObject);
-      if (socket) {
+      if (socket && socket.readyState === 1) {
         logger.debug("send", requestObject, requestJson);
         socket.send(requestJson);
       } else {
