@@ -118,8 +118,6 @@
 			} else if (!ignore) {
 				var error = new xrtc.CommonError('send', 'Trying to call method without established connection', 'WebSocket is not connected!');
 				logger.error('send', error);
-
-				throw error;
 			} else {
 				logger.debug('send', 'The call was ignored because no server connection.', requestObject, requestJson);
 			}
