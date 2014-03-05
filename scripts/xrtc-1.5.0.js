@@ -1127,6 +1127,7 @@
       var self = this;
       var chunk = xrtc.blobSerializer.unpack(arrayBuffer);
       if (chunk.total === 1) {
+        self.trigger(events.progress, {messageId:chunk.messageId, percent:100});
         self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(chunk.data)});
       } else {
         if (!receivedChunks[chunk.messageId]) {
@@ -1266,8 +1267,8 @@
   BufferedSender.prototype._trySend = function(message, successCallback, failCallback) {
     try {
       this._sender.send(message);
-    } catch (ex) {
-      failCallback(ex);
+    } catch (evt) {
+      failCallback(new xrtc.CommonError("send", "Message sending error.", evt));
       return false;
     }
     if (typeof successCallback === "function") {

@@ -537,6 +537,7 @@ When special message about stopping/cancelling will be received by remote client
 
 			var chunk = xrtc.blobSerializer.unpack(arrayBuffer);
 			if (chunk.total === 1) {
+				self.trigger(events.progress, { messageId: chunk.messageId, percent: 100 });
 				self.trigger(events.receivedMessage, { data: xrtc.blobSerializer.unpack(chunk.data) });
 			} else {
 				if (!receivedChunks[chunk.messageId]) {
@@ -891,8 +892,8 @@ When special message about stopping/cancelling will be received then need to del
 	BufferedSender.prototype._trySend = function (message, successCallback, failCallback) {
 		try {
 			this._sender.send(message);
-		} catch (ex) {
-			failCallback(ex);
+		} catch (evt) {
+			failCallback(new xrtc.CommonError(&#39;send&#39;, &#39;Message sending error.&#39;, evt));
 			return false;
 		}
 
