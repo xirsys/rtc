@@ -61,10 +61,17 @@
 			logger.error('onCreateOfferError', error);
 		}
 
-		var mediaOptions = options || { video: true, audio: true };
-		if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen") {
-			getUserMedia.call(this, { video: { mandatory: { chromeMediaSource: "screen" } } }, function (screenSharingStream) {
-				if (mediaOptions.audio) {
+		var mediaOptions = options ? xrtc.utils.clone(options) : { video: true, audio: true };
+		if (mediaOptions.video && mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === 'screen') {
+			// Screen sharing feature required no audio.
+			var hasAudio = mediaOptions.audio;
+			mediaOptions.audio = false;
+			delete mediaOptions.video.mandatory.mediaSource;
+			mediaOptions.video.mandatory.chromeMediaSource = 'screen';
+
+			// If requested stream is `screen sharing` and with `audio` then `screen sharing stream` will be merged with separate `audio stream`.
+			getUserMedia.call(this, mediaOptions, function (screenSharingStream) {
+				if (hasAudio) {
 					// *FF 20.0.1: (Not shure about other version, FF 21 works fine)*
 					// reduces the overall sound of the computer (playing using *Chrome* and maybe another *FF*) after calling this functionality.
 					getUserMedia.call(this, { audio: true }, function (audioStream) {

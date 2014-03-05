@@ -32,7 +32,7 @@
 		: parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
 
 	// Features which supported by current browser.
-	xrtc.webrtc.supports = function() {
+	xrtc.webrtc.supports = function () {
 		if (typeof xrtc.webrtc.RTCPeerConnection === 'undefined') {
 			return {};
 		}
@@ -46,7 +46,7 @@
 			pc = new xrtc.webrtc.RTCPeerConnection(null, { optional: [{ RtpDataChannels: true }] });
 			media = true;
 			try {
-				pc.createDataChannel('_XRTCTEST', {reliable: false});
+				pc.createDataChannel('_XRTCTEST', { reliable: false });
 				data = true;
 
 				var reliablePC = new xrtc.webrtc.RTCPeerConnection(null, {});
@@ -79,12 +79,44 @@
 	};
 
 	xRtc.utils = {
-		newGuid: function() {
-			var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		newGuid: function () {
+			var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
 				var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
 				return v.toString(16);
 			});
 			return guid;
+		},
+
+		clone: function (obj) {
+			// Handle the 3 simple types, and null or undefined
+			if (null == obj || "object" != typeof obj) return obj;
+
+			// Handle Date
+			if (obj instanceof Date) {
+				var dateCopy = new Date();
+				dateCopy.setTime(obj.getTime());
+				return dateCopy;
+			}
+
+			// Handle Array
+			if (obj instanceof Array) {
+				var arrayCopy = [];
+				for (var i = 0, len = obj.length; i < len; i++) {
+					arrayCopy[i] = xRtc.utils.clone(obj[i]);
+				}
+				return arrayCopy;
+			}
+
+			// Handle Object
+			if (obj instanceof Object) {
+				var objectCopy = {};
+				for (var attr in obj) {
+					if (obj.hasOwnProperty(attr)) objectCopy[attr] = xRtc.utils.clone(obj[attr]);
+				}
+				return objectCopy;
+			}
+
+			throw new Error("Unable to copy obj! Its type isn't supported.");
 		}
 	};
 })(window);

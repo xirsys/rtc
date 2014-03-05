@@ -715,6 +715,32 @@
       return v.toString(16);
     });
     return guid;
+  }, clone:function(obj) {
+    if (null == obj || "object" != typeof obj) {
+      return obj;
+    }
+    if (obj instanceof Date) {
+      var dateCopy = new Date;
+      dateCopy.setTime(obj.getTime());
+      return dateCopy;
+    }
+    if (obj instanceof Array) {
+      var arrayCopy = [];
+      for (var i = 0, len = obj.length;i < len;i++) {
+        arrayCopy[i] = xRtc.utils.clone(obj[i]);
+      }
+      return arrayCopy;
+    }
+    if (obj instanceof Object) {
+      var objectCopy = {};
+      for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) {
+          objectCopy[attr] = xRtc.utils.clone(obj[attr]);
+        }
+      }
+      return objectCopy;
+    }
+    throw new Error("Unable to copy obj! Its type isn't supported.");
   }};
 })(window);
 (function(exports) {
@@ -2228,10 +2254,14 @@
       var error = new xrtc.CommonError("getUserMedia", "video or audio property of the options parameter should be specified. No sense to create media stream without video and audio components.");
       logger.error("onCreateOfferError", error);
     }
-    var mediaOptions = options || {video:true, audio:true};
+    var mediaOptions = options ? xrtc.utils.clone(options) : {video:true, audio:true};
     if (mediaOptions.video && (mediaOptions.video.mandatory && mediaOptions.video.mandatory.mediaSource === "screen")) {
-      getUserMedia.call(this, {video:{mandatory:{chromeMediaSource:"screen"}}}, function(screenSharingStream) {
-        if (mediaOptions.audio) {
+      var hasAudio = mediaOptions.audio;
+      mediaOptions.audio = false;
+      delete mediaOptions.video.mandatory.mediaSource;
+      mediaOptions.video.mandatory.chromeMediaSource = "screen";
+      getUserMedia.call(this, mediaOptions, function(screenSharingStream) {
+        if (hasAudio) {
           getUserMedia.call(this, {audio:true}, function(audioStream) {
             function addTracks(array, tracks) {
               for (var i = 0;i < tracks.length;i++) {
