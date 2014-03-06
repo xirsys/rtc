@@ -767,24 +767,27 @@
 				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
 				function onCreateAnswerSuccess(answer) {
-					if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-						answer.sdp = iceFilter.filterSDP(answer.sdp);
+					// connection maybe closed on this moment and this field
+					if (peerConnection) {
+						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+							answer.sdp = iceFilter.filterSDP(answer.sdp);
+						}
+
+						peerConnection.setLocalDescription(answer);
+
+						var request = {
+							answer: JSON.stringify(answer),
+							acceptData: offerData.acceptData
+						};
+
+						logger.debug('sendAnswer', offerData, answer);
+						handshakeController.sendAnswer(remoteUser.id, connectionId, request);
+
+						this.trigger(xrtc.Connection.events.answerSent, { connection: this, user: remoteUser, answerData: request });
+						this.trigger(xrtc.Connection.events.connectionEstablishing, { connection: this, user: remoteUser });
+
+						allowIceSending.call(this);
 					}
-
-					peerConnection.setLocalDescription(answer);
-
-					var request = {
-						answer: JSON.stringify(answer),
-						acceptData: offerData.acceptData
-					};
-
-					logger.debug('sendAnswer', offerData, answer);
-					handshakeController.sendAnswer(remoteUser.id, connectionId, request);
-
-					this.trigger(xrtc.Connection.events.answerSent, { connection: this, user: remoteUser, answerData: request });
-					this.trigger(xrtc.Connection.events.connectionEstablishing, { connection: this, user: remoteUser });
-
-					allowIceSending.call(this);
 				}
 
 				function onCreateAnswerError(err) {

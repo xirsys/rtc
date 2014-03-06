@@ -1826,24 +1826,38 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
 				function onCreateAnswerSuccess(answer) {
-					if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
-						answer.sdp = iceFilter.filterSDP(answer.sdp);
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_90">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_90">&#182;</a>
+							</div>
+							<p>connection maybe closed on this moment and this field</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>					if (peerConnection) {
+						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
+							answer.sdp = iceFilter.filterSDP(answer.sdp);
+						}
+
+						peerConnection.setLocalDescription(answer);
+
+						var request = {
+							answer: JSON.stringify(answer),
+							acceptData: offerData.acceptData
+						};
+
+						logger.debug(&#39;sendAnswer&#39;, offerData, answer);
+						handshakeController.sendAnswer(remoteUser.id, connectionId, request);
+
+						this.trigger(xrtc.Connection.events.answerSent, { connection: this, user: remoteUser, answerData: request });
+						this.trigger(xrtc.Connection.events.connectionEstablishing, { connection: this, user: remoteUser });
+
+						allowIceSending.call(this);
 					}
-
-					peerConnection.setLocalDescription(answer);
-
-					var request = {
-						answer: JSON.stringify(answer),
-						acceptData: offerData.acceptData
-					};
-
-					logger.debug(&#39;sendAnswer&#39;, offerData, answer);
-					handshakeController.sendAnswer(remoteUser.id, connectionId, request);
-
-					this.trigger(xrtc.Connection.events.answerSent, { connection: this, user: remoteUser, answerData: request });
-					this.trigger(xrtc.Connection.events.connectionEstablishing, { connection: this, user: remoteUser });
-
-					allowIceSending.call(this);
 				}
 
 				function onCreateAnswerError(err) {
@@ -1923,10 +1937,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_90">
+					<tr id="section_91">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_90">&#182;</a>
+								<a class="pilcrow" href="#section_91">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to think about available states.</p>
 
@@ -1947,10 +1961,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_91">
+					<tr id="section_92">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_91">&#182;</a>
+								<a class="pilcrow" href="#section_92">&#182;</a>
 							</div>
 							<p><strong>Warning:</strong> It can change from version to version.</p>
 
@@ -1961,10 +1975,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_92">
+					<tr id="section_93">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_92">&#182;</a>
+								<a class="pilcrow" href="#section_93">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Why not-ready if local stream is not added? What about situation when only text chat will be used?</p>
 
@@ -1975,10 +1989,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_93">
+					<tr id="section_94">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_93">&#182;</a>
+								<a class="pilcrow" href="#section_94">&#182;</a>
 							</div>
 							<p><em>Chrome M25</em>.
 <strong>Todo:</strong> Why not-ready if local stream is not added? What about situation when only text chat will be used?</p>
@@ -1992,10 +2006,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_94">
+					<tr id="section_95">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_94">&#182;</a>
+								<a class="pilcrow" href="#section_95">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Why not-ready if local stream is not added? What about situation when only text chat will be used?</p>
 
@@ -2006,10 +2020,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_95">
+					<tr id="section_96">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_95">&#182;</a>
+								<a class="pilcrow" href="#section_96">&#182;</a>
 							</div>
 							<p><em>Chrome M26+</em>.</p>
 
@@ -2032,10 +2046,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_96">
+					<tr id="section_97">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_96">&#182;</a>
+								<a class="pilcrow" href="#section_97">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.Connection</code> object.</p>
 
@@ -2045,10 +2059,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_97">
+					<tr id="section_98">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_97">&#182;</a>
+								<a class="pilcrow" href="#section_98">&#182;</a>
 							</div>
 							<p><strong>Main events</strong></p>
 
@@ -2070,10 +2084,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_98">
+					<tr id="section_99">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_98">&#182;</a>
+								<a class="pilcrow" href="#section_99">&#182;</a>
 							</div>
 							<p><strong>Low level events</strong></p>
 
@@ -2094,10 +2108,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_99">
+					<tr id="section_100">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_99">&#182;</a>
+								<a class="pilcrow" href="#section_100">&#182;</a>
 							</div>
 							<p>Following connection types are supported by <code>xRtc</code> library:</p>
 
@@ -2107,10 +2121,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_100">
+					<tr id="section_101">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_100">&#182;</a>
+								<a class="pilcrow" href="#section_101">&#182;</a>
 							</div>
 							<ul>
 <li><code>default</code>. It is mean standart mechanism of connection establishment. At first trying to establish direct p2p connection without STUN or TURN usage. If previous point is not possible then trying to establish STUN connection. If previous point is not possible then establish TURN connection.</li>
@@ -2146,10 +2160,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_101">
+					<tr id="section_102">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_101">&#182;</a>
+								<a class="pilcrow" href="#section_102">&#182;</a>
 							</div>
 							<p>Interop Notes between <em>Chrome M25 and Firefox Nightly (version 21)</em>:
 <em>Chrome</em> does not yet do DTLS-SRTP by default whereas <em>Firefox</em> only does DTLS-SRTP. In order to get interop,
@@ -2166,10 +2180,10 @@ you must supply Chrome with a PC constructor constraint to enable DTLS: <code>{ 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_102">
+					<tr id="section_103">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_102">&#182;</a>
+								<a class="pilcrow" href="#section_103">&#182;</a>
 							</div>
 							<p>Cross-browser support: New syntax of <code>getXXXStreams</code> method in <em>Chrome M26</em>.
 For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undefined.</p>
@@ -2191,10 +2205,10 @@ For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undef
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_103">
+					<tr id="section_104">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_103">&#182;</a>
+								<a class="pilcrow" href="#section_104">&#182;</a>
 							</div>
 							<p>Cross-browser support: New syntax of <code>getXXXTracks</code> method in <em>Chrome M26</em>.</p>
 
@@ -2227,10 +2241,10 @@ For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undef
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_104">
+					<tr id="section_105">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_104">&#182;</a>
+								<a class="pilcrow" href="#section_105">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> No need to disable data channels in case of communication between <em>FireFox</em> and <em>Firefox</em>. These flags are necessary in case of interoperability between <em>FireFox</em> and <em>Chrome</em> only.
 Data channels does't supported in case of interoperability of <em>FireFox</em> and <em>Chrome</em>.</p>
@@ -2241,10 +2255,10 @@ Data channels does't supported in case of interoperability of <em>FireFox</em> a
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_105">
+					<tr id="section_106">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_105">&#182;</a>
+								<a class="pilcrow" href="#section_106">&#182;</a>
 							</div>
 							<p><em>Chrome M26b</em> and <em>Chrome Canary</em> with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between <em>FF</em> and <em>Chrome</em>.</p>
 
