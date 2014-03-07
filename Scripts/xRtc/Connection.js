@@ -767,7 +767,7 @@
 				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
 				function onCreateAnswerSuccess(answer) {
-					// connection maybe closed on this moment and this field
+					// Connection maybe closed on this moment and `peerConnection` field will be not initialized.
 					if (peerConnection) {
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 							answer.sdp = iceFilter.filterSDP(answer.sdp);

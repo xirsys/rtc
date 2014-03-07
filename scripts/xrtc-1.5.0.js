@@ -2246,9 +2246,12 @@
         successCallback(new xrtc.Stream(stream));
       }
     }
-    function onGetUserMediaError(err) {
+    function onGetUserMediaError(error) {
       if (typeof errorCallback === "function") {
-        errorCallback(err);
+        var errorMessage = "Can't get media stream. " + (error.message && error.message !== "" ? error.message : error.name);
+        var xrtcError = new xrtc.CommonError("getUserMedia", errorMessage);
+        logger.error("onCreateOfferError", xrtcError);
+        errorCallback(xrtcError);
       }
     }
   };

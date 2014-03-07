@@ -159,9 +159,12 @@
 				}
 			}
 
-			function onGetUserMediaError(err) {
+			function onGetUserMediaError(error) {
 				if (typeof errorCallback === &quot;function&quot;) {
-					errorCallback(err);
+					var errorMessage = &quot;Can&#39;t get media stream. &quot; + (error.message &amp;&amp; error.message !== &quot;&quot; ? error.message : error.name);
+					var xrtcError = new xrtc.CommonError(&#39;getUserMedia&#39;, errorMessage);
+					logger.error(&#39;onCreateOfferError&#39;, xrtcError);
+					errorCallback(xrtcError);
 				}
 			}
 		};
