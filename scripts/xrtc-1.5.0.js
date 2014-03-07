@@ -978,7 +978,9 @@
     xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, getStream:function() {
       return stream;
     }, stop:function() {
-      stream.stop();
+      if (stream.stop) {
+        stream.stop();
+      }
     }, getId:function() {
       if (!id) {
         id = generateStreamId();

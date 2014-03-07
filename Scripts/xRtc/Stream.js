@@ -40,8 +40,11 @@
 			},
 
 			// **[Public API]:** Stops the stream. After stopping some native resources will be released and the stream can't be used further.
-			stop: function() {
-				stream.stop();
+			stop: function () {
+				// FireFox don't have stop method for remote stream.
+				if (stream.stop) {
+					stream.stop();
+				}
 			},
 
 			// **[Public API]:** Returns unique `id` of the stream.

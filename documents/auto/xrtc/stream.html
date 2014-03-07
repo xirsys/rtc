@@ -187,10 +187,7 @@ It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functiona
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			stop: function() {
-				stream.stop();
-			},
-
+							<pre><code class='prettyprint'>			stop: function () {
 </code></pre>
 						</td>
 					</tr>
@@ -198,6 +195,23 @@ It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functiona
 						<td class="docs">
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_8">&#182;</a>
+							</div>
+							<p>FireFox don't have stop method for remote stream.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>				if (stream.stop) {
+					stream.stop();
+				}
+			},
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_9">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_9">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> Returns unique <code>id</code> of the stream.</p>
 
@@ -214,10 +228,10 @@ It is will be helpful if <code>xRtc.Stream</code> doesn't provide some functiona
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_9">
+					<tr id="section_10">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_9">&#182;</a>
+								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
 							<p><em>*[Public API]: *</em> Returns <code>URL</code> of the stream which provides access to the stream.
 E.g. The <code>URL</code> can be used for assigning to any html 'video' element.</p>
@@ -231,10 +245,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_10">
+					<tr id="section_11">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_10">&#182;</a>
+								<a class="pilcrow" href="#section_11">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> The method will be helpful if you want to assign the stream to html 'video' element.</p>
 
@@ -244,10 +258,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p>Stream could not be started if it has not been downloaded yet.</p>
 
@@ -259,10 +273,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_12">
+					<tr id="section_13">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
+								<a class="pilcrow" href="#section_13">&#182;</a>
 							</div>
 							<p>This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.</p>
 
@@ -279,10 +293,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_14">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_14">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> <code>id</code> property is actual only for <em>Chrome M26+</em>. At the current moment FireFOxe doesn't support it.</p>
 
@@ -300,10 +314,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_15">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_15">&#182;</a>
 							</div>
 							<p>Currently for <em>FireFox</em> <code>src</code> does not work, in future it can be removed.</p>
 
@@ -371,10 +385,10 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_15">
+					<tr id="section_16">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_15">&#182;</a>
+								<a class="pilcrow" href="#section_16">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.Stream</code> object.</p>
 
