@@ -2248,7 +2248,7 @@
     }
     function onGetUserMediaError(error) {
       if (typeof errorCallback === "function") {
-        var errorMessage = "Can't get media stream. " + (error.message && error.message !== "" ? error.message : error.name);
+        var errorMessage = "Can't get media stream. " + (error.message && error.message !== "" ? error.message : error.name) + ". " + "Need to unlock camera/mic access if it was blocked before. For unblocking see special icon in the right corner of the address input of the browser.";
         var xrtcError = new xrtc.CommonError("getUserMedia", errorMessage);
         logger.error("onCreateOfferError", xrtcError);
         errorCallback(xrtcError);
