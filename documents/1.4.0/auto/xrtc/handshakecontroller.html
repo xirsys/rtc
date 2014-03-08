@@ -2,7 +2,7 @@
 
 <html>
 <head>
-	<title>class.js</title>
+	<title>HandshakeController.js</title>
 	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 	<link href="../nocco.css" rel="stylesheet" media="all" type="text/css" />
 	<script src="../prettify.js" type="text/javascript"></script>
@@ -15,19 +15,19 @@
 				<div id="jump_wrapper">
 					<div id="jump_page">
 							<a class="source" href="../xrtc/ajax.html">
-								xrtc\ajax.js
+								xrtc\Ajax.js
 							</a>
 							<a class="source" href="../xrtc/authmanager.html">
-								xrtc\authManager.js
+								xrtc\AuthManager.js
 							</a>
 							<a class="source" href="../xrtc/class.html">
-								xrtc\class.js
+								xrtc\Class.js
 							</a>
 							<a class="source" href="../xrtc/common.html">
-								xrtc\common.js
+								xrtc\Common.js
 							</a>
 							<a class="source" href="../xrtc/commonerror.html">
-								xrtc\commonError.js
+								xrtc\CommonError.js
 							</a>
 							<a class="source" href="../xrtc/connection.html">
 								xrtc\Connection.js
@@ -36,25 +36,25 @@
 								xrtc\DataChannel.js
 							</a>
 							<a class="source" href="../xrtc/eventdispatcher.html">
-								xrtc\eventDispatcher.js
+								xrtc\EventDispatcher.js
 							</a>
 							<a class="source" href="../xrtc/handshakecontroller.html">
-								xrtc\handshakeController.js
+								xrtc\HandshakeController.js
 							</a>
 							<a class="source" href="../xrtc/logger.html">
-								xrtc\logger.js
+								xrtc\Logger.js
 							</a>
 							<a class="source" href="../xrtc/room.html">
-								xrtc\room.js
+								xrtc\Room.js
 							</a>
 							<a class="source" href="../xrtc/serverconnector.html">
 								xrtc\ServerConnector.js
 							</a>
 							<a class="source" href="../xrtc/stream.html">
-								xrtc\stream.js
+								xrtc\Stream.js
 							</a>
 							<a class="source" href="../xrtc/usermedia.html">
-								xrtc\userMedia.js
+								xrtc\UserMedia.js
 							</a>
 					</div>
 				</div>
@@ -63,7 +63,7 @@
 			<thead>
 				<tr>
 					<th class="docs">
-						<h1>class.js</h1>
+						<h1>HandshakeController.js</h1>
 					</th>
 					<th class="code"></th>
 				</tr>
@@ -87,7 +87,34 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_2">&#182;</a>
 							</div>
-							<p>The base type of all classes for xRtc library.</p>
+							<p>It is internal object of xRtc library.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_3">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_3">&#182;</a>
+							</div>
+							<p><strong>Dependencies:</strong></p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_4">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_4">&#182;</a>
+							</div>
+							<p>class.js;
+logger.js.</p>
 
 						</td>
 						<td class="code">
@@ -99,60 +126,38 @@
 		exports.xRtc = {};
 	}
 
-	exports.xRtc.Class = function (namespace, className, constructor) {
-		namespace[className] = constructor;
+	var xrtc = exports.xRtc;
 
-		var klass = namespace[className];
+	xrtc.Class(xrtc, &#39;HandshakeController&#39;, function HandshakeController() {
+		var logger = new xrtc.Logger(this.className);
 
-		klass.fn = klass.prototype;
-		klass.fn.className = className;
+		xrtc.Class.extend(this, xrtc.EventDispatcher, {
+			_logger: logger,
 
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_3">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_3">&#182;</a>
-							</div>
-							<p><strong>[Public API]:</strong> Extends the instance of concrete object.</p>
+			sendIce: function (targetUserId, connectionId, iceCandidateData) {
+				this.trigger(xrtc.HandshakeController.events.sendIce, targetUserId, connectionId, iceCandidateData);
+			},
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>		klass.extend = function (obj) {
-			var extended = obj.extended;
+			sendOffer: function (targetUserId, connectionId, offerData) {
+				this.trigger(xrtc.HandshakeController.events.sendOffer, targetUserId, connectionId, offerData);
+			},
 
-			exports.xRtc.Class.extend(klass, obj);
+			sendAnswer: function (targetUserId, connectionId, answerData) {
+				this.trigger(xrtc.HandshakeController.events.sendAnswer, targetUserId, connectionId, answerData);
+			},
 
-			if (extended) {
-				extended(klass);
+			sendBye: function (targetUserId, connectionId, byeData) {
+				this.trigger(xrtc.HandshakeController.events.sendBye, targetUserId, connectionId, byeData);
 			}
-		};
-	};
+		});
+	});
 
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_4">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_4">&#182;</a>
-							</div>
-							<p><strong>[Public API]:</strong> Extends "destinationObj" by another objects.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>	exports.xRtc.Class.extend = function (destinationObj) {
-		var sourceObjects = Array.prototype.slice.call(arguments, 1);
-
-		for (var index = 0, len = sourceObjects.length; index &lt; len; index++) {
-			var sourceObj = sourceObjects[index];
-
-			for (var propName in sourceObj) {
-				destinationObj[propName] = sourceObj[propName];
-			}
-		}
-	};
+	xrtc.HandshakeController.extend({
+		events: {
+			sendIce: &#39;sendice&#39;,
+			sendOffer: &#39;sendoffer&#39;,
+			sendAnswer: &#39;sendanswer&#39;,
+			sendBye: &#39;sendbye&#39;,
 
 </code></pre>
 						</td>
@@ -162,51 +167,16 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_5">&#182;</a>
 							</div>
-							<p><strong>[Public API]:</strong> Adds to <code>obj</code> getter or/and setter. Where <code>obj</code> is object to add property,
-<code>propertyName</code> is property name, <code>getter</code> is getter to define, can be <code>null</code>, <code>setter</code> is setter to define, can be <code>null</code>.</p>
+							<p><strong>Note:</strong> These events of HandshakeController object can be initiated by another object.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>	exports.xRtc.Class.property = function (obj, propertyName, getter, setter) {
-		if(typeof getter === &quot;function&quot;){
-			obj.__defineGetter__(propertyName, getter);
+							<pre><code class='prettyprint'>			receiveIce: &#39;receiveice&#39;,
+			receiveOffer: &#39;receiveoffer&#39;,
+			receiveAnswer: &#39;receiveanswer&#39;,
+			receiveBye: &#39;receivebye&#39;
 		}
-
-		if (typeof setter === &quot;function&quot;) {
-			obj.__defineSetter__(propertyName, setter);
-		}
-	};
-
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_6">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_6">&#182;</a>
-							</div>
-							<p><strong>[Public API]:</strong> Creates new function, which will wrap another and will replace it's <code>context</code>.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>	exports.xRtc.Class.proxy = function (context) {
-		return function (func) {
-			var baseArgs = [];
-			if (arguments.length &gt; 1) {
-				baseArgs = Array.prototype.slice.call(arguments, 1);
-			}
-			
-			return function () {
-				var args = Array.prototype.slice.call(arguments);
-				
-				for (var i = 0; i &lt; baseArgs.length; i++) {
-					args.push(baseArgs[i]);
-				}
-				
-				func.apply(context, args);
-			};
-		};
-	};
+	});
 })(window);
 </code></pre>
 						</td>

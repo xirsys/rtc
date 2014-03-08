@@ -895,8 +895,9 @@
       try {
         logger.debug("getToken", response);
         if (response === "") {
-          logger.error("getToken", "Server returned an empty response.");
-          self.trigger(xrtc.AuthManager.events.serverError, "Server returned an empty response.");
+          var emptyResponseError = new xrtc.CommonError("getToken", "Server returned an empty response.");
+          logger.error("getToken", emptyResponseError);
+          self.trigger(xrtc.AuthManager.events.serverError, emptyResponseError);
         }
         try {
           response = JSON.parse(response);
@@ -912,8 +913,9 @@
         } else {
           var token = response.d.token;
           if (!token) {
-            logger.error("getToken", response.d);
-            self.trigger(xrtc.AuthManager.events.serverError, response.d);
+            var noTokenError = new xrtc.CommonError("getToken", "Token not found.");
+            logger.error("getToken", noTokenError);
+            self.trigger(xrtc.AuthManager.events.serverError, noTokenError);
           } else {
             logger.info("getToken", token);
             if (typeof callback === "function") {
