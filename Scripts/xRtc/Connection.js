@@ -268,7 +268,7 @@
 					// **TODO:** Need to change fake user to actual user object
 					user: { id: userData.name, name: userData.name },
 					connection: this,
-					stream: xrtcStream,
+					stream: xrtcStream
 				};
 
 				logger.debug('addLocalStream', streamData);

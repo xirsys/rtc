@@ -1370,7 +1370,7 @@
       if (options && options.offer) {
         xrtc.Class.extend(offerOptions, options.offer);
       }
-      self.trigger(xrtc.Connection.events.connectionOpening, {connection:self, user:remoteUser});
+      self.trigger(xrtc.Connection.events.connectionOpening, {user:remoteUser, connection:self});
       initPeerConnection.call(self, remoteUser, function() {
         iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
         peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
@@ -1388,7 +1388,7 @@
             var request = {offer:JSON.stringify(offer), connectionData:connectionData, connectionType:iceFilter.getType(), iceServers:iceServers};
             logger.debug("sendOffer", remoteUser.id, offer);
             handshakeController.sendOffer(remoteUser.id, connectionId, request);
-            self.trigger(xrtc.Connection.events.offerSent, {connection:this, user:remoteUser, offerData:request});
+            self.trigger(xrtc.Connection.events.offerSent, {user:remoteUser, connection:this, offerData:request});
           }
         }
         function onCreateOfferError(err) {
@@ -1407,7 +1407,7 @@
         throwExceptionOfWrongmethodCall("addStream");
       }
       localStreams.push(xrtcStream);
-      var streamData = {connection:this, stream:xrtcStream, user:{id:userData.name, name:userData.name}};
+      var streamData = {user:{id:userData.name, name:userData.name}, connection:this, stream:xrtcStream};
       logger.debug("addLocalStream", streamData);
       this.trigger(xrtc.Connection.events.localStreamAdded, streamData);
     }, createDataChannel:function(name, config) {
@@ -1566,7 +1566,7 @@
             logger.debug("onIceStateChange", (new Date).getTime(), "checkDisconnectedIceStateTimeout was cleared. ID = '" + checkDisconnectedIceStateTimeoutId + "'");
           }
           if (state === "connected") {
-            self.trigger(xrtc.Connection.events.connectionEstablished, {connection:self, user:remoteUser});
+            self.trigger(xrtc.Connection.events.connectionEstablished, {user:remoteUser, connection:self});
           } else {
             if (state === "disconnected") {
               var closeDisconnectedConnectionTimeout = 1E4;
@@ -1664,8 +1664,8 @@
       this.trigger(xrtc.Connection.events.iceAdded, {connection:this, iceCandidate:iceCandidate});
     }
     function onReceiveOffer(offerData) {
-      this.trigger(xrtc.Connection.events.offerReceived, {connection:this, user:remoteUser, offerData:offerData});
-      this.trigger(xrtc.Connection.events.connectionOpening, {connection:this, user:remoteUser});
+      this.trigger(xrtc.Connection.events.offerReceived, {user:remoteUser, connection:this, offerData:offerData});
+      this.trigger(xrtc.Connection.events.connectionOpening, {user:remoteUser, connection:this});
       logger.debug("Offer was received.", offerData);
       iceServers = offerData.iceServers;
       initPeerConnection.call(this, remoteUser, proxy(onPeerConnectionInit));
@@ -1685,8 +1685,8 @@
             var request = {answer:JSON.stringify(answer), acceptData:offerData.acceptData};
             logger.debug("sendAnswer", offerData, answer);
             handshakeController.sendAnswer(remoteUser.id, connectionId, request);
-            this.trigger(xrtc.Connection.events.answerSent, {connection:this, user:remoteUser, answerData:request});
-            this.trigger(xrtc.Connection.events.connectionEstablishing, {connection:this, user:remoteUser});
+            this.trigger(xrtc.Connection.events.answerSent, {user:remoteUser, connection:this, answerData:request});
+            this.trigger(xrtc.Connection.events.connectionEstablishing, {user:remoteUser, connection:this});
             allowIceSending.call(this);
           }
         }
@@ -1703,8 +1703,8 @@
       var sdp = JSON.parse(answerData.answer);
       var sessionDescription = new webrtc.RTCSessionDescription(sdp);
       peerConnection.setRemoteDescription(sessionDescription);
-      this.trigger(xrtc.Connection.events.answerReceived, {connection:this, user:remoteUser, answerData:{answer:sessionDescription}});
-      this.trigger(xrtc.Connection.events.connectionEstablishing, {connection:this, user:remoteUser});
+      this.trigger(xrtc.Connection.events.answerReceived, {user:remoteUser, connection:this, answerData:{answer:sessionDescription}});
+      this.trigger(xrtc.Connection.events.connectionEstablishing, {user:remoteUser, connection:this});
     }
     function onReceiveBye() {
       closePeerConnection.call(this);
