@@ -2147,10 +2147,7 @@
         if (targetHcObject) {
           if (targetHcObject.userId === sender.id) {
             if (data.byeData && data.byeData.type === byeTypes.decline || !targetHcObject.hc) {
-              var declinedConnection = getConnectionById(data.connectionId);
-              if (declinedConnection) {
-                this.trigger(xrtc.Room.events.connectionDeclined, {user:sender, connection:declinedConnection, data:data.byeData});
-              }
+              this.trigger(xrtc.Room.events.connectionDeclined, {user:sender, connectionId:data.connectionId, data:data.byeData});
             }
             if (targetHcObject.hc) {
               targetHcObject.hc.trigger(hcEvents.receiveBye);

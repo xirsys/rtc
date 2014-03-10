@@ -67,7 +67,7 @@
 			connections = [],
 			handshakeControllerObjects = {},
 			byeTypes = {
-				decline : 'decline'
+				decline: 'decline'
 			};
 
 		// `roomInfo` initialization.
@@ -398,17 +398,12 @@
 						if (data.byeData && data.byeData.type === byeTypes.decline /* your connection was declined on the remote side */ ||
 							!targetHcObject.hc /* incoming connection of the remote user was declined by remote user (remote user close appropriate connection)*/) {
 
-							var declinedConnection = getConnectionById(data.connectionId);
-							// If connection was found then throw appropriate event. Another case is when connection still not accepted (so and not created) and decline was received.
-							if (declinedConnection) {
-								this.trigger(xrtc.Room.events.connectionDeclined, {
-									user: sender,
-									// `connection` can be null in case if incoming call of remote user was declined by remote user.
-									// `connection` object on local side will be created only if incoming call will be accepted on local side.
-									connection: declinedConnection,
-									data: data.byeData
-								});
-							}
+							this.trigger(xrtc.Room.events.connectionDeclined, {
+								user: sender,
+								// No connection object exists when connection not accepted yet, so best choices is provided only connectionId.
+								connectionId: data.connectionId,
+								data: data.byeData
+							});
 						}
 
 						if (targetHcObject.hc) {

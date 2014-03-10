@@ -264,7 +264,7 @@ Additionaly <code>roomInfo</code> will be contain information about current user
 			connections = [],
 			handshakeControllerObjects = {},
 			byeTypes = {
-				decline : &#39;decline&#39;
+				decline: &#39;decline&#39;
 			};
 
 </code></pre>
@@ -917,7 +917,8 @@ This functionality helps to detect 'close' action more quickly for <em>Chrome</e
 						if (data.byeData &amp;&amp; data.byeData.type === byeTypes.decline /* your connection was declined on the remote side */ ||
 							!targetHcObject.hc /* incoming connection of the remote user was declined by remote user (remote user close appropriate connection)*/) {
 
-							var declinedConnection = getConnectionById(data.connectionId);
+							this.trigger(xrtc.Room.events.connectionDeclined, {
+								user: sender,
 </code></pre>
 						</td>
 					</tr>
@@ -926,30 +927,13 @@ This functionality helps to detect 'close' action more quickly for <em>Chrome</e
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_40">&#182;</a>
 							</div>
-							<p>If connection was found then throw appropriate event. Another case is when connection still not accepted (so and not created) and decline was received.</p>
+							<p>No connection object exists when connection not accepted yet, so best choices is provided only connectionId.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>							if (declinedConnection) {
-								this.trigger(xrtc.Room.events.connectionDeclined, {
-									user: sender,
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_41">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_41">&#182;</a>
-							</div>
-							<p><code>connection</code> can be null in case if incoming call of remote user was declined by remote user.
-<code>connection</code> object on local side will be created only if incoming call will be accepted on local side.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>									connection: declinedConnection,
-									data: data.byeData
-								});
-							}
+							<pre><code class='prettyprint'>								connectionId: data.connectionId,
+								data: data.byeData
+							});
 						}
 
 						if (targetHcObject.hc) {
@@ -1062,10 +1046,10 @@ This functionality helps to detect 'close' action more quickly for <em>Chrome</e
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_42">
+					<tr id="section_41">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_42">&#182;</a>
+								<a class="pilcrow" href="#section_41">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.Room</code> object.</p>
 
@@ -1093,10 +1077,10 @@ This functionality helps to detect 'close' action more quickly for <em>Chrome</e
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_43">
+					<tr id="section_42">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_43">&#182;</a>
+								<a class="pilcrow" href="#section_42">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Default information values for the <code>xRtc.Room</code> object.</p>
 
@@ -1111,10 +1095,10 @@ This functionality helps to detect 'close' action more quickly for <em>Chrome</e
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_44">
+					<tr id="section_43">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_44">&#182;</a>
+								<a class="pilcrow" href="#section_43">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Default options which used for the <code>enter(credentials, options)</code>
 method of <code>xRtc.Room</code> object if some options not specified.</p>
