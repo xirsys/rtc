@@ -68,7 +68,8 @@
 		return {
 			media: media,
 			data: data,
-			sctp: sctp
+			sctp: sctp,
+			screen: xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.chrome && xrtc.webrtc.detectedBrowserVersion > 25
 		};
 	}();
 

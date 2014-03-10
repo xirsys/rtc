@@ -706,7 +706,7 @@
     if (pc) {
       pc.close();
     }
-    return{media:media, data:data, sctp:sctp};
+    return{media:media, data:data, sctp:sctp, screen:xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.chrome && xrtc.webrtc.detectedBrowserVersion > 25};
   }();
   xrtc.blobSerializer = {pack:BinaryPack.pack, unpack:BinaryPack.unpack};
   xRtc.utils = {newGuid:function() {
