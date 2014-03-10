@@ -15,19 +15,19 @@
 				<div id="jump_wrapper">
 					<div id="jump_page">
 							<a class="source" href="../xrtc/ajax.html">
-								xrtc\Ajax.js
+								xrtc\ajax.js
 							</a>
 							<a class="source" href="../xrtc/authmanager.html">
 								xrtc\AuthManager.js
 							</a>
 							<a class="source" href="../xrtc/class.html">
-								xrtc\Class.js
+								xrtc\class.js
 							</a>
 							<a class="source" href="../xrtc/common.html">
-								xrtc\Common.js
+								xrtc\common.js
 							</a>
 							<a class="source" href="../xrtc/commonerror.html">
-								xrtc\CommonError.js
+								xrtc\commonError.js
 							</a>
 							<a class="source" href="../xrtc/connection.html">
 								xrtc\Connection.js
@@ -36,25 +36,25 @@
 								xrtc\DataChannel.js
 							</a>
 							<a class="source" href="../xrtc/eventdispatcher.html">
-								xrtc\EventDispatcher.js
+								xrtc\eventDispatcher.js
 							</a>
 							<a class="source" href="../xrtc/handshakecontroller.html">
-								xrtc\HandshakeController.js
+								xrtc\handshakeController.js
 							</a>
 							<a class="source" href="../xrtc/logger.html">
-								xrtc\Logger.js
+								xrtc\logger.js
 							</a>
 							<a class="source" href="../xrtc/room.html">
-								xrtc\Room.js
+								xrtc\room.js
 							</a>
 							<a class="source" href="../xrtc/serverconnector.html">
 								xrtc\ServerConnector.js
 							</a>
 							<a class="source" href="../xrtc/stream.html">
-								xrtc\Stream.js
+								xrtc\stream.js
 							</a>
 							<a class="source" href="../xrtc/usermedia.html">
-								xrtc\UserMedia.js
+								xrtc\userMedia.js
 							</a>
 					</div>
 				</div>
@@ -317,13 +317,13 @@ Object types: <code>Array</code>, <code>Blob</code>, <code>File</code>, <code>Ar
 <li>Data will be chunked to small pieces because Chrome doesn't support large messages;</li>
 <li>Each chunk will be serialized to binary format;</li>
 <li>Each serilized chunk will be transformed to ArrayBuffer because only this data format supported by all browsers which supports WebRTC;</li>
-<li>Sending using buffer. If during sending error will be fired then sending will be repeated little bit later until it will be sent.</li>
+<li>Sending using buffer. If during sending error will be fired then sending will be repeated little bit later until it will be sent.
+sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),</li>
 </ul>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),
-			receivedChunks = {};
+							<pre><code class='prettyprint'>			receivedChunks = {};
 
 		dataChannel.onopen = proxy(channelOnOpen);
 		dataChannel.onmessage = proxy(channelOnMessage);
@@ -461,6 +461,25 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 
 				logger.info(&#39;send&#39;, msg);
 
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_24">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_24">&#182;</a>
+							</div>
+							<p>Bug description:
+1. When <code>sender</code> is global variable;
+2. Multithread case (many parallel file uploadings);
+3. Browser is Google Chrome. For Chrome 33 the problem is actual still.
+4. Speed of data sending is hight - > An Exception during hight speed sending (Network error).
+5. Afther the exception only one "thread" continues to run as a result only one random message will be delivered.
+Temporary fix (The fix is working but looks no so good because need to instantiate sender many times).</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>				var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));
 				sender.send(
 					msg,
 					function () {
@@ -490,10 +509,10 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_24">
+					<tr id="section_25">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_24">&#182;</a>
+								<a class="pilcrow" href="#section_25">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to implement.
 <strong>Idea:</strong> Stop the chunks sending and send special message about stopping/cancelling.
@@ -556,10 +575,10 @@ When special message about stopping/cancelling will be received by remote client
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_25">
+					<tr id="section_26">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_25">&#182;</a>
+								<a class="pilcrow" href="#section_26">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to implement.
 <strong>Idea:</strong> Send special 'cancellation' message to sender.
@@ -607,10 +626,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_26">
+					<tr id="section_27">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_26">&#182;</a>
+								<a class="pilcrow" href="#section_27">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.DataChannel</code> object.</p>
 
@@ -621,10 +640,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_27">
+					<tr id="section_28">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_27">&#182;</a>
+								<a class="pilcrow" href="#section_28">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to add possibility to cancel message sending/receiving on <code>progress</code> event.</p>
 
@@ -641,10 +660,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_28">
+					<tr id="section_29">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_28">&#182;</a>
+								<a class="pilcrow" href="#section_29">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of states of the <code>xRtc.DataChannel</code> object.</p>
 
@@ -662,10 +681,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_29">
+					<tr id="section_30">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_29">&#182;</a>
+								<a class="pilcrow" href="#section_30">&#182;</a>
 							</div>
 							<p>BEGIN Binary Sender</p>
 
@@ -683,10 +702,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_30">
+					<tr id="section_31">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_30">&#182;</a>
+								<a class="pilcrow" href="#section_31">&#182;</a>
 							</div>
 							<p>END Binary Sender</p>
 
@@ -705,10 +724,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_31">
+					<tr id="section_32">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_31">&#182;</a>
+								<a class="pilcrow" href="#section_32">&#182;</a>
 							</div>
 							<p>BEGIN Chunked Sender</p>
 
@@ -779,10 +798,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_32">
+					<tr id="section_33">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_32">&#182;</a>
+								<a class="pilcrow" href="#section_33">&#182;</a>
 							</div>
 							<p>END Chunked Sender</p>
 
@@ -792,10 +811,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_33">
+					<tr id="section_34">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_33">&#182;</a>
+								<a class="pilcrow" href="#section_34">&#182;</a>
 							</div>
 							<p>BEGIN ArrayBuffer Sender</p>
 
@@ -816,10 +835,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_34">
+					<tr id="section_35">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_34">&#182;</a>
+								<a class="pilcrow" href="#section_35">&#182;</a>
 							</div>
 							<p>END ArrayBuffer Sender</p>
 
@@ -829,10 +848,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_35">
+					<tr id="section_36">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_35">&#182;</a>
+								<a class="pilcrow" href="#section_36">&#182;</a>
 							</div>
 							<p>BEGIN Buffered Sender</p>
 
@@ -906,10 +925,10 @@ When special message about stopping/cancelling will be received then need to del
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_36">
+					<tr id="section_37">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_36">&#182;</a>
+								<a class="pilcrow" href="#section_37">&#182;</a>
 							</div>
 							<p>END Buffered Sender</p>
 

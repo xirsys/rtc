@@ -64,7 +64,7 @@
 			// * Each chunk will be serialized to binary format;
 			// * Each serilized chunk will be transformed to ArrayBuffer because only this data format supported by all browsers which supports WebRTC;
 			// * Sending using buffer. If during sending error will be fired then sending will be repeated little bit later until it will be sent.
-			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),
+			//sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),
 			receivedChunks = {};
 
 		dataChannel.onopen = proxy(channelOnOpen);
@@ -126,6 +126,14 @@
 
 				logger.info('send', msg);
 
+				// Bug description:
+				// 1. When `sender` is global variable;
+				// 2. Multithread case (many parallel file uploadings);
+				// 3. Browser is Google Chrome. For Chrome 33 the problem is actual still.
+				// 4. Speed of data sending is hight - > An Exception during hight speed sending (Network error).
+				// 5. Afther the exception only one "thread" continues to run as a result only one random message will be delivered.
+				// Temporary fix (The fix is working but looks no so good because need to instantiate sender many times).
+				var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));
 				sender.send(
 					msg,
 					function () {
