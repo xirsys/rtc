@@ -291,6 +291,7 @@ Object types: <code>Array</code>, <code>Blob</code>, <code>File</code>, <code>Ar
 						<td class="code">
 							<pre><code class='prettyprint'>			chunkSize = 16300, /*bytes*/
 			attemptsMaxCount = 100,
+			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),
 </code></pre>
 						</td>
 					</tr>
@@ -475,12 +476,12 @@ This <code>name</code> should be specified on <code>createDataChannel(name)</cod
 3. Browser is Google Chrome. For Chrome 33 the problem is actual still.
 4. Speed of data sending is hight - > An Exception during hight speed sending (Network error).
 5. Afther the exception only one "thread" continues to run as a result only one random message will be delivered.
-Temporary fix (The fix is working but looks no so good because need to instantiate sender many times).</p>
+Temporary fix (The fix is working but looks no so good because need to instantiate sender many times).
+var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>				var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));
-				sender.send(
+							<pre><code class='prettyprint'>				sender.send(
 					msg,
 					function () {
 						var evt = { data: msg };

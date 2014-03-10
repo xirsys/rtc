@@ -57,6 +57,7 @@
 			// The original 60000 bytes setting does not work when sending data from Firefox to Chrome, which is "cut off" after 16384 bytes and delivered individually.
 			chunkSize = 16300, /*bytes*/
 			attemptsMaxCount = 100,
+			sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)),
 			// Phases of data sending:
 
 			// * Data will be serialized to binary format;
@@ -133,7 +134,7 @@
 				// 4. Speed of data sending is hight - > An Exception during hight speed sending (Network error).
 				// 5. Afther the exception only one "thread" continues to run as a result only one random message will be delivered.
 				// Temporary fix (The fix is working but looks no so good because need to instantiate sender many times).
-				var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));
+				//var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));
 				sender.send(
 					msg,
 					function () {

@@ -1061,7 +1061,7 @@
   }
   var xrtc = exports.xRtc;
   xrtc.Class(xrtc, "DataChannel", function(dataChannel, connection) {
-    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events, transferringProgressInterval = 10, chunkSize = 16300, attemptsMaxCount = 100, receivedChunks = {};
+    var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), events = xrtc.DataChannel.events, transferringProgressInterval = 10, chunkSize = 16300, attemptsMaxCount = 100, sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize)), receivedChunks = {};
     dataChannel.onopen = proxy(channelOnOpen);
     dataChannel.onmessage = proxy(channelOnMessage);
     dataChannel.onclose = proxy(channelOnClose);
@@ -1086,7 +1086,6 @@
         self.trigger(events.error, incorrectStateError);
       }
       logger.info("send", msg);
-      var sender = new BinarySender(new ChunkedSender(new BinarySender(new ArrayBufferSender(new BufferedSender(dataChannel, attemptsMaxCount))), chunkSize));
       sender.send(msg, function() {
         var evt = {data:msg};
         if (typeof successCallback === "function") {
