@@ -1358,7 +1358,7 @@
   });
   xrtc.Class(xrtc, "Connection", function Connection(connId, ud, remoteUser, hc, am, data) {
     var proxy = xrtc.Class.proxy(this), logger = new xrtc.Logger(this.className), userData = ud, authManager = am || new xRtc.AuthManager, localStreams = [], remoteStreams = [], dataChannels = [], dataChannelConfigs = [], peerConnection = null, checkConnectionStateIntervalId = null, checkDisconnectedIceStateTimeoutId = null, handshakeController = hc, iceFilter = null, iceServers = null, connectionEstablished = false, iceCandidates = [], connectionId = connId, connectionData = data, connectionIsOpened = 
-    false;
+    false, connectionClosed = false;
     subscribeToHandshakeControllerEvents.call(this);
     xrtc.Class.extend(this, xrtc.EventDispatcher, {_logger:logger, getId:function() {
       return connectionId;
@@ -1376,7 +1376,7 @@
         iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
         peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
         function onCreateOfferSuccess(offer) {
-          if (peerConnection) {
+          if (!connectionClosed && peerConnection) {
             if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
               offer.sdp = iceFilter.filterSDP(offer.sdp);
             }
@@ -1716,17 +1716,20 @@
         exports.clearInterval(checkConnectionStateIntervalId);
         checkConnectionStateIntervalId = null;
       }
-      if (peerConnection) {
-        peerConnection.onicecandidate = null;
-        peerConnection.close();
-        peerConnection = null;
-        iceCandidates = [];
-        iceServers = null;
-        connectionEstablished = false;
-        connectionIsOpened = false;
-        var closeConnectionData = {user:remoteUser, connection:self};
-        remoteUser = null;
-        this.trigger(xrtc.Connection.events.connectionClosed, closeConnectionData);
+      if (!connectionClosed) {
+        connectionClosed = true;
+        var tempUser = remoteUser;
+        if (peerConnection) {
+          peerConnection.onicecandidate = null;
+          peerConnection.close();
+          peerConnection = null;
+          iceCandidates = [];
+          iceServers = null;
+          connectionEstablished = false;
+          connectionIsOpened = false;
+          remoteUser = null;
+        }
+        this.trigger(xrtc.Connection.events.connectionClosed, {user:tempUser, connection:self});
       }
     }
     function getIceState() {

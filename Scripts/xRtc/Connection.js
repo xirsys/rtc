@@ -166,7 +166,8 @@
 			connectionId = connId,
 			// Internal user data conainer. The data helps to identify the connection and differ the connection from other connections.
 			connectionData = data,
-			connectionIsOpened = false;
+			connectionIsOpened = false,
+			connectionClosed = false;
 
 		subscribeToHandshakeControllerEvents.call(this);
 
@@ -204,9 +205,7 @@
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
 
 					function onCreateOfferSuccess(offer) {
-						// **Note:** `peerConnection` object can be `null` in case if connection was created and closed straightway.
-						// So after it async `onCreateOfferSuccess` will start and 'peerConnection' will be `null`.
-						if (peerConnection) {
+						if (!connectionClosed && peerConnection) {
 							if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 								offer.sdp = iceFilter.filterSDP(offer.sdp);
 							}
@@ -823,23 +822,24 @@
 				checkConnectionStateIntervalId = null;
 			}
 
-			if (peerConnection) {
-				peerConnection.onicecandidate = null;
-				peerConnection.close();
-				peerConnection = null;
-				iceCandidates = [];
-				iceServers = null;
-				connectionEstablished = false;
-				connectionIsOpened = false;
+			if (!connectionClosed) {
+				// Connection can be closed before "offer" will be generated and "peerConnection" initialization accordingly. So this flag is required.
+				connectionClosed = true;
 
-				var closeConnectionData = {
-					user: remoteUser,
-					connection: self
-				};
+				var tempUser = remoteUser;
 
-				remoteUser = null;
+				if (peerConnection) {
+					peerConnection.onicecandidate = null;
+					peerConnection.close();
+					peerConnection = null;
+					iceCandidates = [];
+					iceServers = null;
+					connectionEstablished = false;
+					connectionIsOpened = false;
+					remoteUser = null;
+				}
 
-				this.trigger(xrtc.Connection.events.connectionClosed, closeConnectionData);
+				this.trigger(xrtc.Connection.events.connectionClosed, { user: tempUser, connection: self });
 			}
 		}
 

@@ -30,7 +30,7 @@
 // * Opera 18 to Opera 18;
 // * Opera 19 to Opera 19.
 
-// **Todo: Need to test it and created interoperability table. E.g. Opera didn't teste almost in interoperability mode.**
+// **Todo: Need to test it and created interoperability table. E.g. Opera practically didn't tested in interoperability mode.**
 
 // **Dependencies:**
 
