@@ -590,7 +590,41 @@ because the remote peerConnection still not created.</p>
 
 				self.trigger(xrtc.Connection.events.connectionOpening, { user: remoteUser, connection: self });
 
-				initPeerConnection.call(self, remoteUser, function () {
+				initPeerConnection.call(self, remoteUser, proxy(onLocalPeerConnectionInitialized));
+
+				function onLocalPeerConnectionInitialized() {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_30">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_30">&#182;</a>
+							</div>
+							<p>Add streams to native webrtc peerConnection which were added before.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>					for (var i = 0, len = localStreams.length; i &lt; len; i++) {
+						peerConnection.addStream(localStreams[i].getStream());
+					}
+
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_31">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_31">&#182;</a>
+							</div>
+							<p>Create data channnels which were created(registered for creation) before.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>					for (i = 0, len = dataChannelConfigs.length; i &lt; len; i++) {
+						createDataChannel.call(this, dataChannelConfigs[i]);
+					}
+
 					iceFilter = new internal.IceCandidateFilter(options &amp;&amp; options.connectionType || null, iceServers);
 
 					peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
@@ -608,10 +642,10 @@ because the remote peerConnection still not created.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_30">
+					<tr id="section_32">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_30">&#182;</a>
+								<a class="pilcrow" href="#section_32">&#182;</a>
 							</div>
 							<p>This magis is required for interoperability support of FF21 and Chrome.</p>
 
@@ -641,16 +675,16 @@ because the remote peerConnection still not created.</p>
 						logger.error(&#39;onCreateOfferError&#39;, error);
 						self.trigger(xrtc.Connection.events.createOfferError, { connection: self, error: error });
 					}
-				});
+				}
 			},
 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_31">
+					<tr id="section_33">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_31">&#182;</a>
+								<a class="pilcrow" href="#section_33">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. This method should be used for closing the <code>connection</code>.</p>
 
@@ -667,10 +701,10 @@ because the remote peerConnection still not created.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_32">
+					<tr id="section_34">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_32">&#182;</a>
+								<a class="pilcrow" href="#section_34">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. This method should be used for adding <code>xRtc.Stream</code> to the <code>connection</code>.
 It is required if you want to transmit the <code>stream</code> to remote user. The <code>xRtc.Stream</code> can be obtained using <code>xRtc.getUserMedia</code> method.
@@ -690,10 +724,10 @@ After execution this method <code>localstreamadded</code> (<code>xrtc.Connection
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_33">
+					<tr id="section_35">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_33">&#182;</a>
+								<a class="pilcrow" href="#section_35">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> user.id equals current user name.
 <strong>TODO:</strong> Need to change fake user to actual user object</p>
@@ -712,10 +746,10 @@ After execution this method <code>localstreamadded</code> (<code>xrtc.Connection
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_34">
+					<tr id="section_36">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_34">&#182;</a>
+								<a class="pilcrow" href="#section_36">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. This method should be used for creating <code>xRtc.DataChannel</code> for the <code>connection</code>.
 Names of the data channels should be unique in context of any <code>connection</code>.
@@ -728,10 +762,10 @@ It take following parameters:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_35">
+					<tr id="section_37">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_35">&#182;</a>
+								<a class="pilcrow" href="#section_37">&#182;</a>
 							</div>
 							<ul>
 <li><code>name</code>. Name of the data channel. Name of the data channel should be unique among all data channels of the <code>xrtc.Connection</code> object.</li>
@@ -752,10 +786,10 @@ It take following parameters:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_36">
+					<tr id="section_38">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_36">&#182;</a>
+								<a class="pilcrow" href="#section_38">&#182;</a>
 							</div>
 							<p>binaryType === 'blob'
 binaryType = webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? "arraybuffer" : "blob";</p>
@@ -769,10 +803,10 @@ binaryType = webrtc.detectedBrowser === webrtc.supportedBrowsers.chrome ? "array
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_37">
+					<tr id="section_39">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_37">&#182;</a>
+								<a class="pilcrow" href="#section_39">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. This method should be used for accessing 'specific user data' of the connection.
 User/Developer can pass any data to the 'connection' in the `xRtc.Room.connect()' method. E.g. This functionality will be useful
@@ -788,10 +822,10 @@ Also it will be useful if you want to store some data which related with concret
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_38">
+					<tr id="section_40">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_38">&#182;</a>
+								<a class="pilcrow" href="#section_40">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. Returns state of the <code>connection</code>.
 List of possibly connection states:</p>
@@ -802,10 +836,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_39">
+					<tr id="section_41">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_39">&#182;</a>
+								<a class="pilcrow" href="#section_41">&#182;</a>
 							</div>
 							<ul>
 <li>'ready'</li>
@@ -821,10 +855,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_40">
+					<tr id="section_42">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_40">&#182;</a>
+								<a class="pilcrow" href="#section_42">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to revise all states.</p>
 
@@ -837,10 +871,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_41">
+					<tr id="section_43">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_41">&#182;</a>
+								<a class="pilcrow" href="#section_43">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. Returns <code>xRtc.Stream[]</code> object where each stream is <code>stream</code> which was added by <code>addStream</code> public method. For the most cases this <code>array</code> will be contain only one stream.</p>
 
@@ -850,10 +884,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_42">
+					<tr id="section_44">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_42">&#182;</a>
+								<a class="pilcrow" href="#section_44">&#182;</a>
 							</div>
 							<p>Return the copy of internal array.</p>
 
@@ -867,10 +901,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_43">
+					<tr id="section_45">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_43">&#182;</a>
+								<a class="pilcrow" href="#section_45">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. Returns <code>xRtc.Stream[]</code> object where each stream is <code>stream</code> which tranferred from the remote side.
 <strong>Note:</strong> Each remote <code>xRtc.Stream</code> creates asynchronously on <code>remotestreamadded</code> (xrtc.Room.events.remoteStreamAdded) event and will be accessible in this array after mentioned event only.</p>
@@ -881,10 +915,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_44">
+					<tr id="section_46">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_44">&#182;</a>
+								<a class="pilcrow" href="#section_46">&#182;</a>
 							</div>
 							<p>Return the copy of internal array.</p>
 
@@ -898,10 +932,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_45">
+					<tr id="section_47">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_45">&#182;</a>
+								<a class="pilcrow" href="#section_47">&#182;</a>
 							</div>
 							<p><strong>[Public API]:</strong> It is public method of <code>connection</code> object. Returns <code>xRtc.DataChannel[]</code> object where each channel is <code>channel</code>which was created using <code>createDataChannel</code> public method.
 <strong>Note:</strong> Each <code>xRtc.DataChannel</code> creates asynchronously on <code>datachannelcreated</code> (<code>xrtc.Room.events.dataChannelCreated</code>) event and will be accessible in this array after mentioned event only.</p>
@@ -912,10 +946,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_46">
+					<tr id="section_48">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_46">&#182;</a>
+								<a class="pilcrow" href="#section_48">&#182;</a>
 							</div>
 							<p>Return the copy of internal array.</p>
 
@@ -930,10 +964,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_47">
+					<tr id="section_49">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_47">&#182;</a>
+								<a class="pilcrow" href="#section_49">&#182;</a>
 							</div>
 							<p>Internal helper method which throws appropriate exception in case when someone try to call <code>addStream</code> or <code>createDataChannel</code> methods at inappropriate time.</p>
 
@@ -948,10 +982,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_48">
+					<tr id="section_50">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_48">&#182;</a>
+								<a class="pilcrow" href="#section_50">&#182;</a>
 							</div>
 							<p>Internal method which helps to subscribe to all events of <code>handshakeController</code> object where <code>handshakeController</code> is internal object and bridge between <code>xRtc.Connection</code> and <code>xRtc.Room</code>.</p>
 
@@ -969,10 +1003,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_49">
+					<tr id="section_51">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_49">&#182;</a>
+								<a class="pilcrow" href="#section_51">&#182;</a>
 							</div>
 							<p>Internal method which used for initialization of internal <code>peerConnection</code>. During execution of this method following async request will be performed:</p>
 
@@ -982,10 +1016,10 @@ List of possibly connection states:</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_50">
+					<tr id="section_52">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_50">&#182;</a>
+								<a class="pilcrow" href="#section_52">&#182;</a>
 							</div>
 							<ul>
 <li>Async ajax request to sever side for the <code>Token</code>.</li>
@@ -996,45 +1030,6 @@ List of possibly connection states:</p>
 						<td class="code">
 							<pre><code class='prettyprint'>		function initPeerConnection(user, callback) {
 			remoteUser = user;
-
-			if (!peerConnection) {
-				getIceServers.call(this, proxy(onIceServersGot));
-			} else {
-				callCallback();
-			}
-
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_51">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_51">&#182;</a>
-							</div>
-							<p><strong>Todo:</strong> Need to think of this approach and refactor it.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>			function callCallback() {
-				if (typeof callback === &quot;function&quot;) {
-					try {
-						callback();
-					} catch (e) {
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_52">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_52">&#182;</a>
-							</div>
-							<p><strong>Todo:</strong> Check or not check?</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>					}
-				}
-			}
 
 </code></pre>
 						</td>
@@ -1538,38 +1533,22 @@ enum RTCIceGatheringState {
 					addRemoteStream.call(this, evt.stream);
 				}
 
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_78">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_78">&#182;</a>
-							</div>
-							<p>Add streams to native webrtc peerConnection which were added before.</p>
+				callCallback();
+			}
 
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>				for (var i = 0, len = localStreams.length; i &lt; len; i++) {
-					peerConnection.addStream(localStreams[i].getStream());
+			function callCallback() {
+				if (typeof callback === &quot;function&quot;) {
+					try {
+						callback();
+					} catch (error) {
+						logger.error(&#39;initPeerConnection.callback&#39;, error);
+					}
 				}
+			}
 
-</code></pre>
-						</td>
-					</tr>
-					<tr id="section_79">
-						<td class="docs">
-							<div class="pilwrap">
-								<a class="pilcrow" href="#section_79">&#182;</a>
-							</div>
-							<p>Create data channnels which were created(registered for creation) before.</p>
-
-						</td>
-						<td class="code">
-							<pre><code class='prettyprint'>				for (var i = 0, len = dataChannelConfigs.length; i &lt; len; i++) {
-					createDataChannel.call(this, dataChannelConfigs[i]);
-				}
-
+			if (!peerConnection) {
+				getIceServers.call(this, proxy(onIceServersGot));
+			} else {
 				callCallback();
 			}
 		}
@@ -1577,10 +1556,10 @@ enum RTCIceGatheringState {
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_80">
+					<tr id="section_78">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_80">&#182;</a>
+								<a class="pilcrow" href="#section_78">&#182;</a>
 							</div>
 							<p>Internal helper method which creates new instance of DataChannel by channel source <code>{name, config}</code>.</p>
 
@@ -1592,10 +1571,10 @@ enum RTCIceGatheringState {
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_81">
+					<tr id="section_79">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_81">&#182;</a>
+								<a class="pilcrow" href="#section_79">&#182;</a>
 							</div>
 							<p><em>FF 19-21(and 18 maybe)</em>: Data channels should be created after connection establishment.
 Connection should be established usually with audio and/or video.  For the time being,
@@ -1611,10 +1590,10 @@ For more information see <a href="https://hacks.mozilla.org/2012/11/progress-upd
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_82">
+					<tr id="section_80">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_82">&#182;</a>
+								<a class="pilcrow" href="#section_80">&#182;</a>
 							</div>
 							<p>As a result current library approach of data channels creation works only for <em>FF 22+</em>.
 for earlier versions exception will be thrown: Component returned failure code:
@@ -1626,10 +1605,10 @@ for earlier versions exception will be thrown: Component returned failure code:
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_83">
+					<tr id="section_81">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_83">&#182;</a>
+								<a class="pilcrow" href="#section_81">&#182;</a>
 							</div>
 							<p>Reliable channel is chanel which works using RTCP protocol, unreliable channels uses UDP protocol.
 RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
@@ -1640,10 +1619,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_84">
+					<tr id="section_82">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_84">&#182;</a>
+								<a class="pilcrow" href="#section_82">&#182;</a>
 							</div>
 							<p>Data channels works in following cases:</p>
 
@@ -1653,10 +1632,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_85">
+					<tr id="section_83">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_85">&#182;</a>
+								<a class="pilcrow" href="#section_83">&#182;</a>
 							</div>
 							<ul>
 <li>FireFox 22+ to FireFox 22+;</li>
@@ -1681,10 +1660,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_86">
+					<tr id="section_84">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_86">&#182;</a>
+								<a class="pilcrow" href="#section_84">&#182;</a>
 							</div>
 							<p>Default value of <code>binaryType</code> for Chrome is <code>'arraybuffer'</code>, for FireFox is <code>'blob'</code> and <code>'blob'</code> doesn't supported by Chrome at now (Chrome 32).</p>
 
@@ -1701,10 +1680,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_87">
+					<tr id="section_85">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_87">&#182;</a>
+								<a class="pilcrow" href="#section_85">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> <code>peerConnection.ondatachannel</code> fires only for the remote side. So this event is required.</p>
 
@@ -1732,10 +1711,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_88">
+					<tr id="section_86">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_88">&#182;</a>
+								<a class="pilcrow" href="#section_86">&#182;</a>
 							</div>
 							<p>Send already generated ice candidates.</p>
 
@@ -1793,23 +1772,35 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 		}
 
 		function onReceiveOffer(offerData) {
+			logger.debug(&#39;Offer was received.&#39;, offerData);
+
 			this.trigger(xrtc.Connection.events.offerReceived, { user: remoteUser, connection: this, offerData: offerData });
 			this.trigger(xrtc.Connection.events.connectionOpening, { user: remoteUser, connection: this });
 
-			logger.debug(&#39;Offer was received.&#39;, offerData);
-
 			iceServers = offerData.iceServers;
 
-			initPeerConnection.call(this, remoteUser, proxy(onPeerConnectionInit));
+			initPeerConnection.call(this, remoteUser, proxy(onRemotePeerConnectionInitialized));
 
-			function onPeerConnectionInit() {
-				logger.debug(&#39;receiveOffer&#39;, offerData);
+			function onRemotePeerConnectionInitialized() {
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_87">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_87">&#182;</a>
+							</div>
+							<p>Add streams to native webrtc peerConnection which were added before.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>				for (var i = 0, len = localStreams.length; i &lt; len; i++) {
+					peerConnection.addStream(localStreams[i].getStream());
+				}
+
+				peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(JSON.parse(offerData.offer)));
+
 				iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
-
-				var sdp = JSON.parse(offerData.offer);
-
-				var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
-				peerConnection.setRemoteDescription(remoteSessionDescription);
 
 				peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
 
@@ -1817,19 +1808,21 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_89">
+					<tr id="section_88">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_89">&#182;</a>
+								<a class="pilcrow" href="#section_88">&#182;</a>
 							</div>
 							<p>Connection maybe closed on this moment and <code>peerConnection</code> field will be not initialized.</p>
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>					if (peerConnection) {
+							<pre><code class='prettyprint'>					if (!connectionClosed &amp;&amp; peerConnection) {
 						if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
 							answer.sdp = iceFilter.filterSDP(answer.sdp);
 						}
+
+						logger.debug(&#39;onCreateAnswerSuccess&#39;, answer);
 
 						peerConnection.setLocalDescription(answer);
 
@@ -1860,16 +1853,17 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 		function onReceiveAnswer(answerData) {
 			logger.debug(&#39;Answer was received.&#39;, answerData);
 
+			this.trigger(xrtc.Connection.events.answerReceived, { user: remoteUser, connection: this, answerData: { answer: answerData } });
+			this.trigger(xrtc.Connection.events.connectionEstablishing, { user: remoteUser, connection: this });
+
 			allowIceSending.call(this);
 
-			var sdp = JSON.parse(answerData.answer);
-			var sessionDescription = new webrtc.RTCSessionDescription(sdp);
-			peerConnection.setRemoteDescription(sessionDescription);
-			this.trigger(xrtc.Connection.events.answerReceived, { user: remoteUser, connection: this, answerData: { answer: sessionDescription } });
-			this.trigger(xrtc.Connection.events.connectionEstablishing, { user: remoteUser, connection: this });
+			peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(JSON.parse(answerData.answer)));
 		}
 
 		function onReceiveBye() {
+			logger.debug(&#39;Bye was received&#39;);
+
 			closePeerConnection.call(this);
 		}
 
@@ -1885,10 +1879,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_90">
+					<tr id="section_89">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_90">&#182;</a>
+								<a class="pilcrow" href="#section_89">&#182;</a>
 							</div>
 							<p>Connection can be closed before "offer" will be generated and "peerConnection" initialization accordingly. So this flag is required.</p>
 
@@ -1937,10 +1931,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_91">
+					<tr id="section_90">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_91">&#182;</a>
+								<a class="pilcrow" href="#section_90">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Need to think about available states.</p>
 
@@ -1961,10 +1955,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_92">
+					<tr id="section_91">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_92">&#182;</a>
+								<a class="pilcrow" href="#section_91">&#182;</a>
 							</div>
 							<p><strong>Warning:</strong> It can change from version to version.</p>
 
@@ -1975,10 +1969,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_93">
+					<tr id="section_92">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_93">&#182;</a>
+								<a class="pilcrow" href="#section_92">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Why not-ready if local stream is not added? What about situation when only text chat will be used?</p>
 
@@ -1989,10 +1983,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_94">
+					<tr id="section_93">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_94">&#182;</a>
+								<a class="pilcrow" href="#section_93">&#182;</a>
 							</div>
 							<p><em>Chrome M25</em>.
 <strong>Todo:</strong> Why not-ready if local stream is not added? What about situation when only text chat will be used?</p>
@@ -2006,10 +2000,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_95">
+					<tr id="section_94">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_95">&#182;</a>
+								<a class="pilcrow" href="#section_94">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> Why not-ready if local stream is not added? What about situation when only text chat will be used?</p>
 
@@ -2020,10 +2014,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_96">
+					<tr id="section_95">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_96">&#182;</a>
+								<a class="pilcrow" href="#section_95">&#182;</a>
 							</div>
 							<p><em>Chrome M26+</em>.</p>
 
@@ -2046,10 +2040,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_97">
+					<tr id="section_96">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_97">&#182;</a>
+								<a class="pilcrow" href="#section_96">&#182;</a>
 							</div>
 							<p><strong>Note:</strong> Full list of events for the <code>xRtc.Connection</code> object.</p>
 
@@ -2059,10 +2053,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_98">
+					<tr id="section_97">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_98">&#182;</a>
+								<a class="pilcrow" href="#section_97">&#182;</a>
 							</div>
 							<p><strong>Main events</strong></p>
 
@@ -2084,10 +2078,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_99">
+					<tr id="section_98">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_99">&#182;</a>
+								<a class="pilcrow" href="#section_98">&#182;</a>
 							</div>
 							<p><strong>Low level events</strong></p>
 
@@ -2108,10 +2102,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_100">
+					<tr id="section_99">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_100">&#182;</a>
+								<a class="pilcrow" href="#section_99">&#182;</a>
 							</div>
 							<p>Following connection types are supported by <code>xRtc</code> library:</p>
 
@@ -2121,10 +2115,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_101">
+					<tr id="section_100">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_101">&#182;</a>
+								<a class="pilcrow" href="#section_100">&#182;</a>
 							</div>
 							<ul>
 <li><code>default</code>. It is mean standart mechanism of connection establishment. At first trying to establish direct p2p connection without STUN or TURN usage. If previous point is not possible then trying to establish STUN connection. If previous point is not possible then establish TURN connection.</li>
@@ -2160,10 +2154,10 @@ RTCP data channels supported only in <em>FF</em> and <em>Chrome 31+</em>.</p>
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_102">
+					<tr id="section_101">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_102">&#182;</a>
+								<a class="pilcrow" href="#section_101">&#182;</a>
 							</div>
 							<p>Interop Notes between <em>Chrome M25 and Firefox Nightly (version 21)</em>:
 <em>Chrome</em> does not yet do DTLS-SRTP by default whereas <em>Firefox</em> only does DTLS-SRTP. In order to get interop,
@@ -2180,10 +2174,10 @@ you must supply Chrome with a PC constructor constraint to enable DTLS: <code>{ 
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_103">
+					<tr id="section_102">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_103">&#182;</a>
+								<a class="pilcrow" href="#section_102">&#182;</a>
 							</div>
 							<p>Cross-browser support: New syntax of <code>getXXXStreams</code> method in <em>Chrome M26</em>.
 For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undefined.</p>
@@ -2205,10 +2199,10 @@ For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undef
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_104">
+					<tr id="section_103">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_104">&#182;</a>
+								<a class="pilcrow" href="#section_103">&#182;</a>
 							</div>
 							<p>Cross-browser support: New syntax of <code>getXXXTracks</code> method in <em>Chrome M26</em>.</p>
 
@@ -2241,10 +2235,10 @@ For <em>FireFox 22</em> <code>webrtc.RTCPeerConnection.prototype</code> is undef
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_105">
+					<tr id="section_104">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_105">&#182;</a>
+								<a class="pilcrow" href="#section_104">&#182;</a>
 							</div>
 							<p><strong>Todo:</strong> No need to disable data channels in case of communication between <em>FireFox</em> and <em>Firefox</em>. These flags are necessary in case of interoperability between <em>FireFox</em> and <em>Chrome</em> only.
 Data channels does't supported in case of interoperability of <em>FireFox</em> and <em>Chrome</em>.</p>
@@ -2255,10 +2249,10 @@ Data channels does't supported in case of interoperability of <em>FireFox</em> a
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_106">
+					<tr id="section_105">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_106">&#182;</a>
+								<a class="pilcrow" href="#section_105">&#182;</a>
 							</div>
 							<p><em>Chrome M26b</em> and <em>Chrome Canary</em> with this settings fires an erron on the creation of offer/answer, but it is necessary for interoperablity between <em>FF</em> and <em>Chrome</em>.</p>
 

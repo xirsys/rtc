@@ -267,7 +267,7 @@ E.g. The <code>URL</code> can be used for assigning to any html 'video' element.
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>				if (this.videoAvailable || this.audioAvailable || stream.currentTime &gt; 0) {
+							<pre><code class='prettyprint'>				if (this.videoAvailable || this.audioAvailable || stream.currentTime/*this field actual only for FireFox*/ &gt; 0) {
 					assignTo.call(this, videoDomElement);
 				} else {
 </code></pre>

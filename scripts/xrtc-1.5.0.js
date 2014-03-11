@@ -1372,7 +1372,14 @@
         xrtc.Class.extend(offerOptions, options.offer);
       }
       self.trigger(xrtc.Connection.events.connectionOpening, {user:remoteUser, connection:self});
-      initPeerConnection.call(self, remoteUser, function() {
+      initPeerConnection.call(self, remoteUser, proxy(onLocalPeerConnectionInitialized));
+      function onLocalPeerConnectionInitialized() {
+        for (var i = 0, len = localStreams.length;i < len;i++) {
+          peerConnection.addStream(localStreams[i].getStream());
+        }
+        for (i = 0, len = dataChannelConfigs.length;i < len;i++) {
+          createDataChannel.call(this, dataChannelConfigs[i]);
+        }
         iceFilter = new internal.IceCandidateFilter(options && options.connectionType || null, iceServers);
         peerConnection.createOffer(proxy(onCreateOfferSuccess), proxy(onCreateOfferError), offerOptions);
         function onCreateOfferSuccess(offer) {
@@ -1397,7 +1404,7 @@
           logger.error("onCreateOfferError", error);
           self.trigger(xrtc.Connection.events.createOfferError, {connection:self, error:error});
         }
-      });
+      }
     }, close:function(byeData) {
       if (handshakeController && remoteUser) {
         handshakeController.sendBye(remoteUser.id, connectionId, byeData);
@@ -1445,19 +1452,6 @@
     }
     function initPeerConnection(user, callback) {
       remoteUser = user;
-      if (!peerConnection) {
-        getIceServers.call(this, proxy(onIceServersGot));
-      } else {
-        callCallback();
-      }
-      function callCallback() {
-        if (typeof callback === "function") {
-          try {
-            callback();
-          } catch (e) {
-          }
-        }
-      }
       function createBrowserCompatibleIceServers(iceServersArray) {
         var browserCompatibleIceServers = [];
         var createFireFoxTurnServer = function(url, username, password) {
@@ -1585,12 +1579,20 @@
         function onAddStream(evt) {
           addRemoteStream.call(this, evt.stream);
         }
-        for (var i = 0, len = localStreams.length;i < len;i++) {
-          peerConnection.addStream(localStreams[i].getStream());
+        callCallback();
+      }
+      function callCallback() {
+        if (typeof callback === "function") {
+          try {
+            callback();
+          } catch (error) {
+            logger.error("initPeerConnection.callback", error);
+          }
         }
-        for (var i = 0, len = dataChannelConfigs.length;i < len;i++) {
-          createDataChannel.call(this, dataChannelConfigs[i]);
-        }
+      }
+      if (!peerConnection) {
+        getIceServers.call(this, proxy(onIceServersGot));
+      } else {
         callCallback();
       }
     }
@@ -1665,23 +1667,24 @@
       this.trigger(xrtc.Connection.events.iceAdded, {connection:this, iceCandidate:iceCandidate});
     }
     function onReceiveOffer(offerData) {
+      logger.debug("Offer was received.", offerData);
       this.trigger(xrtc.Connection.events.offerReceived, {user:remoteUser, connection:this, offerData:offerData});
       this.trigger(xrtc.Connection.events.connectionOpening, {user:remoteUser, connection:this});
-      logger.debug("Offer was received.", offerData);
       iceServers = offerData.iceServers;
-      initPeerConnection.call(this, remoteUser, proxy(onPeerConnectionInit));
-      function onPeerConnectionInit() {
-        logger.debug("receiveOffer", offerData);
+      initPeerConnection.call(this, remoteUser, proxy(onRemotePeerConnectionInitialized));
+      function onRemotePeerConnectionInitialized() {
+        for (var i = 0, len = localStreams.length;i < len;i++) {
+          peerConnection.addStream(localStreams[i].getStream());
+        }
+        peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(JSON.parse(offerData.offer)));
         iceFilter = new internal.IceCandidateFilter(offerData.connectionType, iceServers);
-        var sdp = JSON.parse(offerData.offer);
-        var remoteSessionDescription = new webrtc.RTCSessionDescription(sdp);
-        peerConnection.setRemoteDescription(remoteSessionDescription);
         peerConnection.createAnswer(proxy(onCreateAnswerSuccess), proxy(onCreateAnswerError), xrtc.Connection.settings.answerOptions);
         function onCreateAnswerSuccess(answer) {
-          if (peerConnection) {
+          if (!connectionClosed && peerConnection) {
             if (webrtc.detectedBrowser === webrtc.supportedBrowsers.firefox) {
               answer.sdp = iceFilter.filterSDP(answer.sdp);
             }
+            logger.debug("onCreateAnswerSuccess", answer);
             peerConnection.setLocalDescription(answer);
             var request = {answer:JSON.stringify(answer), acceptData:offerData.acceptData};
             logger.debug("sendAnswer", offerData, answer);
@@ -1700,14 +1703,13 @@
     }
     function onReceiveAnswer(answerData) {
       logger.debug("Answer was received.", answerData);
-      allowIceSending.call(this);
-      var sdp = JSON.parse(answerData.answer);
-      var sessionDescription = new webrtc.RTCSessionDescription(sdp);
-      peerConnection.setRemoteDescription(sessionDescription);
-      this.trigger(xrtc.Connection.events.answerReceived, {user:remoteUser, connection:this, answerData:{answer:sessionDescription}});
+      this.trigger(xrtc.Connection.events.answerReceived, {user:remoteUser, connection:this, answerData:{answer:answerData}});
       this.trigger(xrtc.Connection.events.connectionEstablishing, {user:remoteUser, connection:this});
+      allowIceSending.call(this);
+      peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(JSON.parse(answerData.answer)));
     }
     function onReceiveBye() {
+      logger.debug("Bye was received");
       closePeerConnection.call(this);
     }
     function closePeerConnection() {

@@ -65,7 +65,7 @@
 			// **[Public API]:** The method will be helpful if you want to assign the stream to html 'video' element.
 			assignTo: function (videoDomElement) {
 				// Stream could not be started if it has not been downloaded yet.
-				if (this.videoAvailable || this.audioAvailable || stream.currentTime > 0) {
+				if (this.videoAvailable || this.audioAvailable || stream.currentTime/*this field actual only for FireFox*/ > 0) {
 					assignTo.call(this, videoDomElement);
 				} else {
 					// This magic is needed for cross-browser support. Chrome works fine but in FF streams objects do not appear immediately.
