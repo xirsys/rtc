@@ -8,7 +8,7 @@
 
 // * Chrome 25+;
 // * FireFox 22+;
-// * Opera 17+ (Chromium).
+// * Opera 18+ (Chromium).
 
 // **Dependencies:**
 

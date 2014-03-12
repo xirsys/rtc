@@ -6,7 +6,7 @@
 
 // * Chrome 25+;
 // * FireFox 22+;
-// * Opera 17+ (Chromium).
+// * Opera 18+ (Chromium).
 
 //** Restrictions:**
 
@@ -25,10 +25,10 @@
 // * FireFox 22+ to FireFox 22+;
 // * FireFox 26+ to Chrome 32+;
 
-// * Opera 17 to Opera 17;
-// * Opera 17 to Chrome 25-31;
+// * Opera 18 to Chrome 25-31;
 // * Opera 18 to Opera 18;
 // * Opera 19 to Opera 19.
+// * Opera 20 to Opera 20.
 
 // **Todo: Need to test it and created interoperability table. E.g. Opera practically didn't tested in interoperability mode.**
 
@@ -197,10 +197,10 @@
 		function handleIncomingArrayBuffer(arrayBuffer) {
 			var self = this;
 
-			var chunk = xrtc.blobSerializer.unpack(arrayBuffer);
+			var chunk = xrtc.binarySerializer.unpack(arrayBuffer);
 			if (chunk.total === 1) {
 				self.trigger(events.progress, { messageId: chunk.messageId, percent: 100 });
-				self.trigger(events.receivedMessage, { data: xrtc.blobSerializer.unpack(chunk.data) });
+				self.trigger(events.receivedMessage, { data: xrtc.binarySerializer.unpack(chunk.data) });
 			} else {
 				if (!receivedChunks[chunk.messageId]) {
 					receivedChunks[chunk.messageId] = { data: [], count: 0, total: chunk.total };
@@ -227,7 +227,7 @@
 
 				if (blobChunks.total === blobChunks.count) {
 					blobToArrayBuffer(new exports.Blob(blobChunks.data), function (ab) {
-						self.trigger(events.receivedMessage, { data: xrtc.blobSerializer.unpack(ab) });
+						self.trigger(events.receivedMessage, { data: xrtc.binarySerializer.unpack(ab) });
 						delete blobChunks[chunk.messageId];
 					});
 				}
@@ -284,7 +284,7 @@
 	}
 
 	BinarySender.prototype.send = function (message, successCallback, failCallback, progressCallback, options) {
-		this._sender.send(xrtc.blobSerializer.pack(message), successCallback, failCallback, progressCallback, options);
+		this._sender.send(xrtc.binarySerializer.pack(message), successCallback, failCallback, progressCallback, options);
 	};
 
 	// END Binary Sender

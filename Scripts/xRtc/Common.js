@@ -23,13 +23,21 @@
 		RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
 		URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 		MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
-		supportedBrowsers: { chrome: "chrome", firefox: "firefox" }
+		supportedBrowsers: { chrome: "chrome", firefox: "firefox", opera: "opera" /*18+*/ }
 	};
 
-	xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : xrtc.webrtc.supportedBrowsers.chrome;
+	// FireFox will be detedcted using "feature detection" approach,
+	// Opera will be detected by `navigator`string because Opera 18+ uses Chromium engine and can't be detected(difficult to choose appropriate feature) by feature.
+	// **Note:** Some existed `navigator` strings can be found here <http://www.useragentstring.com/>
+	xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia
+		? xrtc.webrtc.supportedBrowsers.firefox
+		: ((exports.navigator.userAgent.match(/Opera|OPR\//) ? xrtc.webrtc.supportedBrowsers.opera : xrtc.webrtc.supportedBrowsers.chrome));
+
 	xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox
 		? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1])
-		: parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+		: (xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.opera
+			? parseInt(exports.navigator.userAgent.match(/(Opera|OPR)\/([0-9]+)\./)[2])
+			: parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]));
 
 	// Features which supported by current browser.
 	xrtc.webrtc.supports = function () {
@@ -73,7 +81,7 @@
 		};
 	}();
 
-	xrtc.blobSerializer = {
+	xrtc.binarySerializer = {
 		// **Note:** External reference to BinaryPack library.
 		pack: BinaryPack.pack,
 		unpack: BinaryPack.unpack

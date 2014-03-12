@@ -675,9 +675,9 @@
   }
   var xrtc = exports.xRtc;
   xrtc.webrtc = {getUserMedia:(navigator.webkitGetUserMedia || (navigator.mozGetUserMedia || (navigator.msGetUserMedia || navigator.getUserMedia))).bind(navigator), RTCPeerConnection:exports.mozRTCPeerConnection || (exports.webkitRTCPeerConnection || exports.RTCPeerConnection), RTCIceCandidate:exports.mozRTCIceCandidate || exports.RTCIceCandidate, RTCSessionDescription:exports.mozRTCSessionDescription || exports.RTCSessionDescription, URL:exports.webkitURL || (exports.msURL || (exports.oURL || exports.URL)), 
-  MediaStream:exports.mozMediaStream || (exports.webkitMediaStream || exports.MediaStream), supportedBrowsers:{chrome:"chrome", firefox:"firefox"}};
-  xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : xrtc.webrtc.supportedBrowsers.chrome;
-  xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox ? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]) : parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+  MediaStream:exports.mozMediaStream || (exports.webkitMediaStream || exports.MediaStream), supportedBrowsers:{chrome:"chrome", firefox:"firefox", opera:"opera"}};
+  xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia ? xrtc.webrtc.supportedBrowsers.firefox : exports.navigator.userAgent.match(/Opera|OPR\//) ? xrtc.webrtc.supportedBrowsers.opera : xrtc.webrtc.supportedBrowsers.chrome;
+  xrtc.webrtc.detectedBrowserVersion = xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.firefox ? parseInt(exports.navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]) : xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.opera ? parseInt(exports.navigator.userAgent.match(/(Opera|OPR)\/([0-9]+)\./)[2]) : parseInt(exports.navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
   xrtc.webrtc.supports = function() {
     if (typeof xrtc.webrtc.RTCPeerConnection === "undefined") {
       return{};
@@ -708,7 +708,7 @@
     }
     return{media:media, data:data, sctp:sctp, screen:xrtc.webrtc.detectedBrowser === xrtc.webrtc.supportedBrowsers.chrome && xrtc.webrtc.detectedBrowserVersion > 25};
   }();
-  xrtc.blobSerializer = {pack:BinaryPack.pack, unpack:BinaryPack.unpack};
+  xrtc.binarySerializer = {pack:BinaryPack.pack, unpack:BinaryPack.unpack};
   xRtc.utils = {newGuid:function() {
     var guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
       var r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
@@ -1130,10 +1130,10 @@
     }
     function handleIncomingArrayBuffer(arrayBuffer) {
       var self = this;
-      var chunk = xrtc.blobSerializer.unpack(arrayBuffer);
+      var chunk = xrtc.binarySerializer.unpack(arrayBuffer);
       if (chunk.total === 1) {
         self.trigger(events.progress, {messageId:chunk.messageId, percent:100});
-        self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(chunk.data)});
+        self.trigger(events.receivedMessage, {data:xrtc.binarySerializer.unpack(chunk.data)});
       } else {
         if (!receivedChunks[chunk.messageId]) {
           receivedChunks[chunk.messageId] = {data:[], count:0, total:chunk.total};
@@ -1149,7 +1149,7 @@
         }
         if (blobChunks.total === blobChunks.count) {
           blobToArrayBuffer(new exports.Blob(blobChunks.data), function(ab) {
-            self.trigger(events.receivedMessage, {data:xrtc.blobSerializer.unpack(ab)});
+            self.trigger(events.receivedMessage, {data:xrtc.binarySerializer.unpack(ab)});
             delete blobChunks[chunk.messageId];
           });
         }
@@ -1176,7 +1176,7 @@
     this._sender = sender;
   }
   BinarySender.prototype.send = function(message, successCallback, failCallback, progressCallback, options) {
-    this._sender.send(xrtc.blobSerializer.pack(message), successCallback, failCallback, progressCallback, options);
+    this._sender.send(xrtc.binarySerializer.pack(message), successCallback, failCallback, progressCallback, options);
   };
   function blobToArrayBuffer(blob, callback) {
     var fileReader = new exports.FileReader;
