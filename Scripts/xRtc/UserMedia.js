@@ -47,8 +47,11 @@
 
 	// **[Public API]:** Asks user to allow use local devices, e.g. **camera**, **microphone**, **screen**.
 
-	// **Note:** Screen sharing available only for *Chrome 25+* with special flag `#enable-usermedia-screen-capture` and only in case
+	// **Note:** Screen sharing available only for *Chrome 25+* <-> *Chrome 25+* with special flag `#enable-usermedia-screen-capture` and only in case
 	// when application (app which uses xRtc) was loaded by **HTTPS** protocol.
+	// FireFox don't support this feature and even can't receive remote Chrome's screen sharing stream.
+	// Opera don't support this feature but can receive Chrome's remote screen sharing stream.
+	// This information is actual for FireFox 27, Chrome 33, Opera 20 at least. Maybe in the future the feature will be implemented and for FireFox and Opera.
 
 	// **Simple examples:**
 

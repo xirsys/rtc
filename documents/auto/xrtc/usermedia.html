@@ -24,7 +24,7 @@
 								xrtc\class.js
 							</a>
 							<a class="source" href="../xrtc/common.html">
-								xrtc\common.js
+								xrtc\Common.js
 							</a>
 							<a class="source" href="../xrtc/commonerror.html">
 								xrtc\commonError.js
@@ -193,8 +193,11 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_7">&#182;</a>
 							</div>
-							<p><strong>Note:</strong> Screen sharing available only for <em>Chrome 25+</em> with special flag <code>#enable-usermedia-screen-capture</code> and only in case
-when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> protocol.</p>
+							<p><strong>Note:</strong> Screen sharing available only for <em>Chrome 25+</em> &lt;-> <em>Chrome 25+</em> with special flag <code>#enable-usermedia-screen-capture</code> and only in case
+when application (app which uses xRtc) was loaded by <strong>HTTPS</strong> protocol.
+FireFox don't support this feature and even can't receive remote Chrome's screen sharing stream.
+Opera don't support this feature but can receive Chrome's remote screen sharing stream.
+This information is actual for FireFox 27, Chrome 33, Opera 20 at least. Maybe in the future the feature will be implemented and for FireFox and Opera.</p>
 
 						</td>
 						<td class="code">

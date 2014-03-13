@@ -24,7 +24,7 @@
 								xrtc\class.js
 							</a>
 							<a class="source" href="../xrtc/common.html">
-								xrtc\common.js
+								xrtc\Common.js
 							</a>
 							<a class="source" href="../xrtc/commonerror.html">
 								xrtc\commonError.js
@@ -1362,7 +1362,7 @@ NS<em>ERROR</em>XPC<em>CANT</em>MODIFY<em>PROP</em>ON_WN: Cannot modify properti
 
 						</td>
 						<td class="code">
-							<pre><code class='prettyprint'>					peerConnection.oniceconnectionstatechange = // M27+, FF24+
+							<pre><code class='prettyprint'>					peerConnection.oniceconnectionstatechange = // M27+, FF24+ (For FF in case of FF &lt;-&gt; Chrome this event doesn&#39;t work if remote client was disconnected).
 					proxy(onIceStateChange);
 
 				peerConnection.ondatachannel = function (channelData) {
@@ -1394,7 +1394,8 @@ It is called any time a MediaStream is added by the remote peer. This will be fi
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_72">&#182;</a>
 							</div>
-							<p>For <em>FF</em> only (Tested for <em>FF24</em>. Magic, sometimes works and sometimes not.)</p>
+							<p>For <em>FF</em> only. Works only in case <em>FF</em> &lt;-> <em>FF</em>.
+In case of <em>FF</em> &lt;-> <em>Chrome/Opera</em> this event will be fired only after 12min after real disconnection.</p>
 
 						</td>
 						<td class="code">

@@ -21,14 +21,18 @@
 // * Chrome 25-31 to Opera 17;
 // * Chrome 32+ to Chrome 32+;
 // * Chrome 32+ to FireFox 26+;
+// * Chrome 33 (maybe 32+) to Opera 20 (maybe 20+);
 
 // * FireFox 22+ to FireFox 22+;
 // * FireFox 26+ to Chrome 32+;
+// * FireFox 27 (maybe 26+) to Opera 20 (maybe 20+);
 
 // * Opera 18 to Chrome 25-31;
 // * Opera 18 to Opera 18;
 // * Opera 19 to Opera 19.
 // * Opera 20 to Opera 20.
+// * Opera 20 (maybe 20+) to Opera FireFox 27 (maybe 26+).
+// * Opera 20 (maybe 20+) to Opera Chrome 33 (maybe 32+).
 
 // **Todo: Need to test it and created interoperability table. E.g. Opera practically didn't tested in interoperability mode.**
 

@@ -514,7 +514,7 @@
 				// **Todo:** Need to think about the necessity of this handlers.
 				peerConnection.onicechange = // M25-M26
 					//*FF 20.0.1* (FF 21+ works fine): during assigning peerConnection.oniceconnectionstatechange field *FF* throw following error: NS_ERROR_XPC_CANT_MODIFY_PROP_ON_WN: Cannot modify properties of a WrappedNative
-					peerConnection.oniceconnectionstatechange = // M27+, FF24+
+					peerConnection.oniceconnectionstatechange = // M27+, FF24+ (For FF in case of FF <-> Chrome this event doesn't work if remote client was disconnected).
 					proxy(onIceStateChange);
 
 				peerConnection.ondatachannel = function (channelData) {
@@ -527,7 +527,8 @@
 				// It is called any time a MediaStream is added by the remote peer. This will be fired only as a result of `setRemoteDescription`.
 				peerConnection.onaddstream = proxy(onAddStream);
 
-				// For *FF* only (Tested for *FF24*. Magic, sometimes works and sometimes not.)
+				// For *FF* only. Works only in case *FF* <-> *FF*.
+				// In case of *FF* <-> *Chrome/Opera* this event will be fired only after 12min after real disconnection.
 				peerConnection.onclosedconnection = function (closeData/*temporary ignores*/) {
 					logger.debug('peerConnection.onclosedconnection', closeData);
 					closePeerConnection.call(self);

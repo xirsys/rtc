@@ -23,10 +23,10 @@
 		RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
 		URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 		MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
-		supportedBrowsers: { chrome: "chrome", firefox: "firefox", opera: "opera" /*18+*/ }
+		supportedBrowsers: { chrome: "chrome"/*25+*/, firefox: "firefox"/*22+*/, opera: "opera"/*18+*/ }
 	};
 
-	// FireFox will be detedcted using "feature detection" approach,
+	// FireFox will be detected using "feature detection" approach,
 	// Opera will be detected by `navigator`string because Opera 18+ uses Chromium engine and can't be detected(difficult to choose appropriate feature) by feature.
 	// **Note:** Some existed `navigator` strings can be found here <http://www.useragentstring.com/>
 	xrtc.webrtc.detectedBrowser = navigator.mozGetUserMedia

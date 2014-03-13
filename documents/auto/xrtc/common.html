@@ -2,7 +2,7 @@
 
 <html>
 <head>
-	<title>common.js</title>
+	<title>Common.js</title>
 	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 	<link href="../nocco.css" rel="stylesheet" media="all" type="text/css" />
 	<script src="../prettify.js" type="text/javascript"></script>
@@ -24,7 +24,7 @@
 								xrtc\class.js
 							</a>
 							<a class="source" href="../xrtc/common.html">
-								xrtc\common.js
+								xrtc\Common.js
 							</a>
 							<a class="source" href="../xrtc/commonerror.html">
 								xrtc\commonError.js
@@ -63,7 +63,7 @@
 			<thead>
 				<tr>
 					<th class="docs">
-						<h1>common.js</h1>
+						<h1>Common.js</h1>
 					</th>
 					<th class="code"></th>
 				</tr>
@@ -137,7 +137,7 @@
 		RTCSessionDescription: exports.mozRTCSessionDescription || exports.RTCSessionDescription,
 		URL: exports.webkitURL || exports.msURL || exports.oURL || exports.URL,
 		MediaStream: exports.mozMediaStream || exports.webkitMediaStream || exports.MediaStream,
-		supportedBrowsers: { chrome: &quot;chrome&quot;, firefox: &quot;firefox&quot;, opera: &quot;opera&quot; /*18+*/ }
+		supportedBrowsers: { chrome: &quot;chrome&quot;/*25+*/, firefox: &quot;firefox&quot;/*22+*/, opera: &quot;opera&quot;/*18+*/ }
 	};
 
 </code></pre>
@@ -148,7 +148,7 @@
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_5">&#182;</a>
 							</div>
-							<p>FireFox will be detedcted using "feature detection" approach,
+							<p>FireFox will be detected using "feature detection" approach,
 Opera will be detected by <code>navigator</code>string because Opera 18+ uses Chromium engine and can't be detected(difficult to choose appropriate feature) by feature.
 <strong>Note:</strong> Some existed <code>navigator</code> strings can be found here <a href="http://www.useragentstring.com/">http://www.useragentstring.com/</a></p>
 
