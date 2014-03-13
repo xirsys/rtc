@@ -243,6 +243,20 @@ This information is actual for FireFox 27, Chrome 33, Opera 20 at least. Maybe i
 							<div class="pilwrap">
 								<a class="pilcrow" href="#section_10">&#182;</a>
 							</div>
+							<p><strong>Note:</strong> No callbacks can be called in case of HTTP, Chrome/Opera browser and if existed local stream was stoped before requesting new local stream (some milliseconds before, maybe seconds).
+Looks like Chrome browser sharing local stream and this fact influence on mentioned behaviour.</p>
+
+						</td>
+						<td class="code">
+							<pre><code class='prettyprint'>
+</code></pre>
+						</td>
+					</tr>
+					<tr id="section_11">
+						<td class="docs">
+							<div class="pilwrap">
+								<a class="pilcrow" href="#section_11">&#182;</a>
+							</div>
 							<p><strong>Note:</strong> xRtc.getUserMedia uses the same option as native browser's getUserMedia. Some examples of otions you can find here:
 <a href="http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html">http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html</a></p>
 
@@ -259,10 +273,10 @@ This information is actual for FireFox 27, Chrome 33, Opera 20 at least. Maybe i
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_11">
+					<tr id="section_12">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_11">&#182;</a>
+								<a class="pilcrow" href="#section_12">&#182;</a>
 							</div>
 							<p>Screen sharing feature required no audio.</p>
 
@@ -276,10 +290,10 @@ This information is actual for FireFox 27, Chrome 33, Opera 20 at least. Maybe i
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_12">
+					<tr id="section_13">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_12">&#182;</a>
+								<a class="pilcrow" href="#section_13">&#182;</a>
 							</div>
 							<p>If requested stream is <code>screen sharing</code> and with <code>audio</code> then <code>screen sharing stream</code> will be merged with separate <code>audio stream</code>.</p>
 
@@ -290,10 +304,10 @@ This information is actual for FireFox 27, Chrome 33, Opera 20 at least. Maybe i
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_13">
+					<tr id="section_14">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_13">&#182;</a>
+								<a class="pilcrow" href="#section_14">&#182;</a>
 							</div>
 							<p><em>FF 20.0.1: (Not shure about other version, FF 21 works fine)</em>
 reduces the overall sound of the computer (playing using <em>Chrome</em> and maybe another <em>FF</em>) after calling this functionality.</p>
@@ -310,10 +324,10 @@ reduces the overall sound of the computer (playing using <em>Chrome</em> and may
 </code></pre>
 						</td>
 					</tr>
-					<tr id="section_14">
+					<tr id="section_15">
 						<td class="docs">
 							<div class="pilwrap">
-								<a class="pilcrow" href="#section_14">&#182;</a>
+								<a class="pilcrow" href="#section_15">&#182;</a>
 							</div>
 							<p>Combine audio and video components of different streams in one stream.</p>
 

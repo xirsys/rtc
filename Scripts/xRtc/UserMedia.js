@@ -62,6 +62,9 @@
 	// * `xRtc.getUserMedia({ video: { mandatory: { mediaSource: "screen" } }, audio: true }, function(stream){}, function(error){});`
 	// * `xRtc.getUserMedia({ video: { mandatory: { minWidth: 1280, maxWidth: 1280, minHeight: 720, maxHeight: 720, minFrameRate: 30 }}, function(stream){}, function(error){});`
 
+	//**Note:** No callbacks can be called in case of HTTP, Chrome/Opera browser and if existed local stream was stoped before requesting new local stream (some milliseconds before, maybe seconds).
+	// Looks like Chrome browser sharing local stream and this fact influence on mentioned behaviour.
+
 	// **Note:** xRtc.getUserMedia uses the same option as native browser's getUserMedia. Some examples of otions you can find here:
 	// <http://webrtc.googlecode.com/svn/trunk/samples/js/demos/html/constraints-and-stats.html>
 	xrtc.getUserMedia = function (options, successCallback, errorCallback) {
