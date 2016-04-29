@@ -151,7 +151,7 @@
 
 		function connect(url, token) {
 			// **Todo:** remove "/ws/"
-			socket = new WebSocket(url + '/ws/' + encodeURIComponent(token));
+			socket = new WebSocket(url + '/' + encodeURIComponent(token));
 			socket.onopen = proxy(socketOnOpen);
 			socket.onclose = proxy(socketOnClose);
 			socket.onerror = proxy(socketOnError);
@@ -369,7 +369,7 @@
 		},
 
 		settings: {
-			URL: 'https://api.xirsys.com/wsList'
+			URL: 'https://service.xirsys.com/signal/list'
 		}
 	});
 })(window);

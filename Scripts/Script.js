@@ -478,8 +478,8 @@ $(document).ready(function () {
 		xRtc.Connection.settings.answerOptions.mandatory.MozDontOfferDataChannel = true;
 	}*/
 
-	xRtc.AuthManager.settings.tokenHandler = "getToken.php";
-	xRtc.AuthManager.settings.iceHandler = "getIceServers.php";
+	xRtc.AuthManager.settings.tokenHandler = "signal-token.php";
+	xRtc.AuthManager.settings.iceHandler = "ice.php";
 
 	var pageParams = getParams();
 	setIceServers(pageParams);

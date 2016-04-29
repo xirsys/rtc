@@ -152,8 +152,8 @@
 
 		settings: {
 			unsuccessfulRequestRepeatTimeout: 5000,
-			tokenHandler: 'https://api.xirsys.com/getToken',
-			iceHandler: 'https://api.xirsys.com/getIceServers'
+			tokenHandler: 'https://service.xirsys.com/signal/token',
+			iceHandler: 'https://service.xirsys.com/ice'
 		}
 	});
 })(window);

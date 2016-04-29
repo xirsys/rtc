@@ -966,7 +966,7 @@
       }
     }
   });
-  xrtc.AuthManager.extend({events:{serverError:"servererror"}, settings:{unsuccessfulRequestRepeatTimeout:5E3, tokenHandler:"https://api.xirsys.com/getToken", iceHandler:"https://api.xirsys.com/getIceServers"}});
+  xrtc.AuthManager.extend({events:{serverError:"servererror"}, settings:{unsuccessfulRequestRepeatTimeout:5E3, tokenHandler:"https://service.xirsys.com/signal/token", iceHandler:"https://service.xirsys.com/ice"}});
 })(window);
 (function(exports, xrtc) {
   var webrtc = xrtc.webrtc;
@@ -1857,7 +1857,9 @@
       }
     }
     function connect(url, token) {
-      socket = new WebSocket(url + "/ws/" + encodeURIComponent(token));
+      if (url.startsWith("ws:") && url.indexOf(":443"))
+        url = "wss" + url.substr(2, url.length);
+      socket = new WebSocket(url + "/" + encodeURIComponent(token));
       socket.onopen = proxy(socketOnOpen);
       socket.onclose = proxy(socketOnClose);
       socket.onerror = proxy(socketOnError);
@@ -1983,7 +1985,7 @@
       }, interval);
     }
   });
-  xrtc.ServerConnector.extend({events:{connectionOpen:"connectionopen", connectionClose:"connectionclose", connectionError:"connectionerror", message:"message", messageFormatError:"messageformaterror", serverError:"servererror", tokenInvalid:"tokeninvalid", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveIce:"receiveice", receiveBye:"receivebye", usersUpdated:"peers", userConnected:"peer_connected", userDisconnected:"peer_removed"}, settings:{URL:"https://api.xirsys.com/wsList"}});
+  xrtc.ServerConnector.extend({events:{connectionOpen:"connectionopen", connectionClose:"connectionclose", connectionError:"connectionerror", message:"message", messageFormatError:"messageformaterror", serverError:"servererror", tokenInvalid:"tokeninvalid", receiveOffer:"receiveoffer", receiveAnswer:"receiveanswer", receiveIce:"receiveice", receiveBye:"receivebye", usersUpdated:"peers", userConnected:"peer_connected", userDisconnected:"peer_removed"}, settings:{URL:"https://service.xirsys.com/signal/list"}});
 })(window);
 (function(exports) {
   if (typeof exports.xRtc === "undefined") {
